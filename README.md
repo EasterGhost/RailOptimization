@@ -2,7 +2,7 @@
 
 <img src="https://github.com/fxmorin/RailOptimization/blob/master/common/src/main/resources/icon.png?raw=true" style="max-width:128px;max-height:128px" alt="RailOptimization Icon"/>
 
-# FX's Rail Optimization(1.20.2-fabirc with bugs fixed)
+# FX's Rail Optimization(fabirc version with bugs fixed)
 
 [![Mod Environment](https://img.shields.io/badge/Environment-Fabric-blue?style=round)](https://github.com/EasterGhost/RailOptimization)
 [![Hits Of Code](https://hitsofcode.com/github/EasterGhost/RailOptimization?branch=1.20.2-fabric)](https://github.com/EasterGhost/RailOptimization)
