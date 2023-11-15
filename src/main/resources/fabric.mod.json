@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "railoptimization",
+  "version": "${version}",
+  "name": "RailOptimization",
+  "description": "A simple mod that makes powered/activator rails turning on/off up to 4x faster",
+  "authors": [
+    "FX - PROCESS",
+    "EasterGhost"
+  ],
+  "contact": {
+    "repo": "https://github.com/easterghost/RailOptimization"
+  },
+  "license": "LGPL-3.0",
+  "icon": "assets/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "RailOptimization.RailOptimizationFabric"
+    ]
+  },
+  "mixins": [
+    "railoptimization.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
