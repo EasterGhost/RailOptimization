@@ -9,7 +9,7 @@
     "EasterGhost"
   ],
   "contact": {
-    "repo": "https://github.com/easterghost/RailOptimization"
+    "repo": "https://github.com/EasterGhost/RailOptimization"
   },
   "license": "LGPL-3.0",
   "icon": "assets/icon.png",
@@ -20,7 +20,7 @@
     ]
   },
   "mixins": [
-    "railoptimization.mixins.json"
+    "railoptimization-1_20_2.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
