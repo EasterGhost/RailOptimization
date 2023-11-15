@@ -20,7 +20,7 @@
     ]
   },
   "mixins": [
-    "railoptimization.mixins.json"
+    "railoptimization-1_20_1.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
