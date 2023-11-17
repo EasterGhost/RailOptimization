@@ -20,11 +20,11 @@
     ]
   },
   "mixins": [
-    "railoptimization-1_20_2.mixins.json"
+    "railoptimization-1_19_4.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=${loader_version}",
+    "fabricloader": ">=0.14.18",
     "fabric": "*",
-    "minecraft": "${minecraft_version}"
+    "minecraft": "1.19.x"
   }
 }
