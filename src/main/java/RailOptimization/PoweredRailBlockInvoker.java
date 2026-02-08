@@ -1,4 +1,4 @@
-package RailOptimization;
+package railOptimization;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;

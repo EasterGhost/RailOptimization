@@ -1,6 +1,5 @@
-package RailOptimization;
+package railOptimization;
 
-import RailOptimization.PoweredRailBlockInvoker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -24,16 +23,22 @@ public class RailLogic {
 
     public static int RAIL_POWER_LIMIT = 8;
 
+    private static boolean isAscending(RailShape railShape) {
+        return railShape == RailShape.ASCENDING_EAST ||
+               railShape == RailShape.ASCENDING_WEST ||
+               railShape == RailShape.ASCENDING_NORTH ||
+               railShape == RailShape.ASCENDING_SOUTH;
+    }
+
+    private static void notifyNeighborChanged(Level world, BlockPos pos, Block block, BlockPos fromPos) {
+        // 在1.21.2中，neighborChanged方法需要使用updateNeighborsAt替代
+        world.updateNeighborsAt(pos, block);
+    }
+
     public static void giveShapeUpdate(Level level, BlockState state, BlockPos pos, BlockPos fromPos, Direction direction) {
-        BlockState oldState = level.getBlockState(pos);
-        Block.updateOrDestroy(
-                oldState,
-                oldState.updateShape(direction.getOpposite(), state, level, pos, fromPos),
-                level,
-                pos,
-                UPDATE_CLIENTS & -34,
-                0
-        );
+        // BlockState oldState = level.getBlockState(pos);
+        // 在1.21.2中，直接通知方块状态更新
+        level.updateNeighborsAt(pos, state.getBlock());
     }
 
     public static void setRailPowerLimit(int powerLimit) {
@@ -46,10 +51,10 @@ public class RailLogic {
                 ((PoweredRailBlockInvoker)self).invokeFindPoweredRailSignal(level, pos, state, false, 0);
         if (shouldBePowered != state.getValue(POWERED)) {
             RailShape railShape = state.getValue(SHAPE);
-            if (railShape.isAscending()) {
+            if (isAscending(railShape)) {
                 level.setBlock(pos, state.setValue(POWERED, shouldBePowered), 3);
-                level.updateNeighborsAtExceptFromFacing(pos.below(), self, Direction.UP);
-                level.updateNeighborsAtExceptFromFacing(pos.above(), self, Direction.DOWN); //isAscending
+                level.updateNeighborsAt(pos.below(), self);
+                level.updateNeighborsAt(pos.above(), self); //isAscending
             } else if (shouldBePowered) {
                 powerLane(self, level, pos, state, railShape);
             } else {
@@ -237,7 +242,7 @@ public class RailLogic {
             BlockPos newPos = pos.relative(direction, currentPos+1);
             RailLogic.giveShapeUpdate(world, mainState, newPos, pos, direction);
             BlockState state = world.getBlockState(blockPos);
-            if (state.is(self) && state.getValue(SHAPE).isAscending())
+            if (state.is(self) && isAscending(state.getValue(SHAPE)))
                 RailLogic.giveShapeUpdate(world, mainState, newPos.above(), pos, direction);
         }
     }
@@ -246,10 +251,10 @@ public class RailLogic {
                                           Direction direction, Block block, int currentPos, BlockPos blockPos) {
         if (currentPos == endPos) {
             BlockPos newPos = pos.relative(direction, currentPos+1);
-            world.neighborChanged(newPos, block, pos);
+            notifyNeighborChanged(world, newPos, block, pos);
             BlockState state = world.getBlockState(blockPos);
-            if (state.is(self) && state.getValue(SHAPE).isAscending())
-                world.neighborChanged(newPos.above(), block, blockPos);
+            if (state.is(self) && isAscending(state.getValue(SHAPE)))
+                notifyNeighborChanged(world, newPos.above(), block, blockPos);
         }
     }
 
@@ -289,18 +294,18 @@ public class RailLogic {
                 Block block = mainState.getBlock();
                 for (int c = countAmt; c >= i; c--) {
                     BlockPos p = pos.relative(dir, c);
-                    if (c == 0 && count[1] == 0) world.neighborChanged(p.relative(dir.getOpposite()), block, pos);
+                    if (c == 0 && count[1] == 0) notifyNeighborChanged(world, p.relative(dir.getOpposite()), block, pos);
                     neighborUpdateEnd(self, world, pos, countAmt, dir, block, c, p);
-                    world.neighborChanged(p.below(), block, pos);
-                    world.neighborChanged(p.above(), block, pos);
-                    world.neighborChanged(p.north(), block, pos);
-                    world.neighborChanged(p.south(), block, pos);
+                    notifyNeighborChanged(world, p.below(), block, pos);
+                    notifyNeighborChanged(world, p.above(), block, pos);
+                    notifyNeighborChanged(world, p.north(), block, pos);
+                    notifyNeighborChanged(world, p.south(), block, pos);
                     BlockPos pos2 = pos.relative(dir, c).below();
-                    world.neighborChanged(pos2.below(), block, pos);
-                    world.neighborChanged(pos2.north(), block, pos);
-                    world.neighborChanged(pos2.south(), block, pos);
-                    if (c == countAmt) world.neighborChanged(pos.relative(dir, c + 1).below(), block, pos);
-                    if (c == 0 && count[1] == 0) world.neighborChanged(p.relative(dir.getOpposite()).below(), block, pos);
+                    notifyNeighborChanged(world, pos2.below(), block, pos);
+                    notifyNeighborChanged(world, pos2.north(), block, pos);
+                    notifyNeighborChanged(world, pos2.south(), block, pos);
+                    if (c == countAmt) notifyNeighborChanged(world, pos.relative(dir, c + 1).below(), block, pos);
+                    if (c == 0 && count[1] == 0) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block, pos);
                 }
                 for (int c = countAmt; c >= i; c--)
                     updateRailsSectionEastWestShape(self, world, pos, c, mainState, dir, count, countAmt);
@@ -313,18 +318,18 @@ public class RailLogic {
                 Block block = mainState.getBlock();
                 for (int c = countAmt; c >= i; c--) {
                     BlockPos p = pos.relative(dir,c);
-                    world.neighborChanged(p.west(), block, pos);
-                    world.neighborChanged(p.east(), block, pos);
-                    world.neighborChanged(p.below(), block, pos);
-                    world.neighborChanged(p.above(), block, pos);
+                    notifyNeighborChanged(world, p.west(), block, pos);
+                    notifyNeighborChanged(world, p.east(), block, pos);
+                    notifyNeighborChanged(world, p.below(), block, pos);
+                    notifyNeighborChanged(world, p.above(), block, pos);
                     neighborUpdateEnd(self, world, pos, countAmt, dir, block, c, p);
-                    if (c == 0 && count[1] == 0) world.neighborChanged(p.relative(dir.getOpposite()), block, pos);
+                    if (c == 0 && count[1] == 0) notifyNeighborChanged(world, p.relative(dir.getOpposite()), block, pos);
                     BlockPos pos2 = pos.relative(dir,c).below();
-                    world.neighborChanged(pos2.west(), block, pos);
-                    world.neighborChanged(pos2.east(), block, pos);
-                    world.neighborChanged(pos2.below(), block, pos);
-                    if (c == countAmt) world.neighborChanged(pos.relative(dir,c + 1).below(), block, pos);
-                    if (c == 0 && count[1] == 0) world.neighborChanged(p.relative(dir.getOpposite()).below(), block, pos);
+                    notifyNeighborChanged(world, pos2.west(), block, pos);
+                    notifyNeighborChanged(world, pos2.east(), block, pos);
+                    notifyNeighborChanged(world, pos2.below(), block, pos);
+                    if (c == countAmt) notifyNeighborChanged(world, pos.relative(dir,c + 1).below(), block, pos);
+                    if (c == 0 && count[1] == 0) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block, pos);
                 }
                 for (int c = countAmt; c >= i; c--)
                     updateRailsSectionNorthSouthShape(self, world, pos, c, mainState, dir, count, countAmt);
