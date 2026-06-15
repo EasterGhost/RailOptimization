@@ -12,7 +12,6 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationGameTest {
     private static final int RAIL_Y = 2;
-    private static final int SUPPORT_Y = RAIL_Y - 1;
     private static final int RAIL_X = 2;
     private static final int FIRST_RAIL_Z = 1;
     private static final int LAST_RAIL_Z = 7;

@@ -36,15 +36,12 @@ public final class RailLogic {
                railShape == RailShape.ASCENDING_SOUTH;
     }
 
-    private static void notifyNeighborChanged(Level world, BlockPos pos, Block block) {
-        // 在1.21.2中，neighborChanged方法需要使用updateNeighborsAt替代
-        world.updateNeighborsAt(pos, block);
+    private static void notifyNeighborChanged(Level level, BlockPos pos, Block sourceBlock) {
+        level.updateNeighborsAt(pos, sourceBlock);
     }
 
-    public static void giveShapeUpdate(Level level, BlockState state, BlockPos pos) {
-        // BlockState oldState = level.getBlockState(pos);
-        // 在1.21.2中，直接通知方块状态更新
-        level.updateNeighborsAt(pos, state.getBlock());
+    private static void notifyShapeChanged(Level level, BlockPos pos, Block sourceBlock) {
+        level.updateNeighborsAt(pos, sourceBlock);
     }
 
     public static void setRailPowerLimit(int powerLimit) {
@@ -70,13 +67,13 @@ public final class RailLogic {
     }
 
     public static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level world, BlockPos pos,
-                                                      boolean bl, int distance, RailShape shape,
-                                                      Map<BlockPos,Boolean> checkedPos) {
+                                                      boolean forward, int distance, RailShape shape,
+                                                      Map<BlockPos, Boolean> checkedPos) {
         BlockState blockState = world.getBlockState(pos);
         boolean speedCheck = Boolean.TRUE.equals(checkedPos.get(pos));
         if (speedCheck) {
             return world.hasNeighborSignal(pos) ||
-                    findPoweredRailSignalFaster(self, world, pos, blockState, bl, distance + 1, checkedPos);
+                    findPoweredRailSignalFaster(self, world, pos, blockState, forward, distance + 1, checkedPos);
         }
 
         if (!blockState.is(self)) {
@@ -89,7 +86,7 @@ public final class RailLogic {
         }
 
         return world.hasNeighborSignal(pos) ||
-                findPoweredRailSignalFaster(self, world, pos, blockState, bl, distance + 1, checkedPos);
+                findPoweredRailSignalFaster(self, world, pos, blockState, forward, distance + 1, checkedPos);
     }
 
     private static boolean isMismatchedRailShape(RailShape expected, RailShape actual) {
@@ -105,60 +102,60 @@ public final class RailLogic {
     }
 
     public static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level,
-                                                      BlockPos pos, BlockState state, boolean bl, int distance,
-                                                      Map<BlockPos,Boolean> checkedPos) {
+                                                      BlockPos pos, BlockState state, boolean forward, int distance,
+                                                      Map<BlockPos, Boolean> checkedPos) {
         if (distance >= railPowerLimit - 1) return false;
-        int i = pos.getX();
-        int j = pos.getY();
-        int k = pos.getZ();
-        boolean bl2 = true;
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
+        boolean checkBelow = true;
         RailShape railShape = state.getValue(SHAPE);
         switch (railShape) {
             case NORTH_SOUTH -> {
-                if (bl) ++k;
-                else --k;
+                if (forward) ++z;
+                else --z;
             }
             case EAST_WEST -> {
-                if (bl) --i;
-                else ++i;
+                if (forward) --x;
+                else ++x;
             }
             case ASCENDING_EAST -> {
-                if (bl) {
-                    --i;
+                if (forward) {
+                    --x;
                 } else {
-                    ++i;
-                    ++j;
-                    bl2 = false;
+                    ++x;
+                    ++y;
+                    checkBelow = false;
                 }
                 railShape = RailShape.EAST_WEST;
             }
             case ASCENDING_WEST -> {
-                if (bl) {
-                    --i;
-                    ++j;
-                    bl2 = false;
+                if (forward) {
+                    --x;
+                    ++y;
+                    checkBelow = false;
                 } else {
-                    ++i;
+                    ++x;
                 }
                 railShape = RailShape.EAST_WEST;
             }
             case ASCENDING_NORTH -> {
-                if (bl) {
-                    ++k;
+                if (forward) {
+                    ++z;
                 } else {
-                    --k;
-                    ++j;
-                    bl2 = false;
+                    --z;
+                    ++y;
+                    checkBelow = false;
                 }
                 railShape = RailShape.NORTH_SOUTH;
             }
             case ASCENDING_SOUTH -> {
-                if (bl) {
-                    ++k;
-                    ++j;
-                    bl2 = false;
+                if (forward) {
+                    ++z;
+                    ++y;
+                    checkBelow = false;
                 } else {
-                    --k;
+                    --z;
                 }
                 railShape = RailShape.NORTH_SOUTH;
             }
@@ -167,12 +164,12 @@ public final class RailLogic {
             }
         }
         return findPoweredRailSignalFaster(
-                self, level, new BlockPos(i, j, k),
-                bl, distance, railShape, checkedPos
+                self, level, new BlockPos(x, y, z),
+                forward, distance, railShape, checkedPos
         ) ||
-                (bl2 && findPoweredRailSignalFaster(
-                        self, level, new BlockPos(i, j - 1, k),
-                        bl, distance, railShape, checkedPos
+                (checkBelow && findPoweredRailSignalFaster(
+                        self, level, new BlockPos(x, y - 1, z),
+                        forward, distance, railShape, checkedPos
                 ));
     }
 
@@ -182,7 +179,7 @@ public final class RailLogic {
         if (directions == null) return;
 
         world.setBlock(pos, mainState.setValue(POWERED, true), UPDATE_FORCE_PLACE);
-        Map<BlockPos,Boolean> checkedPos = new HashMap<>();
+        Map<BlockPos, Boolean> checkedPos = new HashMap<>();
         checkedPos.put(pos, true);
         int[] count = new int[2];
         for(int i = 0; i < directions.length; ++i) {
@@ -248,14 +245,14 @@ public final class RailLogic {
         }
     }
 
-    private static void shapeUpdateEnd(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState,
+    private static void shapeUpdateEnd(PoweredRailBlock self, Level world, BlockPos pos, Block sourceBlock,
                                        int endPos, Direction direction, int currentPos, BlockPos blockPos) {
         if (currentPos == endPos) {
             BlockPos newPos = pos.relative(direction, currentPos+1);
-            RailLogic.giveShapeUpdate(world, mainState, newPos);
+            notifyShapeChanged(world, newPos, sourceBlock);
             BlockState state = world.getBlockState(blockPos);
             if (state.is(self) && isAscending(state.getValue(SHAPE)))
-                RailLogic.giveShapeUpdate(world, mainState, newPos.above());
+                notifyShapeChanged(world, newPos.above(), sourceBlock);
         }
     }
 
@@ -271,29 +268,29 @@ public final class RailLogic {
     }
 
     private static void updateRailsSectionEastWestShape(PoweredRailBlock self, Level world, BlockPos pos,
-                                                        int c, BlockState mainState, Direction dir,
+                                                        int c, Block sourceBlock, Direction dir,
                                                         int[] count, int countAmt) {
         BlockPos pos1 = pos.relative(dir, c);
         if (c == 0 && count[1] == 0)
-            giveShapeUpdate(world, mainState, pos1.relative(dir.getOpposite()));
-        shapeUpdateEnd(self, world, pos, mainState, countAmt, dir, c, pos1);
-        giveShapeUpdate(world, mainState, pos1.below());
-        giveShapeUpdate(world, mainState, pos1.above());
-        giveShapeUpdate(world, mainState, pos1.north());
-        giveShapeUpdate(world, mainState, pos1.south());
+            notifyShapeChanged(world, pos1.relative(dir.getOpposite()), sourceBlock);
+        shapeUpdateEnd(self, world, pos, sourceBlock, countAmt, dir, c, pos1);
+        notifyShapeChanged(world, pos1.below(), sourceBlock);
+        notifyShapeChanged(world, pos1.above(), sourceBlock);
+        notifyShapeChanged(world, pos1.north(), sourceBlock);
+        notifyShapeChanged(world, pos1.south(), sourceBlock);
     }
 
     private static void updateRailsSectionNorthSouthShape(PoweredRailBlock self, Level world, BlockPos pos,
-                                                          int c, BlockState mainState, Direction dir,
+                                                          int c, Block sourceBlock, Direction dir,
                                                           int[] count, int countAmt) {
         BlockPos pos1 = pos.relative(dir, c);
-        giveShapeUpdate(world, mainState, pos1.west());
-        giveShapeUpdate(world, mainState, pos1.east());
-        giveShapeUpdate(world, mainState, pos1.below());
-        giveShapeUpdate(world, mainState, pos1.above());
-        shapeUpdateEnd(self, world, pos, mainState, countAmt, dir, c, pos1);
+        notifyShapeChanged(world, pos1.west(), sourceBlock);
+        notifyShapeChanged(world, pos1.east(), sourceBlock);
+        notifyShapeChanged(world, pos1.below(), sourceBlock);
+        notifyShapeChanged(world, pos1.above(), sourceBlock);
+        shapeUpdateEnd(self, world, pos, sourceBlock, countAmt, dir, c, pos1);
         if (c == 0 && count[1] == 0)
-            giveShapeUpdate(world, mainState, pos1.relative(dir.getOpposite()));
+            notifyShapeChanged(world, pos1.relative(dir.getOpposite()), sourceBlock);
     }
 
     private static void updateRails(PoweredRailBlock self, boolean eastWest, Level world,
@@ -320,7 +317,7 @@ public final class RailLogic {
                     if (c == 0 && count[1] == 0) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block);
                 }
                 for (int c = countAmt; c >= i; c--)
-                    updateRailsSectionEastWestShape(self, world, pos, c, mainState, dir, count, countAmt);
+                    updateRailsSectionEastWestShape(self, world, pos, c, block, dir, count, countAmt);
             }
         } else {
             for(int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
@@ -344,7 +341,7 @@ public final class RailLogic {
                     if (c == 0 && count[1] == 0) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block);
                 }
                 for (int c = countAmt; c >= i; c--)
-                    updateRailsSectionNorthSouthShape(self, world, pos, c, mainState, dir, count, countAmt);
+                    updateRailsSectionNorthSouthShape(self, world, pos, c, block, dir, count, countAmt);
             }
         }
     }

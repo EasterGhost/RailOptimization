@@ -20,7 +20,7 @@ import RailOptimization.PoweredRailBlockInvoker;
 public abstract class PoweredRailBlockMixin implements PoweredRailBlockInvoker {
 
     @Shadow
-    protected boolean findPoweredRailSignal(Level Level, BlockPos pos, BlockState state, boolean bl, int distance) {
+    protected boolean findPoweredRailSignal(Level level, BlockPos pos, BlockState state, boolean forward, int distance) {
         throw new UnsupportedOperationException();
     }
 
@@ -31,7 +31,7 @@ public abstract class PoweredRailBlockMixin implements PoweredRailBlockInvoker {
     }
 
     @Override
-    public boolean invokeFindPoweredRailSignal(Level level, BlockPos pos, BlockState state, boolean bl, int distance) {
-        return this.findPoweredRailSignal(level, pos, state, bl, distance);
+    public boolean invokeFindPoweredRailSignal(Level level, BlockPos pos, BlockState state, boolean forward, int distance) {
+        return this.findPoweredRailSignal(level, pos, state, forward, distance);
     }
 }
