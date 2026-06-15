@@ -164,6 +164,54 @@ public class RailOptimizationGameTest {
                 .thenSucceed();
     }
 
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    public void consecutiveDescendingRailsPowerFollowingFlatRail(GameTestHelper helper) {
+        BlockPos[] rails = new BlockPos[]{
+                new BlockPos(1, RAIL_Y + 2, 2),
+                new BlockPos(2, RAIL_Y + 1, 2),
+                new BlockPos(3, RAIL_Y, 2),
+                new BlockPos(4, RAIL_Y, 2),
+                new BlockPos(5, RAIL_Y, 2)
+        };
+
+        placeRail(helper, rails[0], RailShape.EAST_WEST);
+        placeRail(helper, rails[1], RailShape.ASCENDING_WEST);
+        placeRail(helper, rails[2], RailShape.ASCENDING_WEST);
+        placeRail(helper, rails[3], RailShape.EAST_WEST);
+        placeRail(helper, rails[4], RailShape.EAST_WEST);
+        helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK);
+
+        helper.startSequence()
+                .thenIdle(6)
+                .thenExecute(() -> assertRailsPowered(helper, rails, true))
+                .thenSucceed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    public void consecutiveDescendingRailsPowerFollowingAscendingRail(GameTestHelper helper) {
+        BlockPos[] rails = new BlockPos[]{
+                new BlockPos(1, RAIL_Y + 2, 2),
+                new BlockPos(2, RAIL_Y + 1, 2),
+                new BlockPos(3, RAIL_Y, 2),
+                new BlockPos(4, RAIL_Y, 2),
+                new BlockPos(5, RAIL_Y + 1, 2),
+                new BlockPos(6, RAIL_Y + 1, 2)
+        };
+
+        placeRail(helper, rails[0], RailShape.EAST_WEST);
+        placeRail(helper, rails[1], RailShape.ASCENDING_WEST);
+        placeRail(helper, rails[2], RailShape.ASCENDING_WEST);
+        placeRail(helper, rails[3], RailShape.ASCENDING_EAST);
+        placeRail(helper, rails[4], RailShape.EAST_WEST);
+        placeRail(helper, rails[5], RailShape.EAST_WEST);
+        helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK);
+
+        helper.startSequence()
+                .thenIdle(6)
+                .thenExecute(() -> assertRailsPowered(helper, rails, true))
+                .thenSucceed();
+    }
+
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 80)
     public void neighborCountersReceiveNorthSouthRailUpdatePositions(GameTestHelper helper) {
         BlockPos start = new BlockPos(3, RAIL_Y, 2);
