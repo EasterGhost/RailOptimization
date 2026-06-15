@@ -82,8 +82,12 @@ public final class RailLogic {
             return false;
         }
 
-        return world.hasNeighborSignal(pos) ||
+        boolean isPowered = world.hasNeighborSignal(pos) ||
                 findPoweredRailSignalFaster(self, world, pos, blockState, forward, distance + 1, checkedPos);
+        if (isPowered) {
+            checkedPos.put(pos.asLong(), CHECKED_POWERED);
+        }
+        return isPowered;
     }
 
     private static boolean isMismatchedRailShape(RailShape expected, RailShape actual) {
