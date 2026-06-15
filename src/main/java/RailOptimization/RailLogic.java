@@ -42,10 +42,6 @@ public final class RailLogic {
         level.updateNeighborsAt(pos, sourceBlock);
     }
 
-    private static void notifyShapeChanged(Level level, BlockPos pos, Block sourceBlock) {
-        level.updateNeighborsAt(pos, sourceBlock);
-    }
-
     public static void setRailPowerLimit(int powerLimit) {
         railPowerLimit = Math.max(1, powerLimit);
     }
@@ -250,17 +246,6 @@ public final class RailLogic {
         return count;
     }
 
-    private static void shapeUpdateEnd(PoweredRailBlock self, Level world, BlockPos pos, Block sourceBlock,
-                                       int endPos, Direction direction, int currentPos, BlockPos blockPos) {
-        if (currentPos == endPos) {
-            BlockPos newPos = pos.relative(direction, currentPos+1);
-            notifyShapeChanged(world, newPos, sourceBlock);
-            BlockState state = world.getBlockState(blockPos);
-            if (state.is(self) && isAscending(state.getValue(SHAPE)))
-                notifyShapeChanged(world, newPos.above(), sourceBlock);
-        }
-    }
-
     private static void neighborUpdateEnd(PoweredRailBlock self, Level world, BlockPos pos, int endPos,
                                           Direction direction, Block block, int currentPos, BlockPos blockPos) {
         if (currentPos == endPos) {
@@ -270,32 +255,6 @@ public final class RailLogic {
             if (state.is(self) && isAscending(state.getValue(SHAPE)))
                 notifyNeighborChanged(world, newPos.above(), block);
         }
-    }
-
-    private static void updateRailsSectionEastWestShape(PoweredRailBlock self, Level world, BlockPos pos,
-                                                        int c, Block sourceBlock, Direction dir,
-                                                        boolean secondDirectionEmpty, int countAmt) {
-        BlockPos pos1 = pos.relative(dir, c);
-        if (c == 0 && secondDirectionEmpty)
-            notifyShapeChanged(world, pos1.relative(dir.getOpposite()), sourceBlock);
-        shapeUpdateEnd(self, world, pos, sourceBlock, countAmt, dir, c, pos1);
-        notifyShapeChanged(world, pos1.below(), sourceBlock);
-        notifyShapeChanged(world, pos1.above(), sourceBlock);
-        notifyShapeChanged(world, pos1.north(), sourceBlock);
-        notifyShapeChanged(world, pos1.south(), sourceBlock);
-    }
-
-    private static void updateRailsSectionNorthSouthShape(PoweredRailBlock self, Level world, BlockPos pos,
-                                                          int c, Block sourceBlock, Direction dir,
-                                                          boolean secondDirectionEmpty, int countAmt) {
-        BlockPos pos1 = pos.relative(dir, c);
-        notifyShapeChanged(world, pos1.west(), sourceBlock);
-        notifyShapeChanged(world, pos1.east(), sourceBlock);
-        notifyShapeChanged(world, pos1.below(), sourceBlock);
-        notifyShapeChanged(world, pos1.above(), sourceBlock);
-        shapeUpdateEnd(self, world, pos, sourceBlock, countAmt, dir, c, pos1);
-        if (c == 0 && secondDirectionEmpty)
-            notifyShapeChanged(world, pos1.relative(dir.getOpposite()), sourceBlock);
     }
 
     private static void updateRails(PoweredRailBlock self, boolean eastWest, Level world,
@@ -323,8 +282,6 @@ public final class RailLogic {
                     if (c == countAmt) notifyNeighborChanged(world, pos.relative(dir, c + 1).below(), block);
                     if (c == 0 && secondDirectionEmpty) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block);
                 }
-                for (int c = countAmt; c >= i; c--)
-                    updateRailsSectionEastWestShape(self, world, pos, c, block, dir, secondDirectionEmpty, countAmt);
             }
         } else {
             for(int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
@@ -346,8 +303,6 @@ public final class RailLogic {
                     if (c == countAmt) notifyNeighborChanged(world, pos.relative(dir,c + 1).below(), block);
                     if (c == 0 && secondDirectionEmpty) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block);
                 }
-                for (int c = countAmt; c >= i; c--)
-                    updateRailsSectionNorthSouthShape(self, world, pos, c, block, dir, secondDirectionEmpty, countAmt);
             }
         }
     }
