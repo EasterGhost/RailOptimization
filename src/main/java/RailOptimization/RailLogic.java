@@ -55,7 +55,7 @@ public final class RailLogic {
             if (isAscending(railShape)) {
                 level.setBlock(pos, state.setValue(POWERED, shouldBePowered), 3);
                 level.updateNeighborsAt(pos.below(), self);
-                level.updateNeighborsAt(pos.above(), self); //isAscending
+                level.updateNeighborsAt(pos.above(), self);
             } else if (shouldBePowered) {
                 powerLane(self, level, pos, state, railShape);
             } else {
@@ -246,15 +246,12 @@ public final class RailLogic {
         return count;
     }
 
-    private static void neighborUpdateEnd(PoweredRailBlock self, Level world, BlockPos pos, int endPos,
-                                          Direction direction, Block block, int currentPos, BlockPos blockPos) {
-        if (currentPos == endPos) {
-            BlockPos newPos = pos.relative(direction, currentPos+1);
-            notifyNeighborChanged(world, newPos, block);
-            BlockState state = world.getBlockState(blockPos);
-            if (state.is(self) && isAscending(state.getValue(SHAPE)))
-                notifyNeighborChanged(world, newPos.above(), block);
-        }
+    private static void notifyRailEnd(PoweredRailBlock self, Level world, BlockPos endPos,
+                                      Block block, BlockPos railPos) {
+        notifyNeighborChanged(world, endPos, block);
+        BlockState state = world.getBlockState(railPos);
+        if (state.is(self) && isAscending(state.getValue(SHAPE)))
+            notifyNeighborChanged(world, endPos.above(), block);
     }
 
     private static void updateRails(PoweredRailBlock self, boolean eastWest, Level world,
@@ -262,48 +259,62 @@ public final class RailLogic {
                                     int firstDirectionCount, int secondDirectionCount) {
         Block block = mainState.getBlock();
         boolean secondDirectionEmpty = secondDirectionCount == 0;
+        Direction[] directions = eastWest ? EAST_WEST_DIR : NORTH_SOUTH_DIR;
+        for (int i = 0; i < directions.length; ++i) {
+            int countAmt = i == 0 ? firstDirectionCount : secondDirectionCount;
+            if (i == 1 && countAmt == 0) continue;
+            updateRailSection(self, world, pos, block, directions[i], i, countAmt, secondDirectionEmpty, eastWest);
+        }
+    }
+
+    private static void updateRailSection(PoweredRailBlock self, Level world, BlockPos pos, Block block,
+                                          Direction dir, int directionIndex, int countAmt,
+                                          boolean secondDirectionEmpty, boolean eastWest) {
+        Direction oppositeDir = dir.getOpposite();
+        for (int c = countAmt; c >= directionIndex; c--) {
+            BlockPos p = pos.relative(dir, c);
+            BlockPos endPos = c == countAmt ? p.relative(dir) : null;
+            BlockPos oppositePos = c == 0 && secondDirectionEmpty ? p.relative(oppositeDir) : null;
+
+            if (eastWest) {
+                if (oppositePos != null) notifyNeighborChanged(world, oppositePos, block);
+                if (endPos != null) notifyRailEnd(self, world, endPos, block, p);
+                notifyRailAndSideNeighbors(world, p, block, true);
+            } else {
+                notifyRailAndSideNeighbors(world, p, block, false);
+                if (endPos != null) notifyRailEnd(self, world, endPos, block, p);
+                if (oppositePos != null) notifyNeighborChanged(world, oppositePos, block);
+            }
+
+            notifyLowerRailSideNeighbors(world, p.below(), block, eastWest);
+            if (endPos != null) notifyNeighborChanged(world, endPos.below(), block);
+            if (oppositePos != null) notifyNeighborChanged(world, oppositePos.below(), block);
+        }
+    }
+
+    private static void notifyRailAndSideNeighbors(Level world, BlockPos pos, Block block, boolean eastWest) {
         if (eastWest) {
-            for (int i = 0; i < EAST_WEST_DIR.length; ++i) {
-                int countAmt = i == 0 ? firstDirectionCount : secondDirectionCount;
-                if (i == 1 && countAmt == 0) continue;
-                Direction dir = EAST_WEST_DIR[i];
-                for (int c = countAmt; c >= i; c--) {
-                    BlockPos p = pos.relative(dir, c);
-                    if (c == 0 && secondDirectionEmpty) notifyNeighborChanged(world, p.relative(dir.getOpposite()), block);
-                    neighborUpdateEnd(self, world, pos, countAmt, dir, block, c, p);
-                    notifyNeighborChanged(world, p.below(), block);
-                    notifyNeighborChanged(world, p.above(), block);
-                    notifyNeighborChanged(world, p.north(), block);
-                    notifyNeighborChanged(world, p.south(), block);
-                    BlockPos pos2 = p.below();
-                    notifyNeighborChanged(world, pos2.below(), block);
-                    notifyNeighborChanged(world, pos2.north(), block);
-                    notifyNeighborChanged(world, pos2.south(), block);
-                    if (c == countAmt) notifyNeighborChanged(world, pos.relative(dir, c + 1).below(), block);
-                    if (c == 0 && secondDirectionEmpty) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block);
-                }
-            }
+            notifyNeighborChanged(world, pos.below(), block);
+            notifyNeighborChanged(world, pos.above(), block);
+            notifyNeighborChanged(world, pos.north(), block);
+            notifyNeighborChanged(world, pos.south(), block);
         } else {
-            for(int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
-                int countAmt = i == 0 ? firstDirectionCount : secondDirectionCount;
-                if (i == 1 && countAmt == 0) continue;
-                Direction dir = NORTH_SOUTH_DIR[i];
-                for (int c = countAmt; c >= i; c--) {
-                    BlockPos p = pos.relative(dir,c);
-                    notifyNeighborChanged(world, p.west(), block);
-                    notifyNeighborChanged(world, p.east(), block);
-                    notifyNeighborChanged(world, p.below(), block);
-                    notifyNeighborChanged(world, p.above(), block);
-                    neighborUpdateEnd(self, world, pos, countAmt, dir, block, c, p);
-                    if (c == 0 && secondDirectionEmpty) notifyNeighborChanged(world, p.relative(dir.getOpposite()), block);
-                    BlockPos pos2 = p.below();
-                    notifyNeighborChanged(world, pos2.west(), block);
-                    notifyNeighborChanged(world, pos2.east(), block);
-                    notifyNeighborChanged(world, pos2.below(), block);
-                    if (c == countAmt) notifyNeighborChanged(world, pos.relative(dir,c + 1).below(), block);
-                    if (c == 0 && secondDirectionEmpty) notifyNeighborChanged(world, p.relative(dir.getOpposite()).below(), block);
-                }
-            }
+            notifyNeighborChanged(world, pos.west(), block);
+            notifyNeighborChanged(world, pos.east(), block);
+            notifyNeighborChanged(world, pos.below(), block);
+            notifyNeighborChanged(world, pos.above(), block);
+        }
+    }
+
+    private static void notifyLowerRailSideNeighbors(Level world, BlockPos pos, Block block, boolean eastWest) {
+        if (eastWest) {
+            notifyNeighborChanged(world, pos.below(), block);
+            notifyNeighborChanged(world, pos.north(), block);
+            notifyNeighborChanged(world, pos.south(), block);
+        } else {
+            notifyNeighborChanged(world, pos.west(), block);
+            notifyNeighborChanged(world, pos.east(), block);
+            notifyNeighborChanged(world, pos.below(), block);
         }
     }
 }
