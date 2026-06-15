@@ -27,6 +27,7 @@ public final class RailLogic {
     private static final byte CHECKED_POWERED = 2;
 
     private static int railPowerLimit = 8;
+    private static boolean optimizationEnabled = true;
 
     private RailLogic() {
     }
@@ -50,6 +51,14 @@ public final class RailLogic {
 
     public static void setRailPowerLimit(int powerLimit) {
         railPowerLimit = Math.max(1, powerLimit);
+    }
+
+    public static boolean isOptimizationEnabled() {
+        return optimizationEnabled;
+    }
+
+    public static void setOptimizationEnabled(boolean enabled) {
+        optimizationEnabled = enabled;
     }
 
     public static void customUpdateState(PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
