@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "Railoptimization",
+  "id": "railoptimization",
   "version": "${version}",
   "name": "RailOptimization",
   "description": "A simple mod that makes powered/activator rails turn on/off up to 4x faster",

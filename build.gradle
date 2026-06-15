@@ -38,7 +38,7 @@ processResources {
 }
 
 base {
-    archivesName = project.archives_base_name
+    archivesName = "${project.archives_base_name.toLowerCase()}-fabric-mc${project.minecraft_version}"
 }
 
 def targetJavaVersion = 21
