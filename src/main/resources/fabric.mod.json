@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "railoptimization",
+  "id": "Railoptimization",
   "version": "${version}",
-  "name": "railOptimization",
+  "name": "RailOptimization",
   "description": "A simple mod that makes powered/activator rails turn on/off up to 4x faster",
   "authors": [
     "FX - PROCESS",
@@ -16,7 +16,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "railOptimization.railOptimizationFabric"
+      "RailOptimization.RailOptimizationFabric"
     ]
   },
   "mixins": [

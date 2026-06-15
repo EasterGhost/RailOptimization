@@ -1,4 +1,4 @@
-package railOptimization;
+package RailOptimization;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

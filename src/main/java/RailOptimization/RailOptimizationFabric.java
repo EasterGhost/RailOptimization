@@ -1,8 +1,8 @@
-package railOptimization;
+package RailOptimization;
 
 import net.fabricmc.api.ModInitializer;
 
-public class railOptimizationFabric implements ModInitializer {
+public class RailOptimizationFabric implements ModInitializer {
     @Override
     public void onInitialize() {}
 }

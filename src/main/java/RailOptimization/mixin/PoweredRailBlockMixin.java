@@ -1,15 +1,18 @@
-package railOptimization.mixin;
+package RailOptimization.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
+
+import static RailOptimization.RailLogic.*;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
-import railOptimization.PoweredRailBlockInvoker;
-import static railOptimization.RailLogic.customUpdateState;
+
+import RailOptimization.PoweredRailBlockInvoker;
 
 @Mixin(value = PoweredRailBlock.class, priority = 990)
 public abstract class PoweredRailBlockMixin implements PoweredRailBlockInvoker {
