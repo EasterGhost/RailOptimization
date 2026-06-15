@@ -11,11 +11,13 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 import java.util.HashMap;
 import java.util.Map;
 
-import static net.minecraft.world.level.block.Block.*;
+import static net.minecraft.world.level.block.Block.UPDATE_CLIENTS;
+import static net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
+import static net.minecraft.world.level.block.Block.UPDATE_MOVE_BY_PISTON;
 import static net.minecraft.world.level.block.PoweredRailBlock.POWERED;
 import static net.minecraft.world.level.block.PoweredRailBlock.SHAPE;
 
-public class RailLogic {
+public final class RailLogic {
 
     private static final Direction[] EAST_WEST_DIR = new Direction[]{Direction.WEST, Direction.EAST};
     private static final Direction[] NORTH_SOUTH_DIR = new Direction[]{Direction.SOUTH, Direction.NORTH};
@@ -23,6 +25,9 @@ public class RailLogic {
     private static final int UPDATE_FORCE_PLACE = UPDATE_MOVE_BY_PISTON | UPDATE_KNOWN_SHAPE | UPDATE_CLIENTS;
 
     private static int railPowerLimit = 8;
+
+    private RailLogic() {
+    }
 
     private static boolean isAscending(RailShape railShape) {
         return railShape == RailShape.ASCENDING_EAST ||
@@ -72,28 +77,31 @@ public class RailLogic {
         if (speedCheck) {
             return world.hasNeighborSignal(pos) ||
                     findPoweredRailSignalFaster(self, world, pos, blockState, bl, distance + 1, checkedPos);
-        } else {
-            if (blockState.is(self)) {
-                RailShape railShape = blockState.getValue(SHAPE);
-                if (shape == RailShape.EAST_WEST && (
-                        railShape == RailShape.NORTH_SOUTH ||
-                                railShape == RailShape.ASCENDING_NORTH ||
-                                railShape == RailShape.ASCENDING_SOUTH
-                ) || shape == RailShape.NORTH_SOUTH && (
-                        railShape == RailShape.EAST_WEST ||
-                                railShape == RailShape.ASCENDING_EAST ||
-                                railShape == RailShape.ASCENDING_WEST
-                )) {
-                    return false;
-                } else if (blockState.getValue(POWERED)) {
-                    return world.hasNeighborSignal(pos) ||
-                            findPoweredRailSignalFaster(self, world, pos, blockState, bl, distance + 1, checkedPos);
-                } else {
-                    return false;
-                }
-            }
+        }
+
+        if (!blockState.is(self)) {
             return false;
         }
+
+        RailShape railShape = blockState.getValue(SHAPE);
+        if (isMismatchedRailShape(shape, railShape) || !blockState.getValue(POWERED)) {
+            return false;
+        }
+
+        return world.hasNeighborSignal(pos) ||
+                findPoweredRailSignalFaster(self, world, pos, blockState, bl, distance + 1, checkedPos);
+    }
+
+    private static boolean isMismatchedRailShape(RailShape expected, RailShape actual) {
+        return expected == RailShape.EAST_WEST && (
+                actual == RailShape.NORTH_SOUTH ||
+                        actual == RailShape.ASCENDING_NORTH ||
+                        actual == RailShape.ASCENDING_SOUTH
+        ) || expected == RailShape.NORTH_SOUTH && (
+                actual == RailShape.EAST_WEST ||
+                        actual == RailShape.ASCENDING_EAST ||
+                        actual == RailShape.ASCENDING_WEST
+        );
     }
 
     public static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level,
@@ -170,38 +178,38 @@ public class RailLogic {
 
     public static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
                                  BlockState mainState, RailShape railShape) {
+        Direction[] directions = getRailDirections(railShape);
+        if (directions == null) return;
+
         world.setBlock(pos, mainState.setValue(POWERED, true), UPDATE_FORCE_PLACE);
         Map<BlockPos,Boolean> checkedPos = new HashMap<>();
         checkedPos.put(pos, true);
         int[] count = new int[2];
-        if (railShape == RailShape.NORTH_SOUTH) { //Order: +z, -z
-            for(int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
-                setRailPositionsPower(self, world, pos, checkedPos, count, i, NORTH_SOUTH_DIR[i]);
-            }
-            updateRails(self, false, world, pos, mainState, count);
-        } else if (railShape == RailShape.EAST_WEST) { //Order: -x, +x
-            for(int i = 0; i < EAST_WEST_DIR.length; ++i) {
-                setRailPositionsPower(self, world, pos, checkedPos, count, i, EAST_WEST_DIR[i]);
-            }
-            updateRails(self, true, world, pos, mainState, count);
+        for(int i = 0; i < directions.length; ++i) {
+            setRailPositionsPower(self, world, pos, checkedPos, count, i, directions[i]);
         }
+        updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState, count);
     }
 
     public static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
                                    BlockState mainState, RailShape railShape) {
+        Direction[] directions = getRailDirections(railShape);
+        if (directions == null) return;
+
         world.setBlock(pos, mainState.setValue(POWERED, false), UPDATE_FORCE_PLACE);
         int[] count = new int[2];
-        if (railShape == RailShape.NORTH_SOUTH) { //Order: +z, -z
-            for(int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
-                setRailPositionsDePower(self, world, pos, count, i, NORTH_SOUTH_DIR[i]);
-            }
-            updateRails(self, false, world, pos, mainState, count);
-        } else if (railShape == RailShape.EAST_WEST) { //Order: -x, +x
-            for(int i = 0; i < EAST_WEST_DIR.length; ++i) {
-                setRailPositionsDePower(self, world, pos, count, i, EAST_WEST_DIR[i]);
-            }
-            updateRails(self, true, world, pos, mainState, count);
+        for(int i = 0; i < directions.length; ++i) {
+            setRailPositionsDePower(self, world, pos, count, i, directions[i]);
         }
+        updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState, count);
+    }
+
+    private static Direction[] getRailDirections(RailShape railShape) {
+        return switch (railShape) {
+            case NORTH_SOUTH -> NORTH_SOUTH_DIR; // Order: +z, -z
+            case EAST_WEST -> EAST_WEST_DIR; // Order: -x, +x
+            default -> null;
+        };
     }
 
     private static void setRailPositionsPower(PoweredRailBlock self, Level world, BlockPos pos,

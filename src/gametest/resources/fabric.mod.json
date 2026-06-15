@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "railoptimization-gametest",
+  "version": "${version}",
+  "name": "RailOptimization Game Tests",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "RailOptimization.RailOptimizationFabric"
+    ],
+    "fabric-gametest": [
+      "RailOptimization.gametest.RailOptimizationGameTest"
+    ]
+  },
+  "depends": {
+    "fabricloader": "*",
+    "fabric": "*",
+    "railoptimization": "*",
+    "minecraft": ">=${minecraft_version}"
+  }
+}
