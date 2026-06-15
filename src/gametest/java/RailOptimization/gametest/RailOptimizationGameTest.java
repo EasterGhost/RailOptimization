@@ -165,6 +165,58 @@ public class RailOptimizationGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 80)
+    public void neighborCountersReceiveNorthSouthRailUpdatePositions(GameTestHelper helper) {
+        BlockPos start = new BlockPos(3, RAIL_Y, 2);
+        BlockPos monitoredRail = start.relative(Direction.SOUTH, 2);
+        BlockPos[] counters = new BlockPos[]{
+                monitoredRail.west(),
+                monitoredRail.east(),
+                monitoredRail.above(),
+                monitoredRail.below().west(),
+                monitoredRail.below().east(),
+                monitoredRail.below().below(),
+                start.relative(Direction.SOUTH, 4),
+                start.relative(Direction.SOUTH, 4).below(),
+                start.north(),
+                start.north().below()
+        };
+
+        placeRailLine(helper, start, Direction.SOUTH, 4, RailShape.NORTH_SOUTH);
+        placeNeighborCounters(helper, counters);
+        helper.setBlock(start.west(), Blocks.REDSTONE_BLOCK);
+
+        helper.startSequence()
+                .thenIdle(4)
+                .thenExecute(() -> assertNeighborCountersUpdated(helper, counters))
+                .thenSucceed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 80)
+    public void neighborCountersReceiveEastWestRailUpdatePositions(GameTestHelper helper) {
+        BlockPos start = new BlockPos(2, RAIL_Y, 3);
+        BlockPos monitoredRail = start.relative(Direction.EAST, 2);
+        BlockPos[] counters = new BlockPos[]{
+                monitoredRail.north(),
+                monitoredRail.south(),
+                monitoredRail.above(),
+                monitoredRail.below().north(),
+                monitoredRail.below().south(),
+                monitoredRail.below().below(),
+                start.relative(Direction.EAST, 4),
+                start.relative(Direction.EAST, 4).below()
+        };
+
+        placeRailLine(helper, start, Direction.EAST, 4, RailShape.EAST_WEST);
+        placeNeighborCounters(helper, counters);
+        helper.setBlock(start.north(), Blocks.REDSTONE_BLOCK);
+
+        helper.startSequence()
+                .thenIdle(4)
+                .thenExecute(() -> assertNeighborCountersUpdated(helper, counters))
+                .thenSucceed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 80)
     public void adjacentMismatchedRailShapesStillReceivePower(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         placeRailLine(helper, start, Direction.SOUTH, 2, RailShape.NORTH_SOUTH);
@@ -195,6 +247,13 @@ public class RailOptimizationGameTest {
         helper.setBlock(railPos, Blocks.POWERED_RAIL.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
     }
 
+    private static void placeNeighborCounters(GameTestHelper helper, BlockPos[] counters) {
+        BlockState counter = RailOptimizationGameTestMod.NEIGHBOR_COUNTER.defaultBlockState();
+        for (BlockPos counterPos : counters) {
+            helper.setBlock(counterPos, counter);
+        }
+    }
+
     private static void placeAscendingEastRail(GameTestHelper helper, BlockPos ramp) {
         helper.setBlock(ramp.below(), Blocks.STONE);
         helper.setBlock(ramp.east(), Blocks.STONE);
@@ -208,6 +267,17 @@ public class RailOptimizationGameTest {
                                               int length, boolean powered) {
         for (int step = 0; step < length; step++) {
             helper.assertBlockProperty(start.relative(direction, step), PoweredRailBlock.POWERED, powered);
+        }
+    }
+
+    private static void assertNeighborCountersUpdated(GameTestHelper helper, BlockPos[] counters) {
+        for (BlockPos counterPos : counters) {
+            helper.assertBlockProperty(
+                    counterPos,
+                    RailOptimizationGameTestMod.NeighborCounterBlock.COUNT,
+                    count -> count > 0,
+                    "expected neighbor counter to receive an update"
+            );
         }
     }
 

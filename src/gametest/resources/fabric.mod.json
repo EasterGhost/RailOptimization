@@ -6,7 +6,8 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "RailOptimization.RailOptimizationFabric"
+      "RailOptimization.RailOptimizationFabric",
+      "RailOptimization.gametest.RailOptimizationGameTestMod"
     ],
     "fabric-gametest": [
       "RailOptimization.gametest.RailOptimizationGameTest"
