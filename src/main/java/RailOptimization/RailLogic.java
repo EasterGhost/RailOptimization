@@ -53,13 +53,17 @@ public final class RailLogic {
     }
 
     public static void customUpdateState(PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
+        RailShape railShape = state.getValue(SHAPE);
+        Direction[] directions = getRailDirections(railShape);
+        Long2ByteOpenHashMap checkedPos = directions == null ? null : newCheckedMap();
         boolean shouldBePowered = level.hasNeighborSignal(pos) ||
-                ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, true, 0) ||
-                ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, false, 0);
+                (directions == null
+                        ? ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, true, 0) ||
+                                ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, false, 0)
+                        : findPoweredRailSignalFaster(self, level, pos, state, true, 0, checkedPos) ||
+                                findPoweredRailSignalFaster(self, level, pos, state, false, 0, checkedPos));
 
         if (shouldBePowered != state.getValue(POWERED)) {
-            RailShape railShape = state.getValue(SHAPE);
-
             if (isAscending(railShape)) {
                 level.setBlock(pos, state.setValue(POWERED, shouldBePowered), 3);
 
@@ -67,7 +71,7 @@ public final class RailLogic {
                 notifyNeighborChanged(level, pos.getX(), pos.getY() - 1, pos.getZ(), self, scratchPos);
                 notifyNeighborChanged(level, pos.getX(), pos.getY() + 1, pos.getZ(), self, scratchPos);
             } else if (shouldBePowered) {
-                powerLane(self, level, pos, state, railShape);
+                powerLane(self, level, pos, state, railShape, checkedPos);
             } else {
                 dePowerLane(self, level, pos, state, railShape);
             }
@@ -136,7 +140,7 @@ public final class RailLogic {
 
     private static boolean findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z,
             BlockState state, boolean forward, int distance, Long2ByteMap checkedPos, MutableBlockPos scratchPos) {
-        if (distance >= railPowerLimit - 1) {
+        if (distance >= railPowerLimit) {
             return false;
         }
 
@@ -209,12 +213,16 @@ public final class RailLogic {
 
     public static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape) {
+        powerLane(self, world, pos, mainState, railShape, newCheckedMap());
+    }
+
+    private static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
+            BlockState mainState, RailShape railShape, Long2ByteOpenHashMap checkedPos) {
         Direction[] directions = getRailDirections(railShape);
         if (directions == null)
             return;
 
         world.setBlock(pos, mainState.setValue(POWERED, true), UPDATE_FORCE_PLACE);
-        Long2ByteOpenHashMap checkedPos = newCheckedMap();
         checkedPos.put(pos.asLong(), CHECKED_POWERED);
         int firstDirectionCount = setRailPositionsPower(self, world, pos, checkedPos, directions[0]);
         int secondDirectionCount = setRailPositionsPower(self, world, pos, checkedPos, directions[1]);
