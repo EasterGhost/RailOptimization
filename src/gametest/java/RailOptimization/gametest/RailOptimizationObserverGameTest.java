@@ -30,6 +30,7 @@ public class RailOptimizationObserverGameTest extends RailOptimizationGameTestSu
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
@@ -52,6 +53,7 @@ public class RailOptimizationObserverGameTest extends RailOptimizationGameTestSu
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(source), Blocks.AIR);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {

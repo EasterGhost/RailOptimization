@@ -36,6 +36,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(REDSTONE_SOURCE_POS), Blocks.REDSTONE_BLOCK);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -54,6 +55,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(REDSTONE_SOURCE_POS), Blocks.AIR);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -140,6 +142,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(start.north()), Blocks.REDSTONE_BLOCK);
                     helper.setBlock(mirrorCopy(end.north()), Blocks.REDSTONE_BLOCK);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -155,6 +158,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(start.north()), Blocks.AIR);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {

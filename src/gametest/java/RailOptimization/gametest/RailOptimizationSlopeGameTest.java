@@ -19,6 +19,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(ramp.west()), Blocks.REDSTONE_BLOCK);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -34,6 +35,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(ramp.west()), Blocks.AIR);
+                    RailLogic.setOptimizationEnabled(true);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
