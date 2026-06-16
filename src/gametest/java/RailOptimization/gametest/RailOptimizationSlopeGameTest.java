@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSupport {
-    @GameTest(maxTicks = 140)
+    @GameTest(environment = "railoptimization-gametest:serial_10", maxTicks = 140)
     public void ascendingRailPowersAndDepowersFromRedstoneSource(GameTestHelper helper) {
         BlockPos ramp = new BlockPos(2, RAIL_Y, 2);
         BlockPos[] rails = new BlockPos[]{ramp, ramp.east().above()};
@@ -51,7 +51,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                 .thenSucceed();
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_11", maxTicks = 100)
     public void descendingRailLinePowersAcrossMultipleSteps(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 3, 2),
@@ -91,7 +91,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_12", maxTicks = 100)
     public void descendingThenAscendingRailLinePowersAcrossMultipleSteps(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 2, 2),
@@ -133,7 +133,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_13", maxTicks = 100)
     public void consecutiveDescendingRailsPowerFollowingFlatRail(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 2, 2),
@@ -162,7 +162,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_14", maxTicks = 100)
     public void consecutiveDescendingRailsPowerFollowingAscendingRail(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 2, 2),
@@ -193,7 +193,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_15", maxTicks = 100)
     public void continuousDescendingThenContinuousAscendingRailsPowerWithinLimit(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 4, 2),
@@ -233,7 +233,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_16", maxTicks = 100)
     public void northSouthContinuousDescendingThenContinuousAscendingRailsPowerWithinLimit(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(2, RAIL_Y + 4, 1),
@@ -274,7 +274,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
     }
 
     @SuppressWarnings("null")
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_17", maxTicks = 100)
     public void flatThenContinuousDescendingThenContinuousAscendingThenFlatRailsPowerWithinLimit(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 3, 2),
