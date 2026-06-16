@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSupport {
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 140)
     public void ascendingRailPowersAndDepowersFromRedstoneSource(GameTestHelper helper) {
         BlockPos ramp = new BlockPos(2, RAIL_Y, 2);
@@ -49,6 +50,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                 .thenSucceed();
     }
 
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 100)
     public void descendingRailLinePowersAcrossMultipleSteps(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
@@ -89,6 +91,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 100)
     public void descendingThenAscendingRailLinePowersAcrossMultipleSteps(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
@@ -131,6 +134,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 100)
     public void consecutiveDescendingRailsPowerFollowingFlatRail(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
@@ -160,6 +164,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 100)
     public void consecutiveDescendingRailsPowerFollowingAscendingRail(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
@@ -191,6 +196,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 100)
     public void continuousDescendingThenContinuousAscendingRailsPowerWithinLimit(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
@@ -231,6 +237,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         );
     }
 
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 100)
     public void flatThenContinuousDescendingThenContinuousAscendingThenFlatRailsPowerWithinLimit(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{

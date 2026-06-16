@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationObserverGameTest extends RailOptimizationGameTestSupport {
+    @SuppressWarnings("null")
     @GameTest(maxTicks = 180)
     public void observerFacingFlatRailActivatesOnPowerStateChanges(GameTestHelper helper) {
         BlockPos rail = new BlockPos(3, RAIL_Y, 3);

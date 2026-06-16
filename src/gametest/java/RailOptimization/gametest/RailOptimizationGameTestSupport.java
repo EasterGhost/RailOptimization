@@ -59,6 +59,7 @@ abstract class RailOptimizationGameTestSupport {
         placeRailLine(helper, mirrorCopy(start), direction, length, shape);
     }
 
+    @SuppressWarnings("null")
     static void placeRailLine(GameTestHelper helper, BlockPos start, Direction direction,
                               int length, RailShape shape) {
         BlockState rail = Blocks.POWERED_RAIL.defaultBlockState()
@@ -86,15 +87,18 @@ abstract class RailOptimizationGameTestSupport {
         }
     }
 
+    @SuppressWarnings("null")
     static void placeRail(GameTestHelper helper, BlockPos railPos, RailShape shape) {
         helper.setBlock(railPos.below(), Blocks.STONE);
         helper.setBlock(railPos, Blocks.POWERED_RAIL.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
     }
 
+    @SuppressWarnings("null")
     static void placeObserverWatchingRail(GameTestHelper helper, BlockPos observerPos, Direction facing) {
         helper.setBlock(observerPos, Blocks.OBSERVER.defaultBlockState().setValue(ObserverBlock.FACING, facing));
     }
 
+    @SuppressWarnings("null")
     static void placeNeighborCounters(GameTestHelper helper, BlockPos[] counters) {
         BlockState counter = RailOptimizationGameTestMod.NEIGHBOR_COUNTER.defaultBlockState();
         for (BlockPos counterPos : counters) {
@@ -107,6 +111,7 @@ abstract class RailOptimizationGameTestSupport {
         placeAscendingEastRail(helper, mirrorCopy(ramp));
     }
 
+    @SuppressWarnings("null")
     static void placeAscendingEastRail(GameTestHelper helper, BlockPos ramp) {
         helper.setBlock(ramp.below(), Blocks.STONE);
         helper.setBlock(ramp.east(), Blocks.STONE);
@@ -116,6 +121,7 @@ abstract class RailOptimizationGameTestSupport {
                 .setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
     }
 
+    @SuppressWarnings("null")
     static void assertRailLinePowered(GameTestHelper helper, BlockPos start, Direction direction,
                                       int length, boolean powered) {
         for (int step = 0; step < length; step++) {
@@ -123,6 +129,7 @@ abstract class RailOptimizationGameTestSupport {
         }
     }
 
+    @SuppressWarnings("null")
     static void assertNeighborCountersUpdated(GameTestHelper helper, BlockPos[] counters) {
         for (BlockPos counterPos : counters) {
             helper.assertBlockProperty(
@@ -134,6 +141,7 @@ abstract class RailOptimizationGameTestSupport {
         }
     }
 
+    @SuppressWarnings("null")
     static void assertObserverPowered(GameTestHelper helper, BlockPos observerPos, boolean powered) {
         helper.assertBlockProperty(observerPos, ObserverBlock.POWERED, powered);
     }
@@ -142,6 +150,7 @@ abstract class RailOptimizationGameTestSupport {
         assertRailsPowered(helper, rails, 0, rails.length, powered);
     }
 
+    @SuppressWarnings("null")
     static void assertRailsPowered(GameTestHelper helper, BlockPos[] rails,
                                    int startIndex, int endIndex, boolean powered) {
         for (int railIndex = startIndex; railIndex < endIndex; railIndex++) {
@@ -149,6 +158,7 @@ abstract class RailOptimizationGameTestSupport {
         }
     }
 
+    @SuppressWarnings("null")
     static void assertMatchingRailLinePower(GameTestHelper helper, BlockPos firstStart, BlockPos secondStart,
                                             Direction direction, int length) {
         for (int step = 0; step < length; step++) {
@@ -170,6 +180,7 @@ abstract class RailOptimizationGameTestSupport {
         }
     }
 
+    @SuppressWarnings("null")
     static void assertMatchingRailPower(GameTestHelper helper, BlockPos firstRail, BlockPos secondRail) {
         boolean firstPowered = helper.getBlockState(firstRail).getValue(PoweredRailBlock.POWERED);
         helper.assertBlockProperty(secondRail, PoweredRailBlock.POWERED, firstPowered);

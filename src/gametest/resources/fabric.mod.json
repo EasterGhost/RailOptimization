@@ -18,7 +18,7 @@
   },
   "depends": {
     "fabricloader": "*",
-    "fabric": "*",
+    "fabric-api": "*",
     "railoptimization": "*",
     "minecraft": ">=${minecraft_version}"
   }

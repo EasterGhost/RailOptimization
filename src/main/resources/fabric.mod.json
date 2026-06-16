@@ -11,7 +11,7 @@
   "contact": {
     "repo": "https://github.com/EasterGhost/RailOptimization"
   },
-  "license": "LGPL-3.0",
+  "license": "GPL-3.0",
   "icon": "assets/icon.png",
   "environment": "*",
   "entrypoints": {
@@ -24,7 +24,7 @@
   ],
   "depends": {
     "fabricloader": "*",
-    "fabric": "*",
-    "minecraft": ">=${minecraft_version}"
+    "fabric-api": "*",
+    "minecraft": ">=26.1"
   }
 }

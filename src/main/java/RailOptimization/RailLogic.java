@@ -55,6 +55,7 @@ public final class RailLogic {
         optimizationEnabled = enabled;
     }
 
+    @SuppressWarnings("null")
     public static void customUpdateState(PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
         Direction[] directions = getRailDirections(railShape);
@@ -91,6 +92,7 @@ public final class RailLogic {
         powerLane(self, world, pos, mainState, railShape, newCheckedMap());
     }
 
+    @SuppressWarnings("null")
     private static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape, Long2ByteOpenHashMap checkedPos) {
         Direction[] directions = getRailDirections(railShape);
@@ -112,6 +114,7 @@ public final class RailLogic {
         dePowerLane(self, world, pos, mainState, railShape, newCheckedMap());
     }
 
+    @SuppressWarnings("null")
     private static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape, Long2ByteMap checkedPos) {
         Direction[] directions = getRailDirections(railShape);
@@ -137,6 +140,7 @@ public final class RailLogic {
         };
     }
 
+    @SuppressWarnings("null")
     private static int setRailPositionsPower(PoweredRailBlock self, Level world, BlockPos pos,
             Long2ByteMap checkedPos, Direction dir) {
         int count = 0;
@@ -183,6 +187,7 @@ public final class RailLogic {
         return count;
     }
 
+    @SuppressWarnings("null")
     private static int setRailPositionsDePower(PoweredRailBlock self, Level world, BlockPos pos, Direction dir,
             Long2ByteMap checkedPos) {
         int count = 0;

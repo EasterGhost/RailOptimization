@@ -13,6 +13,7 @@ final class RailUpdateNotifier {
     private RailUpdateNotifier() {
     }
 
+    @SuppressWarnings("null")
     static void notifyNeighborChanged(Level level, int x, int y, int z, Block sourceBlock, MutableBlockPos scratchPos) {
         scratchPos.set(x, y, z);
         level.updateNeighborsAt(scratchPos, sourceBlock);
