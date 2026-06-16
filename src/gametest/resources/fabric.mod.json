@@ -10,7 +10,10 @@
       "RailOptimization.gametest.RailOptimizationGameTestMod"
     ],
     "fabric-gametest": [
-      "RailOptimization.gametest.RailOptimizationGameTest"
+      "RailOptimization.gametest.RailOptimizationGameTest",
+      "RailOptimization.gametest.RailOptimizationSlopeGameTest",
+      "RailOptimization.gametest.RailOptimizationNeighborUpdateGameTest",
+      "RailOptimization.gametest.RailOptimizationObserverGameTest"
     ]
   },
   "depends": {
