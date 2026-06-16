@@ -117,6 +117,68 @@ public class RailOptimizationGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    public void middlePoweredEastWestRailLinePowersBothDirectionsWithinLimit(GameTestHelper helper) {
+        BlockPos start = new BlockPos(1, RAIL_Y, 3);
+        BlockPos sourceRail = start.relative(Direction.EAST, 5);
+        int length = 10;
+
+        placeRailLinePair(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
+
+        compareVanillaAndOptimizedPower(
+                helper,
+                () -> helper.setBlock(vanillaCopy(sourceRail.north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(sourceRail.north(), Blocks.REDSTONE_BLOCK),
+                () -> {
+                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.EAST, length);
+                    assertRailLinePowered(helper, start, Direction.EAST, length, true);
+                }
+        );
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 180)
+    public void railLineWithTwoSourcesKeepsOriginalPowerAfterOneSourceRemoval(GameTestHelper helper) {
+        BlockPos start = new BlockPos(1, RAIL_Y, 3);
+        int length = 10;
+        BlockPos end = start.relative(Direction.EAST, length - 1);
+
+        placeRailLinePair(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(vanillaCopy(start.north()), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(vanillaCopy(end.north()), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(start.north(), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(end.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.EAST, length);
+                    assertRailLinePowered(helper, start, Direction.EAST, length, true);
+                })
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(vanillaCopy(start.north()), Blocks.AIR);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(start.north(), Blocks.AIR);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.EAST, length);
+                    helper.assertBlockProperty(start, PoweredRailBlock.POWERED, false);
+                    assertRailLinePowered(helper, start.relative(Direction.EAST), Direction.EAST, length - 1, true);
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void railLineStopsPoweringAcrossGap(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         placeRailLinePair(helper, start, Direction.SOUTH, 4, RailShape.NORTH_SOUTH);
@@ -378,6 +440,46 @@ public class RailOptimizationGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    public void northSouthContinuousDescendingThenContinuousAscendingRailsMatchVanilla(GameTestHelper helper) {
+        BlockPos[] rails = new BlockPos[]{
+                new BlockPos(2, RAIL_Y + 4, 1),
+                new BlockPos(2, RAIL_Y + 3, 2),
+                new BlockPos(2, RAIL_Y + 2, 3),
+                new BlockPos(2, RAIL_Y + 1, 4),
+                new BlockPos(2, RAIL_Y, 5),
+                new BlockPos(2, RAIL_Y, 6),
+                new BlockPos(2, RAIL_Y + 1, 7),
+                new BlockPos(2, RAIL_Y + 2, 8),
+                new BlockPos(2, RAIL_Y + 3, 9),
+                new BlockPos(2, RAIL_Y + 4, 10)
+        };
+        RailShape[] shapes = new RailShape[]{
+                RailShape.NORTH_SOUTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.NORTH_SOUTH
+        };
+
+        placeRailPathPair(helper, rails, shapes);
+        compareVanillaAndOptimizedPower(
+                helper,
+                () -> helper.setBlock(vanillaCopy(rails[0].west()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(rails[0].west(), Blocks.REDSTONE_BLOCK),
+                () -> {
+                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertRailsPowered(helper, rails, 0, 9, true);
+                    assertRailsPowered(helper, rails, 9, rails.length, false);
+                }
+        );
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void flatThenContinuousDescendingThenContinuousAscendingThenFlatRailsMatchVanilla(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 3, 2),
@@ -478,7 +580,7 @@ public class RailOptimizationGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
-    public void adjacentMismatchedRailShapesStillReceivePower(GameTestHelper helper) {
+    public void adjacentMismatchedRailShapesMatchVanilla(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         BlockPos[] rails = new BlockPos[]{
                 start,
@@ -502,7 +604,7 @@ public class RailOptimizationGameTest {
                 () -> helper.setBlock(start.west(), Blocks.REDSTONE_BLOCK),
                 () -> {
                     assertMatchingRailPower(helper, vanillaCopy(rails), rails);
-                    assertRailLinePowered(helper, start, Direction.SOUTH, 5, true);
+                    helper.assertBlockProperty(start, PoweredRailBlock.POWERED, true);
                 }
         );
     }
