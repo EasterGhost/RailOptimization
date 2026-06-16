@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 public class RailOptimizationGameTestMod implements ModInitializer {
-    private static final ResourceLocation NEIGHBOR_COUNTER_ID = ResourceLocation.fromNamespaceAndPath(
+    private static final ResourceLocation NEIGHBOR_COUNTER_ID = new ResourceLocation(
             "railoptimization-gametest", "neighbor_counter"
     );
     public static final NeighborCounterBlock NEIGHBOR_COUNTER = new NeighborCounterBlock(
@@ -43,8 +43,8 @@ public class RailOptimizationGameTestMod implements ModInitializer {
         }
 
         @Override
-        protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
-                                       BlockPos fromPos, boolean movedByPiston) {
+        public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                    BlockPos fromPos, boolean movedByPiston) {
             if (level.isClientSide) return;
             int count = state.getValue(COUNT);
             if (count < 15) {
