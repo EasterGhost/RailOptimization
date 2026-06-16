@@ -25,7 +25,7 @@ abstract class RailOptimizationGameTestSupport {
                                                  Runnable optimizedTrigger, Runnable assertions) {
         helper.startSequence()
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(true);
+                    RailLogic.setOptimizationEnabled(false);
                     mirrorTrigger.run();
                 })
                 .thenIdle(4)

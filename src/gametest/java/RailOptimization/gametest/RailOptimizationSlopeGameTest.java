@@ -18,7 +18,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
 
         helper.startSequence()
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(true);
+                    RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(ramp.west()), Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(4)
@@ -33,7 +33,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                     helper.assertBlockProperty(ramp, PoweredRailBlock.POWERED, true);
                 })
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(true);
+                    RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(ramp.west()), Blocks.AIR);
                 })
                 .thenIdle(4)
@@ -229,6 +229,47 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                 helper,
                 () -> helper.setBlock(mirrorCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK),
+                () -> {
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
+                    assertRailsPowered(helper, rails, 0, 9, true);
+                    assertRailsPowered(helper, rails, 9, rails.length, false);
+                }
+        );
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(maxTicks = 100)
+    public void northSouthContinuousDescendingThenContinuousAscendingRailsPowerWithinLimit(GameTestHelper helper) {
+        BlockPos[] rails = new BlockPos[]{
+                new BlockPos(2, RAIL_Y + 4, 1),
+                new BlockPos(2, RAIL_Y + 3, 2),
+                new BlockPos(2, RAIL_Y + 2, 3),
+                new BlockPos(2, RAIL_Y + 1, 4),
+                new BlockPos(2, RAIL_Y, 5),
+                new BlockPos(2, RAIL_Y, 6),
+                new BlockPos(2, RAIL_Y + 1, 7),
+                new BlockPos(2, RAIL_Y + 2, 8),
+                new BlockPos(2, RAIL_Y + 3, 9),
+                new BlockPos(2, RAIL_Y + 4, 10)
+        };
+        RailShape[] shapes = new RailShape[]{
+                RailShape.NORTH_SOUTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_NORTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.ASCENDING_SOUTH,
+                RailShape.NORTH_SOUTH
+        };
+
+        placeRailPathPair(helper, rails, shapes);
+        compareMirroredAndOptimizedPower(
+                helper,
+                () -> helper.setBlock(mirrorCopy(rails[0].west()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(rails[0].west(), Blocks.REDSTONE_BLOCK),
                 () -> {
                     assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailsPowered(helper, rails, 0, 9, true);
