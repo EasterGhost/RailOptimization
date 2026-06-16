@@ -21,7 +21,7 @@ public class RailOptimizationGameTest {
     private static final BlockPos NORTH_SOUTH_LINE_START = new BlockPos(RAIL_X, RAIL_Y, FIRST_RAIL_Z);
     private static final BlockPos REDSTONE_SOURCE_POS = NORTH_SOUTH_LINE_START.west();
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_01", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void straightRailLinePowersFromRedstoneSource(GameTestHelper helper) {
         placeRailLinePair(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, RailShape.NORTH_SOUTH);
 
@@ -39,7 +39,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140)
+    @GameTest(batch = "railoptimization_serial_02", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140)
     public void straightRailLineDepowersAfterSourceRemoval(GameTestHelper helper) {
         placeRailLinePair(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, RailShape.NORTH_SOUTH);
 
@@ -83,7 +83,7 @@ public class RailOptimizationGameTest {
                 .thenSucceed();
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_03", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void eastWestRailLinePowersFromRedstoneSource(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 2);
         placeRailLinePair(helper, start, Direction.EAST, DEFAULT_LINE_LENGTH, RailShape.EAST_WEST);
@@ -99,7 +99,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_04", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void eastWestRailLineRespectsPowerLimitBoundary(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 2);
         placeRailLinePair(helper, start, Direction.EAST, 10, RailShape.EAST_WEST);
@@ -116,7 +116,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_05", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void middlePoweredEastWestRailLinePowersBothDirectionsWithinLimit(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
         BlockPos sourceRail = start.relative(Direction.EAST, 5);
@@ -135,7 +135,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 180)
+    @GameTest(batch = "railoptimization_serial_06", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 180)
     public void railLineWithTwoSourcesKeepsOriginalPowerAfterOneSourceRemoval(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
         int length = 10;
@@ -178,7 +178,7 @@ public class RailOptimizationGameTest {
                 .thenSucceed();
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_07", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void railLineStopsPoweringAcrossGap(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         placeRailLinePair(helper, start, Direction.SOUTH, 4, RailShape.NORTH_SOUTH);
@@ -200,7 +200,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_08", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void railLineRespectsPowerLimitBoundary(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         placeRailLinePair(helper, start, Direction.SOUTH, 10, RailShape.NORTH_SOUTH);
@@ -217,7 +217,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140)
+    @GameTest(batch = "railoptimization_serial_09", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140)
     public void ascendingRailPowersAndDepowersFromRedstoneSource(GameTestHelper helper) {
         BlockPos ramp = new BlockPos(2, RAIL_Y, 2);
         BlockPos[] rails = new BlockPos[]{ramp, ramp.east().above()};
@@ -257,7 +257,7 @@ public class RailOptimizationGameTest {
                 .thenSucceed();
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_10", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void descendingRailLinePowersAcrossMultipleSteps(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 3, 2),
@@ -297,7 +297,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_11", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void descendingThenAscendingRailLinePowersAcrossMultipleSteps(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 2, 2),
@@ -339,7 +339,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_12", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void consecutiveDescendingRailsPowerFollowingFlatRail(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 2, 2),
@@ -368,7 +368,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_13", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void consecutiveDescendingRailsPowerFollowingAscendingRail(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 2, 2),
@@ -399,7 +399,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_14", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void continuousDescendingThenContinuousAscendingRailsMatchVanilla(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 4, 2),
@@ -439,7 +439,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_15", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void northSouthContinuousDescendingThenContinuousAscendingRailsMatchVanilla(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(2, RAIL_Y + 4, 1),
@@ -479,7 +479,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_16", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void flatThenContinuousDescendingThenContinuousAscendingThenFlatRailsMatchVanilla(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 3, 2),
@@ -519,7 +519,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_17", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void neighborCountersReceiveNorthSouthRailUpdatePositions(GameTestHelper helper) {
         BlockPos start = new BlockPos(3, RAIL_Y, 2);
         BlockPos monitoredRail = start.relative(Direction.SOUTH, 2);
@@ -550,7 +550,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_18", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void neighborCountersReceiveEastWestRailUpdatePositions(GameTestHelper helper) {
         BlockPos start = new BlockPos(2, RAIL_Y, 3);
         BlockPos monitoredRail = start.relative(Direction.EAST, 2);
@@ -579,7 +579,7 @@ public class RailOptimizationGameTest {
         );
     }
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
+    @GameTest(batch = "railoptimization_serial_19", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 100)
     public void adjacentMismatchedRailShapesMatchVanilla(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         BlockPos[] rails = new BlockPos[]{
