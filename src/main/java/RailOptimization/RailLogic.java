@@ -17,7 +17,7 @@ public final class RailLogic {
     static final Direction[] EAST_WEST_DIR = new Direction[] { Direction.WEST, Direction.EAST };
     static final Direction[] NORTH_SOUTH_DIR = new Direction[] { Direction.SOUTH, Direction.NORTH };
 
-    private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS;
+    private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_CLIENTS;
     private static final boolean[] RAIL_ASCENDING = { false, false, true, true, true, true, false, false, false, false };
     static final byte CHECKED_UNKNOWN = 0;
     static final byte CHECKED_BLOCKED = 1;
