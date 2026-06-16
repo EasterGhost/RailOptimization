@@ -82,7 +82,7 @@ public final class RailLogic {
             } else if (shouldBePowered) {
                 powerLane(self, level, pos, state, railShape, checkedPos);
             } else {
-                dePowerLane(self, level, pos, state, railShape);
+                dePowerLane(self, level, pos, state, railShape, checkedPos);
             }
         }
     }
@@ -242,6 +242,11 @@ public final class RailLogic {
 
     public static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape) {
+        dePowerLane(self, world, pos, mainState, railShape, newCheckedMap());
+    }
+
+    private static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
+            BlockState mainState, RailShape railShape, Long2ByteMap checkedPos) {
         Direction[] directions = getRailDirections(railShape);
         if (directions == null) {
             return;
@@ -249,8 +254,8 @@ public final class RailLogic {
 
         world.setBlock(pos, mainState.setValue(POWERED, false), UPDATE_FORCE_PLACE);
 
-        int firstDirectionCount = setRailPositionsDePower(self, world, pos, directions[0]);
-        int secondDirectionCount = setRailPositionsDePower(self, world, pos, directions[1]);
+        int firstDirectionCount = setRailPositionsDePower(self, world, pos, directions[0], checkedPos);
+        int secondDirectionCount = setRailPositionsDePower(self, world, pos, directions[1], checkedPos);
 
         updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState, firstDirectionCount,
                 secondDirectionCount);
@@ -310,7 +315,8 @@ public final class RailLogic {
         return count;
     }
 
-    private static int setRailPositionsDePower(PoweredRailBlock self, Level world, BlockPos pos, Direction dir) {
+    private static int setRailPositionsDePower(PoweredRailBlock self, Level world, BlockPos pos, Direction dir,
+            Long2ByteMap checkedPos) {
         int count = 0;
 
         final int baseX = pos.getX();
@@ -327,18 +333,27 @@ public final class RailLogic {
             int y = baseY;
             int z = baseZ + stepZ * i;
 
+            long posKey = BlockPos.asLong(x, y, z);
+            byte checked = checkedPos.get(posKey);
+
+            if (checked == CHECKED_BLOCKED) {
+                break;
+            }
+
             cursor.set(x, y, z);
             BlockState state = world.getBlockState(cursor);
 
             if (!state.is(self) ||
                     !state.getValue(POWERED) ||
                     world.hasNeighborSignal(cursor) ||
-                    ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(world, cursor, state, true, 0) ||
-                    ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(world, cursor, state, false, 0)) {
+                    findPoweredRailSignalFaster(self, world, cursor, state, true, 0, checkedPos) ||
+                    findPoweredRailSignalFaster(self, world, cursor, state, false, 0, checkedPos)) {
+                checkedPos.put(posKey, CHECKED_BLOCKED);
                 break;
             }
 
             world.setBlock(cursor, state.setValue(POWERED, false), UPDATE_FORCE_PLACE);
+            checkedPos.put(posKey, CHECKED_BLOCKED);
             count++;
         }
 
