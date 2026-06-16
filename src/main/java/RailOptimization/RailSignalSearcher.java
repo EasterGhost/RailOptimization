@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 final class RailSignalSearcher {
+    private static final byte[] RAIL_AXIS = { 2, 1, 1, 1, 2, 2, 0, 0, 0, 0 };
 
     private RailSignalSearcher() {
     }
@@ -46,7 +47,7 @@ final class RailSignalSearcher {
 
         RailShape actualShape = blockState.getValue(PoweredRailBlock.SHAPE);
 
-        if (isMismatchedRailShape(expectedShape, actualShape) || !blockState.getValue(PoweredRailBlock.POWERED)) {
+        if (isMismatchedRailAxis(expectedShape, actualShape) || !blockState.getValue(PoweredRailBlock.POWERED)) {
             return false;
         }
 
@@ -61,12 +62,8 @@ final class RailSignalSearcher {
         return isPowered;
     }
 
-    private static boolean isMismatchedRailShape(RailShape expected, RailShape actual) {
-        return expected == RailShape.EAST_WEST
-                && (actual == RailShape.NORTH_SOUTH || actual == RailShape.ASCENDING_NORTH
-                        || actual == RailShape.ASCENDING_SOUTH)
-                || expected == RailShape.NORTH_SOUTH && (actual == RailShape.EAST_WEST
-                        || actual == RailShape.ASCENDING_EAST || actual == RailShape.ASCENDING_WEST);
+    private static boolean isMismatchedRailAxis(RailShape expected, RailShape actual) {
+        return RAIL_AXIS[expected.ordinal()] != RAIL_AXIS[actual.ordinal()];
     }
 
     static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level,

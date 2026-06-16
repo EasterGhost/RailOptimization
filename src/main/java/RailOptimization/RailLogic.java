@@ -17,8 +17,8 @@ public final class RailLogic {
     static final Direction[] EAST_WEST_DIR = new Direction[] { Direction.WEST, Direction.EAST };
     static final Direction[] NORTH_SOUTH_DIR = new Direction[] { Direction.SOUTH, Direction.NORTH };
 
-    private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_KNOWN_SHAPE
-            | Block.UPDATE_CLIENTS;    
+    private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS;
+    private static final boolean[] RAIL_ASCENDING = { false, false, true, true, true, true, false, false, false, false };
     static final byte CHECKED_UNKNOWN = 0;
     static final byte CHECKED_BLOCKED = 1;
     static final byte CHECKED_POWERED = 2;
@@ -30,8 +30,7 @@ public final class RailLogic {
     }
 
     static boolean isAscending(RailShape railShape) {
-        return railShape == RailShape.ASCENDING_EAST || railShape == RailShape.ASCENDING_WEST ||
-                railShape == RailShape.ASCENDING_NORTH || railShape == RailShape.ASCENDING_SOUTH;
+        return RAIL_ASCENDING[railShape.ordinal()];
     }
 
     private static Long2ByteOpenHashMap newCheckedMap() {
@@ -63,17 +62,22 @@ public final class RailLogic {
         boolean shouldBePowered = level.hasNeighborSignal(pos) ||
                 (directions == null
                         ? ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, true, 0) ||
-                                ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, false, 0)
-                        : RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, checkedPos) ||
-                                RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, false, 0, checkedPos));
+                                ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, false,
+                                        0)
+                        : RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, checkedPos)
+                                ||
+                                RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, false, 0,
+                                        checkedPos));
 
         if (shouldBePowered != state.getValue(POWERED)) {
             if (isAscending(railShape)) {
                 level.setBlock(pos, state.setValue(POWERED, shouldBePowered), 3);
 
                 MutableBlockPos scratchPos = new MutableBlockPos();
-                RailUpdateNotifier.notifyNeighborChanged(level, pos.getX(), pos.getY() - 1, pos.getZ(), self, scratchPos);
-                RailUpdateNotifier.notifyNeighborChanged(level, pos.getX(), pos.getY() + 1, pos.getZ(), self, scratchPos);
+                RailUpdateNotifier.notifyNeighborChanged(level, pos.getX(), pos.getY() - 1, pos.getZ(), self,
+                        scratchPos);
+                RailUpdateNotifier.notifyNeighborChanged(level, pos.getX(), pos.getY() + 1, pos.getZ(), self,
+                        scratchPos);
             } else if (shouldBePowered) {
                 powerLane(self, level, pos, state, railShape, checkedPos);
             } else {
@@ -98,7 +102,8 @@ public final class RailLogic {
         int firstDirectionCount = setRailPositionsPower(self, world, pos, checkedPos, directions[0]);
         int secondDirectionCount = setRailPositionsPower(self, world, pos, checkedPos, directions[1]);
 
-        RailUpdateNotifier.updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState, firstDirectionCount,
+        RailUpdateNotifier.updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState,
+                firstDirectionCount,
                 secondDirectionCount);
     }
 
@@ -119,7 +124,8 @@ public final class RailLogic {
         int firstDirectionCount = setRailPositionsDePower(self, world, pos, directions[0], checkedPos);
         int secondDirectionCount = setRailPositionsDePower(self, world, pos, directions[1], checkedPos);
 
-        RailUpdateNotifier.updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState, firstDirectionCount,
+        RailUpdateNotifier.updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState,
+                firstDirectionCount,
                 secondDirectionCount);
     }
 
