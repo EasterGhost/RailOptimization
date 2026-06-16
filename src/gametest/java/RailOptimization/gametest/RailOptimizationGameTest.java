@@ -14,13 +14,13 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     public void straightRailLinePowersFromRedstoneSource(GameTestHelper helper) {
         placeRailLinePair(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, RailShape.NORTH_SOUTH);
 
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(REDSTONE_SOURCE_POS), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(REDSTONE_SOURCE_POS), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(REDSTONE_SOURCE_POS, Blocks.REDSTONE_BLOCK),
                 () -> {
                     assertMatchingRailLinePower(
-                            helper, vanillaCopy(NORTH_SOUTH_LINE_START), NORTH_SOUTH_LINE_START,
+                            helper, mirrorCopy(NORTH_SOUTH_LINE_START), NORTH_SOUTH_LINE_START,
                             Direction.SOUTH, DEFAULT_LINE_LENGTH
                     );
                     assertRailLinePowered(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, true);
@@ -34,8 +34,8 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
 
         helper.startSequence()
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(false);
-                    helper.setBlock(vanillaCopy(REDSTONE_SOURCE_POS), Blocks.REDSTONE_BLOCK);
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(mirrorCopy(REDSTONE_SOURCE_POS), Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -46,14 +46,14 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     assertMatchingRailLinePower(
-                            helper, vanillaCopy(NORTH_SOUTH_LINE_START), NORTH_SOUTH_LINE_START,
+                            helper, mirrorCopy(NORTH_SOUTH_LINE_START), NORTH_SOUTH_LINE_START,
                             Direction.SOUTH, DEFAULT_LINE_LENGTH
                     );
                     assertRailLinePowered(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, true);
                 })
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(false);
-                    helper.setBlock(vanillaCopy(REDSTONE_SOURCE_POS), Blocks.AIR);
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(mirrorCopy(REDSTONE_SOURCE_POS), Blocks.AIR);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -64,7 +64,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     assertMatchingRailLinePower(
-                            helper, vanillaCopy(NORTH_SOUTH_LINE_START), NORTH_SOUTH_LINE_START,
+                            helper, mirrorCopy(NORTH_SOUTH_LINE_START), NORTH_SOUTH_LINE_START,
                             Direction.SOUTH, DEFAULT_LINE_LENGTH
                     );
                     assertRailLinePowered(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, false);
@@ -77,12 +77,12 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
         BlockPos start = new BlockPos(1, RAIL_Y, 2);
         placeRailLinePair(helper, start, Direction.EAST, DEFAULT_LINE_LENGTH, RailShape.EAST_WEST);
 
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(start.north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(start.north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(start.north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.EAST, DEFAULT_LINE_LENGTH);
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, DEFAULT_LINE_LENGTH);
                     assertRailLinePowered(helper, start, Direction.EAST, DEFAULT_LINE_LENGTH, true);
                 }
         );
@@ -93,12 +93,12 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
         BlockPos start = new BlockPos(1, RAIL_Y, 2);
         placeRailLinePair(helper, start, Direction.EAST, 10, RailShape.EAST_WEST);
 
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(start.north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(start.north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(start.north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.EAST, 10);
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, 10);
                     assertRailLinePowered(helper, start, Direction.EAST, 9, true);
                     helper.assertBlockProperty(start.relative(Direction.EAST, 9), PoweredRailBlock.POWERED, false);
                 }
@@ -111,14 +111,14 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
         placeRailLinePair(helper, start, Direction.SOUTH, 4, RailShape.NORTH_SOUTH);
         placeRailLinePair(helper, start.relative(Direction.SOUTH, 5), Direction.SOUTH, 3, RailShape.NORTH_SOUTH);
 
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(start.west()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(start.west()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(start.west(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.SOUTH, 4);
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.SOUTH, 4);
                     assertMatchingRailLinePower(
-                            helper, vanillaCopy(start.relative(Direction.SOUTH, 5)),
+                            helper, mirrorCopy(start.relative(Direction.SOUTH, 5)),
                             start.relative(Direction.SOUTH, 5), Direction.SOUTH, 3
                     );
                     assertRailLinePowered(helper, start, Direction.SOUTH, 4, true);
@@ -132,12 +132,12 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
         BlockPos start = NORTH_SOUTH_LINE_START;
         placeRailLinePair(helper, start, Direction.SOUTH, 10, RailShape.NORTH_SOUTH);
 
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(start.west()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(start.west()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(start.west(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.SOUTH, 10);
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.SOUTH, 10);
                     assertRailLinePowered(helper, start, Direction.SOUTH, 9, true);
                     helper.assertBlockProperty(start.relative(Direction.SOUTH, 9), PoweredRailBlock.POWERED, false);
                 }
@@ -163,12 +163,12 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
         };
 
         placeRailPathPair(helper, rails, shapes);
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(start.west()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(start.west()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(start.west(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailLinePowered(helper, start, Direction.SOUTH, 5, true);
                 }
         );

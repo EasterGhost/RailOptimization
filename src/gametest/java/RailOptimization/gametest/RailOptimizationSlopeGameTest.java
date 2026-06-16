@@ -17,8 +17,8 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
 
         helper.startSequence()
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(false);
-                    helper.setBlock(vanillaCopy(ramp.west()), Blocks.REDSTONE_BLOCK);
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(mirrorCopy(ramp.west()), Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -28,12 +28,12 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                 .thenIdle(4)
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     helper.assertBlockProperty(ramp, PoweredRailBlock.POWERED, true);
                 })
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(false);
-                    helper.setBlock(vanillaCopy(ramp.west()), Blocks.AIR);
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(mirrorCopy(ramp.west()), Blocks.AIR);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -43,7 +43,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
                 .thenIdle(4)
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     helper.assertBlockProperty(ramp, PoweredRailBlock.POWERED, false);
                 })
                 .thenSucceed();
@@ -77,12 +77,12 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         };
 
         placeRailPathPair(helper, rails, shapes);
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailsPowered(helper, rails, 0, 9, true);
                     assertRailsPowered(helper, rails, 9, rails.length, false);
                 }
@@ -119,12 +119,12 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         };
 
         placeRailPathPair(helper, rails, shapes);
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailsPowered(helper, rails, 0, 9, true);
                     assertRailsPowered(helper, rails, 9, rails.length, false);
                 }
@@ -149,12 +149,12 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         };
 
         placeRailPathPair(helper, rails, shapes);
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailsPowered(helper, rails, true);
                 }
         );
@@ -180,19 +180,19 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         };
 
         placeRailPathPair(helper, rails, shapes);
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailsPowered(helper, rails, true);
                 }
         );
     }
 
     @GameTest(maxTicks = 100)
-    public void continuousDescendingThenContinuousAscendingRailsMatchVanilla(GameTestHelper helper) {
+    public void continuousDescendingThenContinuousAscendingRailsPowerWithinLimit(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 4, 2),
                 new BlockPos(2, RAIL_Y + 3, 2),
@@ -219,12 +219,12 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         };
 
         placeRailPathPair(helper, rails, shapes);
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailsPowered(helper, rails, 0, 9, true);
                     assertRailsPowered(helper, rails, 9, rails.length, false);
                 }
@@ -232,7 +232,7 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
     }
 
     @GameTest(maxTicks = 100)
-    public void flatThenContinuousDescendingThenContinuousAscendingThenFlatRailsMatchVanilla(GameTestHelper helper) {
+    public void flatThenContinuousDescendingThenContinuousAscendingThenFlatRailsPowerWithinLimit(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 3, 2),
                 new BlockPos(2, RAIL_Y + 3, 2),
@@ -259,12 +259,12 @@ public class RailOptimizationSlopeGameTest extends RailOptimizationGameTestSuppo
         };
 
         placeRailPathPair(helper, rails, shapes);
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(rails[0].north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(rails[0].north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailPower(helper, vanillaCopy(rails), rails);
+                    assertMatchingRailPower(helper, mirrorCopy(rails), rails);
                     assertRailsPowered(helper, rails, 0, 9, true);
                     assertRailsPowered(helper, rails, 9, rails.length, false);
                 }

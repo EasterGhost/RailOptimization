@@ -17,16 +17,16 @@ abstract class RailOptimizationGameTestSupport {
     static final int FIRST_RAIL_Z = 1;
     static final int LAST_RAIL_Z = 7;
     static final int DEFAULT_LINE_LENGTH = LAST_RAIL_Z - FIRST_RAIL_Z + 1;
-    static final int VANILLA_COPY_Y_OFFSET = 20;
+    static final int MIRROR_COPY_Y_OFFSET = 20;
     static final BlockPos NORTH_SOUTH_LINE_START = new BlockPos(RAIL_X, RAIL_Y, FIRST_RAIL_Z);
     static final BlockPos REDSTONE_SOURCE_POS = NORTH_SOUTH_LINE_START.west();
 
-    static void compareVanillaAndOptimizedPower(GameTestHelper helper, Runnable vanillaTrigger,
-                                                Runnable optimizedTrigger, Runnable assertions) {
+    static void compareMirroredAndOptimizedPower(GameTestHelper helper, Runnable mirrorTrigger,
+                                                 Runnable optimizedTrigger, Runnable assertions) {
         helper.startSequence()
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(false);
-                    vanillaTrigger.run();
+                    RailLogic.setOptimizationEnabled(true);
+                    mirrorTrigger.run();
                 })
                 .thenIdle(4)
                 .thenExecute(() -> {
@@ -41,14 +41,14 @@ abstract class RailOptimizationGameTestSupport {
                 .thenSucceed();
     }
 
-    static BlockPos vanillaCopy(BlockPos pos) {
-        return pos.above(VANILLA_COPY_Y_OFFSET);
+    static BlockPos mirrorCopy(BlockPos pos) {
+        return pos.above(MIRROR_COPY_Y_OFFSET);
     }
 
-    static BlockPos[] vanillaCopy(BlockPos[] positions) {
+    static BlockPos[] mirrorCopy(BlockPos[] positions) {
         BlockPos[] copy = new BlockPos[positions.length];
         for (int i = 0; i < positions.length; i++) {
-            copy[i] = vanillaCopy(positions[i]);
+            copy[i] = mirrorCopy(positions[i]);
         }
         return copy;
     }
@@ -56,7 +56,7 @@ abstract class RailOptimizationGameTestSupport {
     static void placeRailLinePair(GameTestHelper helper, BlockPos start, Direction direction,
                                   int length, RailShape shape) {
         placeRailLine(helper, start, direction, length, shape);
-        placeRailLine(helper, vanillaCopy(start), direction, length, shape);
+        placeRailLine(helper, mirrorCopy(start), direction, length, shape);
     }
 
     static void placeRailLine(GameTestHelper helper, BlockPos start, Direction direction,
@@ -73,7 +73,7 @@ abstract class RailOptimizationGameTestSupport {
 
     static void placeRailPathPair(GameTestHelper helper, BlockPos[] rails, RailShape[] shapes) {
         placeRailPath(helper, rails, shapes);
-        placeRailPath(helper, vanillaCopy(rails), shapes);
+        placeRailPath(helper, mirrorCopy(rails), shapes);
     }
 
     static void placeRailPath(GameTestHelper helper, BlockPos[] rails, RailShape[] shapes) {
@@ -104,7 +104,7 @@ abstract class RailOptimizationGameTestSupport {
 
     static void placeAscendingEastRailPair(GameTestHelper helper, BlockPos ramp) {
         placeAscendingEastRail(helper, ramp);
-        placeAscendingEastRail(helper, vanillaCopy(ramp));
+        placeAscendingEastRail(helper, mirrorCopy(ramp));
     }
 
     static void placeAscendingEastRail(GameTestHelper helper, BlockPos ramp) {

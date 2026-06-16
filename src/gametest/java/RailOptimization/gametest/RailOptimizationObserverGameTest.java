@@ -17,27 +17,27 @@ public class RailOptimizationObserverGameTest extends RailOptimizationGameTestSu
         BlockPos observer = rail.east();
 
         placeRail(helper, rail, RailShape.NORTH_SOUTH);
-        placeRail(helper, vanillaCopy(rail), RailShape.NORTH_SOUTH);
+        placeRail(helper, mirrorCopy(rail), RailShape.NORTH_SOUTH);
         placeObserverWatchingRail(helper, observer, Direction.WEST);
-        placeObserverWatchingRail(helper, vanillaCopy(observer), Direction.WEST);
+        placeObserverWatchingRail(helper, mirrorCopy(observer), Direction.WEST);
 
         helper.startSequence()
                 .thenIdle(4)
                 .thenExecute(() -> {
                     assertObserverPowered(helper, observer, false);
-                    assertObserverPowered(helper, vanillaCopy(observer), false);
+                    assertObserverPowered(helper, mirrorCopy(observer), false);
                 })
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(false);
-                    helper.setBlock(vanillaCopy(source), Blocks.REDSTONE_BLOCK);
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
-                    helper.assertBlockProperty(vanillaCopy(rail), PoweredRailBlock.POWERED, true);
-                    assertObserverPowered(helper, vanillaCopy(observer), true);
+                    helper.assertBlockProperty(mirrorCopy(rail), PoweredRailBlock.POWERED, true);
+                    assertObserverPowered(helper, mirrorCopy(observer), true);
                 })
                 .thenIdle(4)
-                .thenExecute(() -> assertObserverPowered(helper, vanillaCopy(observer), false))
+                .thenExecute(() -> assertObserverPowered(helper, mirrorCopy(observer), false))
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     helper.setBlock(source, Blocks.REDSTONE_BLOCK);
@@ -50,16 +50,16 @@ public class RailOptimizationObserverGameTest extends RailOptimizationGameTestSu
                 .thenIdle(4)
                 .thenExecute(() -> assertObserverPowered(helper, observer, false))
                 .thenExecute(() -> {
-                    RailLogic.setOptimizationEnabled(false);
-                    helper.setBlock(vanillaCopy(source), Blocks.AIR);
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(mirrorCopy(source), Blocks.AIR);
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
-                    helper.assertBlockProperty(vanillaCopy(rail), PoweredRailBlock.POWERED, false);
-                    assertObserverPowered(helper, vanillaCopy(observer), true);
+                    helper.assertBlockProperty(mirrorCopy(rail), PoweredRailBlock.POWERED, false);
+                    assertObserverPowered(helper, mirrorCopy(observer), true);
                 })
                 .thenIdle(4)
-                .thenExecute(() -> assertObserverPowered(helper, vanillaCopy(observer), false))
+                .thenExecute(() -> assertObserverPowered(helper, mirrorCopy(observer), false))
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     helper.setBlock(source, Blocks.AIR);

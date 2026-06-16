@@ -28,12 +28,12 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
         placeRailLinePair(helper, start, Direction.SOUTH, 4, RailShape.NORTH_SOUTH);
         placeNeighborCounters(helper, counters);
 
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(start.west()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(start.west()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(start.west(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.SOUTH, 4);
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.SOUTH, 4);
                     assertNeighborCountersUpdated(helper, counters);
                 }
         );
@@ -57,12 +57,12 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
         placeRailLinePair(helper, start, Direction.EAST, 4, RailShape.EAST_WEST);
         placeNeighborCounters(helper, counters);
 
-        compareVanillaAndOptimizedPower(
+        compareMirroredAndOptimizedPower(
                 helper,
-                () -> helper.setBlock(vanillaCopy(start.north()), Blocks.REDSTONE_BLOCK),
+                () -> helper.setBlock(mirrorCopy(start.north()), Blocks.REDSTONE_BLOCK),
                 () -> helper.setBlock(start.north(), Blocks.REDSTONE_BLOCK),
                 () -> {
-                    assertMatchingRailLinePower(helper, vanillaCopy(start), start, Direction.EAST, 4);
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, 4);
                     assertNeighborCountersUpdated(helper, counters);
                 }
         );
