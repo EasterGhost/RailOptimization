@@ -4,8 +4,6 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -13,18 +11,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.redstone.Orientation;
 
 public class RailOptimizationGameTestMod implements ModInitializer {
     private static final ResourceLocation NEIGHBOR_COUNTER_ID = ResourceLocation.fromNamespaceAndPath(
             "railoptimization-gametest", "neighbor_counter"
     );
-    private static final ResourceKey<Block> NEIGHBOR_COUNTER_KEY = ResourceKey.create(
-            Registries.BLOCK, NEIGHBOR_COUNTER_ID
-    );
-
     public static final NeighborCounterBlock NEIGHBOR_COUNTER = new NeighborCounterBlock(
-            BlockBehaviour.Properties.of().setId(NEIGHBOR_COUNTER_KEY).strength(1.0F).noLootTable()
+            BlockBehaviour.Properties.of().strength(1.0F).noLootTable()
     );
 
     @Override
@@ -51,7 +44,7 @@ public class RailOptimizationGameTestMod implements ModInitializer {
 
         @Override
         protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
-                                       Orientation orientation, boolean movedByPiston) {
+                                       BlockPos fromPos, boolean movedByPiston) {
             if (level.isClientSide) return;
             int count = state.getValue(COUNT);
             if (count < 15) {
