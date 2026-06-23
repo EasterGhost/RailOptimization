@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGameTestSupport {
     @SuppressWarnings("null")
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_10", maxTicks = 100)
     public void neighborCountersReceiveNorthSouthRailUpdatePositions(GameTestHelper helper) {
         BlockPos start = new BlockPos(3, RAIL_Y, 2);
         BlockPos monitoredRail = start.relative(Direction.SOUTH, 2);
@@ -41,7 +41,7 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
     }
 
     @SuppressWarnings("null")
-    @GameTest(maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_11", maxTicks = 100)
     public void neighborCountersReceiveEastWestRailUpdatePositions(GameTestHelper helper) {
         BlockPos start = new BlockPos(2, RAIL_Y, 3);
         BlockPos monitoredRail = start.relative(Direction.EAST, 2);
