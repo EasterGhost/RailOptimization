@@ -4,7 +4,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.permissions.Permissions;
 
 public class RailOptimizationFabric implements ModInitializer {
     @Override
@@ -13,10 +12,10 @@ public class RailOptimizationFabric implements ModInitializer {
                 dispatcher.register(Commands.literal("railoptimization")
                         .executes(context -> sendStatus(context.getSource()))
                         .then(Commands.literal("on")
-                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
+                                .requires(source -> source.hasPermission(2))
                                 .executes(context -> setEnabled(context.getSource(), true)))
                         .then(Commands.literal("off")
-                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
+                                .requires(source -> source.hasPermission(2))
                                 .executes(context -> setEnabled(context.getSource(), false)))));
     }
 
