@@ -90,7 +90,19 @@ abstract class RailOptimizationGameTestSupport {
     @SuppressWarnings("null")
     static void placeRail(GameTestHelper helper, BlockPos railPos, RailShape shape) {
         helper.setBlock(railPos.below(), Blocks.STONE);
+        placeAscendingRailSupport(helper, railPos, shape);
         helper.setBlock(railPos, Blocks.POWERED_RAIL.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
+    }
+
+    private static void placeAscendingRailSupport(GameTestHelper helper, BlockPos railPos, RailShape shape) {
+        switch (shape) {
+            case ASCENDING_EAST -> helper.setBlock(railPos.east(), Blocks.STONE);
+            case ASCENDING_WEST -> helper.setBlock(railPos.west(), Blocks.STONE);
+            case ASCENDING_NORTH -> helper.setBlock(railPos.north(), Blocks.STONE);
+            case ASCENDING_SOUTH -> helper.setBlock(railPos.south(), Blocks.STONE);
+            default -> {
+            }
+        }
     }
 
     @SuppressWarnings("null")
