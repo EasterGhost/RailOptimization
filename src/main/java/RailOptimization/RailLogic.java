@@ -57,17 +57,17 @@ public final class RailLogic {
 
     public static void customUpdateState(PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
-        Direction[] directions = getRailDirections(railShape);
-        Long2ByteOpenHashMap checkedPos = directions == null ? null : newCheckedMap();
+        boolean supportsFastSearch = RailSignalSearcher.supportsFastSearch(railShape);
+        Long2ByteOpenHashMap checkedPos = supportsFastSearch ? newCheckedMap() : null;
         boolean shouldBePowered = level.hasNeighborSignal(pos) ||
-                (directions == null
-                        ? ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, true, 0) ||
-                                ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, false,
-                                        0)
-                        : RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, checkedPos)
+                (supportsFastSearch
+                        ? RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, checkedPos)
                                 ||
                                 RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, false, 0,
-                                        checkedPos));
+                                        checkedPos)
+                        : ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, true, 0) ||
+                                ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, false,
+                                        0));
 
         if (shouldBePowered != state.getValue(POWERED)) {
             if (isAscending(railShape)) {
@@ -137,6 +137,13 @@ public final class RailLogic {
         };
     }
 
+    private static boolean isRailAlignedWithDirection(BlockState state, Direction direction) {
+        Direction[] railDirections = getRailDirections(state.getValue(PoweredRailBlock.SHAPE));
+        Direction[] expectedDirections = direction.getAxis() == Direction.Axis.X ? EAST_WEST_DIR : NORTH_SOUTH_DIR;
+        return railDirections == expectedDirections;
+    }
+
+    @SuppressWarnings("null")
     private static int setRailPositionsPower(PoweredRailBlock self, Level world, BlockPos pos,
             Long2ByteMap checkedPos, Direction dir) {
         int count = 0;
@@ -168,7 +175,9 @@ public final class RailLogic {
             cursor.set(x, y, z);
             BlockState state = world.getBlockState(cursor);
 
-            if (!state.is(self) || state.getValue(POWERED) || !(world.hasNeighborSignal(cursor) ||
+            if (!state.is(self) ||
+                    !isRailAlignedWithDirection(state, dir) ||
+                    state.getValue(POWERED) || !(world.hasNeighborSignal(cursor) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, checkedPos) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, checkedPos))) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
@@ -212,6 +221,7 @@ public final class RailLogic {
             BlockState state = world.getBlockState(cursor);
 
             if (!state.is(self) ||
+                    !isRailAlignedWithDirection(state, dir) ||
                     !state.getValue(POWERED) ||
                     world.hasNeighborSignal(cursor) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, checkedPos) ||

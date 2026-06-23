@@ -14,6 +14,10 @@ final class RailSignalSearcher {
     private RailSignalSearcher() {
     }
 
+    static boolean supportsFastSearch(RailShape railShape) {
+        return RAIL_AXIS[railShape.ordinal()] != 0;
+    }
+
     static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level world, BlockPos pos,
             boolean forward, int distance, RailShape shape,
             Long2ByteMap checkedPos) {
