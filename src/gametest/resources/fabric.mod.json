@@ -13,7 +13,8 @@
       "RailOptimization.gametest.RailOptimizationGameTest",
       "RailOptimization.gametest.RailOptimizationSlopeGameTest",
       "RailOptimization.gametest.RailOptimizationNeighborUpdateGameTest",
-      "RailOptimization.gametest.RailOptimizationObserverGameTest"
+      "RailOptimization.gametest.RailOptimizationObserverGameTest",
+      "RailOptimization.gametest.RailOptimizationBudGameTest"
     ]
   },
   "depends": {
