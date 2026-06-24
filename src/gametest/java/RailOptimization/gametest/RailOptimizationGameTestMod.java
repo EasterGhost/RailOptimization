@@ -1,5 +1,6 @@
 package RailOptimization.gametest;
 
+import RailOptimization.RailLogic;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -29,6 +30,8 @@ public class RailOptimizationGameTestMod implements ModInitializer {
     @SuppressWarnings("null")
     @Override
     public void onInitialize() {
+        RailLogic.enablePositionBasedTestMode();
+
         Registry.register(
                 BuiltInRegistries.BLOCK,
                 NEIGHBOR_COUNTER_ID,

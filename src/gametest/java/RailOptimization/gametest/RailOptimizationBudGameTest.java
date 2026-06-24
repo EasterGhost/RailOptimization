@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PoweredRailBlock;
@@ -13,7 +14,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport {
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_31", maxTicks = 120)
+    @GameTest(environment = "railoptimization-gametest:serial_31", maxTicks = 120, padding = 40)
     public void flatRailPowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos rail = new BlockPos(3, RAIL_Y, 3);
         BlockPos source = rail.west();
@@ -42,7 +43,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_32", maxTicks = 160)
+    @GameTest(environment = "railoptimization-gametest:serial_32", maxTicks = 160, padding = 40)
     public void flatRailDepowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos rail = new BlockPos(3, RAIL_Y, 3);
         BlockPos source = rail.west();
@@ -82,7 +83,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_33", maxTicks = 120)
+    @GameTest(environment = "railoptimization-gametest:serial_33", maxTicks = 120, padding = 40)
     public void railLinePowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos start = new BlockPos(2, RAIL_Y, 3);
         BlockPos source = start.north();
@@ -111,7 +112,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_34", maxTicks = 120)
+    @GameTest(environment = "railoptimization-gametest:serial_34", maxTicks = 120, padding = 40)
     public void ascendingRailPowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos ramp = new BlockPos(2, RAIL_Y, 2);
         BlockPos upperRail = ramp.east().above();
@@ -141,7 +142,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_35", maxTicks = 160)
+    @GameTest(environment = "railoptimization-gametest:serial_35", maxTicks = 160, padding = 40)
     public void secondSourceInsidePoweredFlatLineDoesNotWakeFarRails(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
         BlockPos firstSource = start.north();
@@ -171,7 +172,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_36", maxTicks = 160)
+    @GameTest(environment = "railoptimization-gametest:serial_36", maxTicks = 160, padding = 40)
     public void secondSourceInsidePoweredSlopedLineDoesNotWakeFarRails(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 4, 3),
@@ -208,24 +209,30 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(firstSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     helper.setBlock(firstSource, Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(4)
-                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails))
+                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails, "after first source"))
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(secondSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     helper.setBlock(secondSource, Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(4)
-                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails))
+                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails, "after second source"))
                 .thenSucceed();
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_37", maxTicks = 160)
+    @GameTest(environment = "railoptimization-gametest:serial_37", maxTicks = 160, padding = 40)
     public void railsPlacedPastSecondSourceOnFlatLineStayUnpowered(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
         BlockPos firstSource = start.north();
@@ -263,7 +270,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_38", maxTicks = 160)
+    @GameTest(environment = "railoptimization-gametest:serial_38", maxTicks = 160, padding = 40)
     public void railsPlacedPastSecondSourceOnSlopedLineStayUnpowered(GameTestHelper helper) {
         BlockPos[] rails = new BlockPos[]{
                 new BlockPos(1, RAIL_Y + 4, 3),
@@ -305,21 +312,108 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(firstSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     helper.setBlock(firstSource, Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(4)
-                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails, initiallyPlacedLength))
+                .thenExecute(() -> assertSlopedLineReachedPowerLimit(
+                        helper, rails, initiallyPlacedLength, "after first source"))
                 .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(false);
                     helper.setBlock(mirrorCopy(secondSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
                     RailLogic.setOptimizationEnabled(true);
                     helper.setBlock(secondSource, Blocks.REDSTONE_BLOCK);
                 })
                 .thenIdle(4)
                 .thenExecute(() -> placeRailPathPastSecondSource(helper, rails, shapes, initiallyPlacedLength))
                 .thenIdle(4)
-                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails))
+                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails, "after placing more rails"))
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_39", maxTicks = 160, padding = 40)
+    public void secondSourceInsidePoweredAllAscendingLineDoesNotWakeFarRails(GameTestHelper helper) {
+        BlockPos[] rails = continuousAscendingEastRails(11);
+        RailShape[] shapes = repeatedRailShapes(RailShape.ASCENDING_EAST, rails.length);
+        BlockPos firstSource = rails[0].north();
+        BlockPos secondSource = rails[4].north();
+
+        placeRailPathPair(helper, rails, shapes);
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(mirrorCopy(firstSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(firstSource, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails, "after first source"))
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(mirrorCopy(secondSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(secondSource, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> assertSlopedLineReachedPowerLimit(helper, rails, "after second source"))
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_40", maxTicks = 160, padding = 40)
+    public void railsPlacedPastSecondSourceOnAllAscendingLineMatchesVanilla(GameTestHelper helper) {
+        BlockPos[] rails = continuousAscendingEastRails(13);
+        RailShape[] shapes = repeatedRailShapes(RailShape.ASCENDING_EAST, rails.length);
+        BlockPos firstSource = rails[0].north();
+        BlockPos secondSource = rails[8].north();
+        int initiallyPlacedLength = 11;
+
+        placeRailPathPair(helper, rails, shapes, initiallyPlacedLength);
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(mirrorCopy(firstSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(firstSource, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> assertSlopedLineReachedPowerLimit(
+                        helper, rails, initiallyPlacedLength, "after first source"))
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(mirrorCopy(secondSource), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(secondSource, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> placeRailPathPastSecondSource(helper, rails, shapes, initiallyPlacedLength))
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailPathPower(helper, rails, rails.length);
+                    assertRailsPowered(helper, rails, 0, 9, true);
+                    helper.assertBlockProperty(rails[9], PoweredRailBlock.POWERED, true);
+                })
                 .thenSucceed();
     }
 
@@ -345,17 +439,52 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
     }
 
     private static void placeRailPastSecondSource(GameTestHelper helper, BlockPos rail, RailShape shape) {
-        if (shape != RailShape.EAST_WEST) {
-            throw new IllegalArgumentException("manual placement helper currently only supports east-west rails");
-        }
-
         RailLogic.setOptimizationEnabled(false);
-        helper.setBlock(mirrorCopy(rail).below(), Blocks.STONE);
-        helper.placeBlock(mirrorCopy(rail), Blocks.POWERED_RAIL, Direction.EAST);
+        placeSingleRailPastSecondSource(helper, mirrorCopy(rail), shape);
 
         RailLogic.setOptimizationEnabled(true);
-        helper.setBlock(rail.below(), Blocks.STONE);
-        helper.placeBlock(rail, Blocks.POWERED_RAIL, Direction.EAST);
+        placeSingleRailPastSecondSource(helper, rail, shape);
+    }
+
+    @SuppressWarnings("null")
+    private static void placeSingleRailPastSecondSource(GameTestHelper helper, BlockPos rail, RailShape shape) {
+        markVanillaForMirrorRail(helper, rail);
+
+        if (shape == RailShape.EAST_WEST) {
+            helper.setBlock(rail.below(), Blocks.STONE);
+            helper.placeBlock(rail, Blocks.POWERED_RAIL, Direction.EAST);
+            return;
+        }
+
+        placeAscendingRailSupportWithoutUpdates(helper, rail, shape);
+        helper.setBlock(rail, Blocks.POWERED_RAIL.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
+    }
+
+    private static void placeAscendingRailSupportWithoutUpdates(GameTestHelper helper, BlockPos rail, RailShape shape) {
+        switch (shape) {
+            case ASCENDING_EAST -> setBlockWithoutUpdates(helper, rail.east(), Blocks.STONE);
+            case ASCENDING_WEST -> setBlockWithoutUpdates(helper, rail.west(), Blocks.STONE);
+            case ASCENDING_NORTH -> setBlockWithoutUpdates(helper, rail.north(), Blocks.STONE);
+            case ASCENDING_SOUTH -> setBlockWithoutUpdates(helper, rail.south(), Blocks.STONE);
+            default -> {
+            }
+        }
+    }
+
+    private static BlockPos[] continuousAscendingEastRails(int length) {
+        BlockPos[] rails = new BlockPos[length];
+        for (int railIndex = 0; railIndex < length; railIndex++) {
+            rails[railIndex] = new BlockPos(1 + railIndex, RAIL_Y + railIndex, 3);
+        }
+        return rails;
+    }
+
+    private static RailShape[] repeatedRailShapes(RailShape shape, int length) {
+        RailShape[] shapes = new RailShape[length];
+        for (int railIndex = 0; railIndex < length; railIndex++) {
+            shapes[railIndex] = shape;
+        }
+        return shapes;
     }
 
     private static void assertMatchingRailPathPower(GameTestHelper helper, BlockPos[] rails, int length) {
@@ -377,10 +506,34 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
         assertSlopedLineReachedPowerLimit(helper, rails, rails.length);
     }
 
+    private static void assertSlopedLineReachedPowerLimit(GameTestHelper helper, BlockPos[] rails, String stage) {
+        assertSlopedLineReachedPowerLimit(helper, rails, rails.length, stage);
+    }
+
     private static void assertSlopedLineReachedPowerLimit(GameTestHelper helper, BlockPos[] rails, int length) {
         assertMatchingRailPathPower(helper, rails, length);
         assertRailsPowered(helper, rails, 0, 9, true);
         assertRailsPowered(helper, rails, 9, length, false);
+    }
+
+    private static void assertSlopedLineReachedPowerLimit(GameTestHelper helper, BlockPos[] rails, int length,
+                                                          String stage) {
+        assertMatchingRailPathPower(helper, rails, length);
+        assertRailsPowered(helper, rails, 0, 9, true);
+        assertRailsPowered(helper, rails, 9, length, false, stage);
+    }
+
+    @SuppressWarnings("null")
+    private static void assertRailsPowered(GameTestHelper helper, BlockPos[] rails, int startIndex, int endIndex,
+                                           boolean powered, String stage) {
+        for (int railIndex = startIndex; railIndex < endIndex; railIndex++) {
+            helper.assertBlockProperty(
+                    rails[railIndex],
+                    PoweredRailBlock.POWERED,
+                    value -> value == powered,
+                    Component.literal(stage + ": rail " + railIndex + " should be powered=" + powered)
+            );
+        }
     }
 
     private static void triggerMirrorAndOptimizedUpdate(GameTestHelper helper, BlockPos trigger) {

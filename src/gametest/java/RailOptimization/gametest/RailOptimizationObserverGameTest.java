@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationObserverGameTest extends RailOptimizationGameTestSupport {
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_12", maxTicks = 180)
+    @GameTest(environment = "railoptimization-gametest:serial_12", maxTicks = 180, padding = 40)
     public void observerFacingFlatRailActivatesOnPowerStateChanges(GameTestHelper helper) {
         BlockPos rail = new BlockPos(3, RAIL_Y, 3);
         BlockPos source = rail.west();

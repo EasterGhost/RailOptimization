@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_01", maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_01", maxTicks = 100, padding = 40)
     public void straightRailLinePowersFromRedstoneSource(GameTestHelper helper) {
         placeRailLinePair(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, RailShape.NORTH_SOUTH);
 
@@ -30,7 +30,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_02", maxTicks = 140)
+    @GameTest(environment = "railoptimization-gametest:serial_02", maxTicks = 140, padding = 40)
     public void straightRailLineDepowersAfterSourceRemoval(GameTestHelper helper) {
         placeRailLinePair(helper, NORTH_SOUTH_LINE_START, Direction.SOUTH, DEFAULT_LINE_LENGTH, RailShape.NORTH_SOUTH);
 
@@ -75,7 +75,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_03", maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_03", maxTicks = 100, padding = 40)
     public void eastWestRailLinePowersFromRedstoneSource(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 2);
         placeRailLinePair(helper, start, Direction.EAST, DEFAULT_LINE_LENGTH, RailShape.EAST_WEST);
@@ -92,7 +92,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_04", maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_04", maxTicks = 100, padding = 40)
     public void eastWestRailLineRespectsPowerLimitBoundary(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 2);
         placeRailLinePair(helper, start, Direction.EAST, 10, RailShape.EAST_WEST);
@@ -110,7 +110,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_05", maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_05", maxTicks = 100, padding = 40)
     public void middlePoweredEastWestRailLinePowersBothDirectionsWithinLimit(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
         BlockPos sourceRail = start.relative(Direction.EAST, 9);
@@ -132,7 +132,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_06", maxTicks = 180)
+    @GameTest(environment = "railoptimization-gametest:serial_06", maxTicks = 180, padding = 40)
     public void railLineWithTwoSourcesKeepsOriginalPowerAfterOneSourceRemoval(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
         int length = 10;
@@ -176,7 +176,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_07", maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_07", maxTicks = 100, padding = 40)
     public void railLineStopsPoweringAcrossGap(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         placeRailLinePair(helper, start, Direction.SOUTH, 4, RailShape.NORTH_SOUTH);
@@ -199,7 +199,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_08", maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_08", maxTicks = 100, padding = 40)
     public void railLineRespectsPowerLimitBoundary(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         placeRailLinePair(helper, start, Direction.SOUTH, 10, RailShape.NORTH_SOUTH);
@@ -217,7 +217,7 @@ public class RailOptimizationGameTest extends RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_09", maxTicks = 100)
+    @GameTest(environment = "railoptimization-gametest:serial_09", maxTicks = 100, padding = 40)
     public void adjacentMismatchedRailShapesMatchOriginalPower(GameTestHelper helper) {
         BlockPos start = NORTH_SOUTH_LINE_START;
         BlockPos[] rails = new BlockPos[]{

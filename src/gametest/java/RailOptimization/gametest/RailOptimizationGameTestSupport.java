@@ -59,16 +59,10 @@ abstract class RailOptimizationGameTestSupport {
         placeRailLine(helper, mirrorCopy(start), direction, length, shape);
     }
 
-    @SuppressWarnings("null")
     static void placeRailLine(GameTestHelper helper, BlockPos start, Direction direction,
                               int length, RailShape shape) {
-        BlockState rail = Blocks.POWERED_RAIL.defaultBlockState()
-                .setValue(PoweredRailBlock.SHAPE, shape);
-
         for (int step = 0; step < length; step++) {
-            BlockPos railPos = start.relative(direction, step);
-            helper.setBlock(railPos.below(), Blocks.STONE);
-            helper.setBlock(railPos, rail);
+            placeRail(helper, start.relative(direction, step), shape);
         }
     }
 
@@ -89,9 +83,16 @@ abstract class RailOptimizationGameTestSupport {
 
     @SuppressWarnings("null")
     static void placeRail(GameTestHelper helper, BlockPos railPos, RailShape shape) {
+        markVanillaForMirrorRail(helper, railPos);
         helper.setBlock(railPos.below(), Blocks.STONE);
         placeAscendingRailSupport(helper, railPos, shape);
         helper.setBlock(railPos, Blocks.POWERED_RAIL.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
+    }
+
+    static void markVanillaForMirrorRail(GameTestHelper helper, BlockPos railPos) {
+        if (railPos.getY() >= RAIL_Y + MIRROR_COPY_Y_OFFSET) {
+            RailLogic.forceVanillaAtForTesting(helper.absolutePos(railPos));
+        }
     }
 
     private static void placeAscendingRailSupport(GameTestHelper helper, BlockPos railPos, RailShape shape) {
@@ -125,6 +126,8 @@ abstract class RailOptimizationGameTestSupport {
 
     @SuppressWarnings("null")
     static void placeAscendingEastRail(GameTestHelper helper, BlockPos ramp) {
+        markVanillaForMirrorRail(helper, ramp);
+        markVanillaForMirrorRail(helper, ramp.east().above());
         helper.setBlock(ramp.below(), Blocks.STONE);
         helper.setBlock(ramp.east(), Blocks.STONE);
         helper.setBlock(ramp, Blocks.POWERED_RAIL.defaultBlockState()

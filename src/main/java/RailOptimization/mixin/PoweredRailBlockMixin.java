@@ -25,7 +25,7 @@ public abstract class PoweredRailBlockMixin implements PoweredRailBlockInvoker {
 
     @Inject(method = "updateState", at = @At("HEAD"), cancellable = true)
     private void railoptimization$updateState(BlockState state, Level level, BlockPos pos, Block block, CallbackInfo ci) {
-        if (!RailLogic.isOptimizationEnabled()) {
+        if (!RailLogic.shouldUseOptimization(pos)) {
             return;
         }
 
