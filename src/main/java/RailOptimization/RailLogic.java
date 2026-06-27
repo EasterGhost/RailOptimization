@@ -67,13 +67,13 @@ public final class RailLogic {
         return optimizationEnabled && (!useTestVanillaPositions || !testVanillaPositions.contains(pos.asLong()));
     }
 
-    public static void enablePositionBasedTestMode() {
+    static void enablePositionBasedTestMode() {
         optimizationEnabled = true;
         useTestVanillaPositions = true;
         testVanillaPositions.clear();
     }
 
-    public static void forceVanillaAtForTesting(BlockPos pos) {
+    static void forceVanillaAtForTesting(BlockPos pos) {
         if (useTestVanillaPositions) {
             testVanillaPositions.add(pos.asLong());
         }

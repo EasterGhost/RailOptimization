@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport {
-    @SuppressWarnings("null")
     @GameTest(environment = "railoptimization-gametest:serial_31", maxTicks = 120, padding = 40)
     public void flatRailPowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos rail = new BlockPos(3, RAIL_Y, 3);
@@ -82,7 +81,6 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
                 .thenSucceed();
     }
 
-    @SuppressWarnings("null")
     @GameTest(environment = "railoptimization-gametest:serial_33", maxTicks = 120, padding = 40)
     public void railLinePowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos start = new BlockPos(2, RAIL_Y, 3);
@@ -111,7 +109,6 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
                 .thenSucceed();
     }
 
-    @SuppressWarnings("null")
     @GameTest(environment = "railoptimization-gametest:serial_34", maxTicks = 120, padding = 40)
     public void ascendingRailPowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos ramp = new BlockPos(2, RAIL_Y, 2);
@@ -493,7 +490,6 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
         }
     }
 
-    @SuppressWarnings("null")
     private static void assertFlatLineReachedPowerLimit(GameTestHelper helper, BlockPos start, int length) {
         assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, length);
         assertRailLinePowered(helper, start, Direction.EAST, 9, true);
@@ -502,18 +498,8 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
         }
     }
 
-    private static void assertSlopedLineReachedPowerLimit(GameTestHelper helper, BlockPos[] rails) {
-        assertSlopedLineReachedPowerLimit(helper, rails, rails.length);
-    }
-
     private static void assertSlopedLineReachedPowerLimit(GameTestHelper helper, BlockPos[] rails, String stage) {
         assertSlopedLineReachedPowerLimit(helper, rails, rails.length, stage);
-    }
-
-    private static void assertSlopedLineReachedPowerLimit(GameTestHelper helper, BlockPos[] rails, int length) {
-        assertMatchingRailPathPower(helper, rails, length);
-        assertRailsPowered(helper, rails, 0, 9, true);
-        assertRailsPowered(helper, rails, 9, length, false);
     }
 
     private static void assertSlopedLineReachedPowerLimit(GameTestHelper helper, BlockPos[] rails, int length,
@@ -536,6 +522,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
         }
     }
 
+    @SuppressWarnings("null")
     private static void triggerMirrorAndOptimizedUpdate(GameTestHelper helper, BlockPos trigger) {
         RailLogic.setOptimizationEnabled(false);
         helper.setBlock(mirrorCopy(trigger), Blocks.STONE);
@@ -547,6 +534,7 @@ public class RailOptimizationBudGameTest extends RailOptimizationGameTestSupport
         setBlockWithoutUpdates(helper, pos, block.defaultBlockState());
     }
 
+    @SuppressWarnings("null")
     private static void setBlockWithoutUpdates(GameTestHelper helper, BlockPos pos, BlockState state) {
         helper.getLevel().setBlock(helper.absolutePos(pos), state, Block.UPDATE_NONE);
     }

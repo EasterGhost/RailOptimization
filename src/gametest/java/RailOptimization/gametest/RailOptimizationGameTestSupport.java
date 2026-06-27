@@ -1,10 +1,12 @@
 package RailOptimization.gametest;
 
 import RailOptimization.RailLogic;
+import RailOptimization.RailLogicTestAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ObserverBlock;
 import net.minecraft.world.level.block.PoweredRailBlock;
@@ -59,6 +61,7 @@ abstract class RailOptimizationGameTestSupport {
         placeRailLine(helper, mirrorCopy(start), direction, length, shape);
     }
 
+    @SuppressWarnings("null")
     static void placeRailLine(GameTestHelper helper, BlockPos start, Direction direction,
                               int length, RailShape shape) {
         for (int step = 0; step < length; step++) {
@@ -81,17 +84,21 @@ abstract class RailOptimizationGameTestSupport {
         }
     }
 
-    @SuppressWarnings("null")
     static void placeRail(GameTestHelper helper, BlockPos railPos, RailShape shape) {
+        placeRail(helper, railPos, shape, Blocks.POWERED_RAIL);
+    }
+
+    @SuppressWarnings("null")
+    static void placeRail(GameTestHelper helper, BlockPos railPos, RailShape shape, Block railBlock) {
         markVanillaForMirrorRail(helper, railPos);
         helper.setBlock(railPos.below(), Blocks.STONE);
         placeAscendingRailSupport(helper, railPos, shape);
-        helper.setBlock(railPos, Blocks.POWERED_RAIL.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
+        helper.setBlock(railPos, railBlock.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
     }
 
     static void markVanillaForMirrorRail(GameTestHelper helper, BlockPos railPos) {
         if (railPos.getY() >= RAIL_Y + MIRROR_COPY_Y_OFFSET) {
-            RailLogic.forceVanillaAtForTesting(helper.absolutePos(railPos));
+            RailLogicTestAccess.forceVanillaAt(helper.absolutePos(railPos));
         }
     }
 
@@ -117,6 +124,29 @@ abstract class RailOptimizationGameTestSupport {
         for (BlockPos counterPos : counters) {
             helper.setBlock(counterPos, counter);
         }
+    }
+
+    @SuppressWarnings("null")
+    static void placeOrderRecorder(GameTestHelper helper, BlockPos probePos, BlockPos[] watchedRails) {
+        helper.setBlock(probePos, RailOptimizationGameTestMod.ORDER_RECORDER.defaultBlockState());
+        BlockPos[] absoluteRails = new BlockPos[watchedRails.length];
+        for (int railIndex = 0; railIndex < watchedRails.length; railIndex++) {
+            absoluteRails[railIndex] = helper.absolutePos(watchedRails[railIndex]);
+        }
+        RailOptimizationGameTestMod.registerOrderProbe(helper.absolutePos(probePos), absoluteRails);
+    }
+
+    @SuppressWarnings("null")
+    static void resetOrderRecorders(GameTestHelper helper, BlockPos[] probes) {
+        for (BlockPos probe : probes) {
+            RailOptimizationGameTestMod.resetOrderProbe(helper.absolutePos(probe));
+        }
+    }
+
+    @SuppressWarnings("null")
+    static RailOptimizationGameTestMod.OrderProbeSnapshot orderProbeSnapshot(
+            GameTestHelper helper, BlockPos probe) {
+        return RailOptimizationGameTestMod.orderProbeSnapshot(helper.absolutePos(probe));
     }
 
     static void placeAscendingEastRailPair(GameTestHelper helper, BlockPos ramp) {
