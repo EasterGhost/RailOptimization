@@ -127,6 +127,11 @@ abstract class RailOptimizationGameTestSupport {
     }
 
     @SuppressWarnings("null")
+    static void placeCascadingNeighborCounter(GameTestHelper helper, BlockPos counterPos) {
+        helper.setBlock(counterPos, RailOptimizationGameTestMod.CASCADING_NEIGHBOR_COUNTER.defaultBlockState());
+    }
+
+    @SuppressWarnings("null")
     static void placeOrderRecorder(GameTestHelper helper, BlockPos probePos, BlockPos[] watchedRails) {
         helper.setBlock(probePos, RailOptimizationGameTestMod.ORDER_RECORDER.defaultBlockState());
         BlockPos[] absoluteRails = new BlockPos[watchedRails.length];
@@ -184,6 +189,36 @@ abstract class RailOptimizationGameTestSupport {
                     Component.literal("expected neighbor counter to receive an update")
             );
         }
+    }
+
+    static void assertMatchingNeighborCounterCounts(GameTestHelper helper, BlockPos first, BlockPos second,
+                                                    String stage) {
+        int firstCount = neighborCounterCount(helper, first);
+        int secondCount = neighborCounterCount(helper, second);
+        helper.assertTrue(firstCount == secondCount,
+                Component.literal(stage + ": counter mismatch at " + second
+                        + ", vanilla=" + firstCount + ", optimized=" + secondCount));
+    }
+
+    static void assertMatchingNeighborCounterCounts(GameTestHelper helper, BlockPos[] positions, String stage) {
+        for (BlockPos pos : positions) {
+            assertMatchingNeighborCounterCounts(helper, mirrorCopy(pos), pos, stage);
+        }
+    }
+
+    static void resetNeighborCounters(GameTestHelper helper, BlockPos[] positions) {
+        for (BlockPos pos : positions) {
+            resetNeighborCounter(helper, pos);
+        }
+    }
+
+    static void resetNeighborCounter(GameTestHelper helper, BlockPos pos) {
+        Block block = helper.getBlockState(pos).getBlock();
+        helper.getLevel().setBlock(helper.absolutePos(pos), block.defaultBlockState(), Block.UPDATE_NONE);
+    }
+
+    private static int neighborCounterCount(GameTestHelper helper, BlockPos pos) {
+        return helper.getBlockState(pos).getValue(RailOptimizationGameTestMod.NeighborCounterBlock.COUNT);
     }
 
     @SuppressWarnings("null")

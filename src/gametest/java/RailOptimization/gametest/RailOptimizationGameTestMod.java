@@ -22,11 +22,16 @@ import net.minecraft.world.level.redstone.Orientation;
 public class RailOptimizationGameTestMod implements ModInitializer {
     private static final Identifier NEIGHBOR_COUNTER_ID = Identifier.fromNamespaceAndPath(
             "railoptimization-gametest", "neighbor_counter");
+    private static final Identifier CASCADING_NEIGHBOR_COUNTER_ID = Identifier.fromNamespaceAndPath(
+            "railoptimization-gametest", "cascading_neighbor_counter");
     private static final Identifier ORDER_RECORDER_ID = Identifier.fromNamespaceAndPath(
             "railoptimization-gametest", "order_recorder");
     @SuppressWarnings("null")
     private static final ResourceKey<Block> NEIGHBOR_COUNTER_KEY = ResourceKey.create(
             Registries.BLOCK, NEIGHBOR_COUNTER_ID);
+    @SuppressWarnings("null")
+    private static final ResourceKey<Block> CASCADING_NEIGHBOR_COUNTER_KEY = ResourceKey.create(
+            Registries.BLOCK, CASCADING_NEIGHBOR_COUNTER_ID);
     @SuppressWarnings("null")
     private static final ResourceKey<Block> ORDER_RECORDER_KEY = ResourceKey.create(
             Registries.BLOCK, ORDER_RECORDER_ID);
@@ -37,6 +42,9 @@ public class RailOptimizationGameTestMod implements ModInitializer {
     @SuppressWarnings("null")
     public static final NeighborCounterBlock NEIGHBOR_COUNTER = new NeighborCounterBlock(
             BlockBehaviour.Properties.of().setId(NEIGHBOR_COUNTER_KEY).strength(1.0F).noLootTable());
+    @SuppressWarnings("null")
+    public static final CascadingNeighborCounterBlock CASCADING_NEIGHBOR_COUNTER = new CascadingNeighborCounterBlock(
+            BlockBehaviour.Properties.of().setId(CASCADING_NEIGHBOR_COUNTER_KEY).strength(1.0F).noLootTable());
     @SuppressWarnings("null")
     public static final OrderRecorderBlock ORDER_RECORDER = new OrderRecorderBlock(
             BlockBehaviour.Properties.of().setId(ORDER_RECORDER_KEY).strength(1.0F).noLootTable());
@@ -50,6 +58,10 @@ public class RailOptimizationGameTestMod implements ModInitializer {
                 BuiltInRegistries.BLOCK,
                 NEIGHBOR_COUNTER_ID,
                 NEIGHBOR_COUNTER);
+        Registry.register(
+                BuiltInRegistries.BLOCK,
+                CASCADING_NEIGHBOR_COUNTER_ID,
+                CASCADING_NEIGHBOR_COUNTER);
         Registry.register(
                 BuiltInRegistries.BLOCK,
                 ORDER_RECORDER_ID,
@@ -100,6 +112,27 @@ public class RailOptimizationGameTestMod implements ModInitializer {
             int count = state.getValue(COUNT);
             if (count < 15) {
                 level.setBlock(pos, state.setValue(COUNT, count + 1), UPDATE_CLIENTS);
+            }
+        }
+    }
+
+    public static class CascadingNeighborCounterBlock extends NeighborCounterBlock {
+        @SuppressWarnings("null")
+        public CascadingNeighborCounterBlock(Properties properties) {
+            super(properties);
+        }
+
+        @SuppressWarnings("null")
+        @Override
+        protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                Orientation orientation, boolean movedByPiston) {
+            if (level.isClientSide()) {
+                return;
+            }
+
+            int count = state.getValue(COUNT);
+            if (count < 15) {
+                level.setBlock(pos, state.setValue(COUNT, count + 1), UPDATE_ALL);
             }
         }
     }

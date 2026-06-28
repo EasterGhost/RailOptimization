@@ -205,7 +205,7 @@ public final class RailLogic {
         int firstDirectionCount = setStraightRailPositionsPower(self, world, pos, checkedPos, directions[0]);
         int secondDirectionCount = setStraightRailPositionsPower(self, world, pos, checkedPos, directions[1]);
 
-        RailUpdateNotifier.updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState,
+        RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState,
                 firstDirectionCount,
                 secondDirectionCount);
     }
@@ -223,7 +223,7 @@ public final class RailLogic {
         int firstDirectionCount = setStraightRailPositionsDePower(self, world, pos, directions[0], checkedPos);
         int secondDirectionCount = setStraightRailPositionsDePower(self, world, pos, directions[1], checkedPos);
 
-        RailUpdateNotifier.updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState,
+        RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState,
                 firstDirectionCount,
                 secondDirectionCount);
     }
@@ -431,7 +431,7 @@ public final class RailLogic {
             RailShape railShape, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails) {
         Direction[] directions = getRailDirections(railShape);
         if (directions != null && !changedRails.hasSlope()) {
-            RailUpdateNotifier.updateRails(self, railShape == RailShape.EAST_WEST, world, pos, mainState,
+            RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState,
                     firstDirectionCount,
                     secondDirectionCount);
             return;

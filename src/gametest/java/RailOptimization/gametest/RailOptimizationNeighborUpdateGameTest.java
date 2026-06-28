@@ -69,4 +69,67 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
                 }
         );
     }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_48", maxTicks = 160, padding = 40)
+    public void endpointCascadeUpdatesMatchVanillaOnStraightRail(GameTestHelper helper) {
+        BlockPos start = new BlockPos(1, RAIL_Y, 3);
+        int length = 5;
+        BlockPos source = start.north();
+        BlockPos endpoint = start.relative(Direction.EAST, length);
+        BlockPos[] cascadeNeighbors = new BlockPos[]{
+                endpoint.east(),
+                endpoint.above(),
+                endpoint.below(),
+                endpoint.north(),
+                endpoint.south()
+        };
+
+        placeRailLinePair(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
+        placeCascadingNeighborCounter(helper, mirrorCopy(endpoint));
+        placeCascadingNeighborCounter(helper, endpoint);
+        placeNeighborCounters(helper, mirrorCopy(cascadeNeighbors));
+        placeNeighborCounters(helper, cascadeNeighbors);
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    resetEndpointCascadeCounters(helper, endpoint, cascadeNeighbors);
+                    RailOptimization.RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailOptimization.RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(source, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> assertEndpointCascadeCountsMatch(helper, endpoint, cascadeNeighbors, "after power"))
+                .thenExecute(() -> {
+                    RailOptimization.RailLogic.setOptimizationEnabled(false);
+                    helper.setBlock(mirrorCopy(source), Blocks.AIR);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    RailOptimization.RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(source, Blocks.AIR);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> assertEndpointCascadeCountsMatch(
+                        helper, endpoint, cascadeNeighbors, "after depower"))
+                .thenSucceed();
+    }
+
+    private static void assertEndpointCascadeCountsMatch(GameTestHelper helper, BlockPos endpoint,
+                                                         BlockPos[] cascadeNeighbors, String stage) {
+        assertMatchingNeighborCounterCounts(helper, mirrorCopy(endpoint), endpoint, stage + " endpoint");
+        assertMatchingNeighborCounterCounts(helper, cascadeNeighbors, stage + " cascade neighbors");
+    }
+
+    private static void resetEndpointCascadeCounters(GameTestHelper helper, BlockPos endpoint,
+                                                     BlockPos[] cascadeNeighbors) {
+        resetNeighborCounter(helper, mirrorCopy(endpoint));
+        resetNeighborCounter(helper, endpoint);
+        resetNeighborCounters(helper, mirrorCopy(cascadeNeighbors));
+        resetNeighborCounters(helper, cascadeNeighbors);
+    }
 }
