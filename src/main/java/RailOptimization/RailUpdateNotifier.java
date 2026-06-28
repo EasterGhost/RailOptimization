@@ -19,8 +19,16 @@ final class RailUpdateNotifier {
         level.updateNeighborsAt(scratchPos, sourceBlock);
     }
 
+    @SuppressWarnings("null")
+    private static void notifyBlockChanged(Level level, int x, int y, int z, Block sourceBlock,
+            MutableBlockPos scratchPos) {
+        scratchPos.set(x, y, z);
+        level.neighborChanged(level.getBlockState(scratchPos), scratchPos, sourceBlock, null, false);
+    }
+
     private static void notifyRailEnd(PoweredRailBlock self, Level world, int endX, int endY, int endZ, Block block,
             int railX, int railY, int railZ, MutableBlockPos scratchPos) {
+        notifyBlockChanged(world, endX, endY, endZ, block, scratchPos);
         notifyNeighborChanged(world, endX, endY, endZ, block, scratchPos);
 
         scratchPos.set(railX, railY, railZ);
@@ -36,6 +44,12 @@ final class RailUpdateNotifier {
         Block block = mainState.getBlock();
         boolean secondDirectionEmpty = secondDirectionCount == 0;
         Direction[] directions = eastWest ? RailLogic.EAST_WEST_DIR : RailLogic.NORTH_SOUTH_DIR;
+
+        if (firstDirectionCount == 0 && secondDirectionCount > 0) {
+            updateRailSection(self, world, pos, block, directions[1], 1, secondDirectionCount, false, eastWest);
+            updateRailSection(self, world, pos, block, directions[0], 0, firstDirectionCount, false, eastWest);
+            return;
+        }
 
         for (int i = 0; i < directions.length; ++i) {
             int countAmt = i == 0 ? firstDirectionCount : secondDirectionCount;

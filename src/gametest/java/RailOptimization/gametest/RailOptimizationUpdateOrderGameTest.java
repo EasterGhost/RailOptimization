@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationUpdateOrderGameTest extends RailOptimizationGameTestSupport {
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_46", maxTicks = 120, padding = 40, required = false)
+    @GameTest(environment = "railoptimization-gametest:serial_46", maxTicks = 120, padding = 40)
     public void straightRailUpdateOrderMatchesVanilla(GameTestHelper helper) {
         int length = 5;
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
@@ -39,7 +39,7 @@ public class RailOptimizationUpdateOrderGameTest extends RailOptimizationGameTes
     }
 
     @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_47", maxTicks = 120, padding = 40, required = false)
+    @GameTest(environment = "railoptimization-gametest:serial_47", maxTicks = 120, padding = 40)
     public void ascendingRailUpdateOrderMatchesVanilla(GameTestHelper helper) {
         BlockPos[] rails = continuousAscendingEastRails(5);
         RailShape[] shapes = new RailShape[]{

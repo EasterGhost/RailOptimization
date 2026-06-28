@@ -439,7 +439,7 @@ public final class RailLogic {
 
         Block block = mainState.getBlock();
         MutableBlockPos scratchPos = new MutableBlockPos();
-        for (int i = 0; i < changedRails.size(); i++) {
+        for (int i = changedRails.size() - 1; i >= 0; i--) {
             BlockPos railPos = changedRails.pos(i);
             BlockState state = changedRails.state(i);
             RailUpdateNotifier.notifyNeighborChanged(world, railPos.getX(), railPos.getY(), railPos.getZ(), block,
