@@ -212,11 +212,13 @@ abstract class RailOptimizationGameTestSupport {
         }
     }
 
+    @SuppressWarnings("null")
     static void resetNeighborCounter(GameTestHelper helper, BlockPos pos) {
         Block block = helper.getBlockState(pos).getBlock();
         helper.getLevel().setBlock(helper.absolutePos(pos), block.defaultBlockState(), Block.UPDATE_NONE);
     }
 
+    @SuppressWarnings("null")
     private static int neighborCounterCount(GameTestHelper helper, BlockPos pos) {
         return helper.getBlockState(pos).getValue(RailOptimizationGameTestMod.NeighborCounterBlock.COUNT);
     }

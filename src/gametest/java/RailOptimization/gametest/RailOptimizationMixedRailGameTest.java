@@ -101,7 +101,6 @@ public class RailOptimizationMixedRailGameTest extends RailOptimizationGameTestS
         );
     }
 
-    @SuppressWarnings("null")
     @GameTest(environment = "railoptimization-gametest:serial_44", maxTicks = 120, padding = 40)
     public void activatorRailPowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos rail = new BlockPos(3, RAIL_Y, 3);
@@ -130,7 +129,6 @@ public class RailOptimizationMixedRailGameTest extends RailOptimizationGameTestS
                 .thenSucceed();
     }
 
-    @SuppressWarnings("null")
     @GameTest(environment = "railoptimization-gametest:serial_45", maxTicks = 120, padding = 40)
     public void mixedRailBoundaryPowersOnlyAfterBudUpdate(GameTestHelper helper) {
         BlockPos[] rails = flatEastWestRails(5);
@@ -195,6 +193,7 @@ public class RailOptimizationMixedRailGameTest extends RailOptimizationGameTestS
         }
     }
 
+    @SuppressWarnings("null")
     private static void triggerMirrorAndOptimizedUpdate(GameTestHelper helper, BlockPos trigger) {
         helper.setBlock(mirrorCopy(trigger), Blocks.STONE);
         helper.setBlock(trigger, Blocks.STONE);
@@ -204,6 +203,7 @@ public class RailOptimizationMixedRailGameTest extends RailOptimizationGameTestS
         setBlockWithoutUpdates(helper, pos, block.defaultBlockState());
     }
 
+    @SuppressWarnings("null")
     private static void setBlockWithoutUpdates(GameTestHelper helper, BlockPos pos, BlockState state) {
         helper.getLevel().setBlock(helper.absolutePos(pos), state, Block.UPDATE_NONE);
     }
