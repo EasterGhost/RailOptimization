@@ -6,9 +6,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.PoweredRailBlock;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationGameTest {
@@ -609,6 +615,57 @@ public class RailOptimizationGameTest {
         );
     }
 
+
+    @GameTest(batch = "railoptimization_serial_20", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140)
+    public void spruceLeavesNeighborUpdateDepowersStalePoweredStraightRail(GameTestHelper helper) {
+        BlockPos start = new BlockPos(2, RAIL_Y, 3);
+        int length = 5;
+        BlockPos source = start.north();
+        BlockPos leafUpdateSource = start.south();
+
+        placeRailLine(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    RailLogic.setOptimizationEnabled(true);
+                    helper.setBlock(source, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> assertRailLinePowered(helper, start, Direction.EAST, length, true))
+                .thenExecute(() -> setBlockWithoutUpdates(helper, source, Blocks.AIR))
+                .thenExecute(() -> helper.setBlock(leafUpdateSource, Blocks.SPRUCE_LEAVES))
+                .thenIdle(4)
+                .thenExecute(() -> assertRailLinePowered(helper, start, Direction.EAST, length, false))
+                .thenSucceed();
+    }
+
+    @GameTest(batch = "railoptimization_serial_21", template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = 140)
+    public void poweredRailDropsWhenPistonSupportExtends(GameTestHelper helper) {
+        BlockPos stone = new BlockPos(2, 2, 2);
+        BlockPos lever = stone.above();
+        BlockPos piston = stone.east().below();
+        BlockPos rail = stone.east();
+
+        helper.setBlock(stone, Blocks.SMOOTH_STONE);
+        helper.setBlock(lever, Blocks.LEVER.defaultBlockState()
+                .setValue(FaceAttachedHorizontalDirectionalBlock.FACE, AttachFace.FLOOR)
+                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH)
+                .setValue(LeverBlock.POWERED, false));
+        helper.setBlock(piston, Blocks.PISTON.defaultBlockState()
+                .setValue(PistonBaseBlock.FACING, Direction.EAST));
+        helper.setBlock(rail, Blocks.POWERED_RAIL.defaultBlockState()
+                .setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
+
+        helper.startSequence()
+                .thenExecute(() -> helper.pullLever(lever))
+                .thenIdle(8)
+                .thenExecute(() -> {
+                    helper.assertBlockProperty(piston, PistonBaseBlock.EXTENDED, true);
+                    helper.assertBlockNotPresent(Blocks.POWERED_RAIL, rail);
+                    helper.assertItemEntityPresent(Blocks.POWERED_RAIL.asItem(), rail, 1.5);
+                })
+                .thenSucceed();
+    }
     private static void compareVanillaAndOptimizedPower(GameTestHelper helper, Runnable vanillaTrigger,
                                                         Runnable optimizedTrigger, Runnable assertions) {
         helper.startSequence()
@@ -698,6 +755,10 @@ public class RailOptimizationGameTest {
                 .setValue(PoweredRailBlock.SHAPE, RailShape.ASCENDING_EAST));
         helper.setBlock(ramp.east().above(), Blocks.POWERED_RAIL.defaultBlockState()
                 .setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
+    }
+
+    private static void setBlockWithoutUpdates(GameTestHelper helper, BlockPos pos, Block block) {
+        helper.getLevel().setBlock(helper.absolutePos(pos), block.defaultBlockState(), Block.UPDATE_NONE);
     }
 
     private static void assertRailLinePowered(GameTestHelper helper, BlockPos start, Direction direction,
