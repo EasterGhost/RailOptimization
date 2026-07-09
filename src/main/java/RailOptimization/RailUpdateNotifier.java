@@ -18,11 +18,11 @@ final class RailUpdateNotifier {
         level.updateNeighborsAt(scratchPos, sourceBlock);
     }
 
-    @SuppressWarnings("null")
     private static void notifyBlockChanged(Level level, int x, int y, int z, Block sourceBlock,
-            MutableBlockPos scratchPos) {
-        scratchPos.set(x, y, z);
-        level.neighborChanged(scratchPos.immutable(), sourceBlock, null);
+            int sourceX, int sourceY, int sourceZ, MutableBlockPos targetPos, MutableBlockPos sourcePos) {
+        targetPos.set(x, y, z);
+        sourcePos.set(sourceX, sourceY, sourceZ);
+        level.neighborChanged(targetPos.immutable(), sourceBlock, sourcePos.immutable());
     }
 
     static void updateRails(boolean eastWest, Level world, BlockPos pos,
@@ -57,6 +57,7 @@ final class RailUpdateNotifier {
         final int stepZ = dir.getStepZ();
 
         MutableBlockPos scratchPos = new MutableBlockPos();
+        MutableBlockPos sourcePos = new MutableBlockPos();
 
         for (int c = countAmt; c >= directionIndex; c--) {
             int x = baseX + stepX * c;
@@ -69,11 +70,11 @@ final class RailUpdateNotifier {
 
             notifyNeighborChanged(world, x, y, z, block, scratchPos);
             if (hasEndPos) {
-                notifyBlockChanged(world, endX, y, endZ, block, scratchPos);
+                notifyBlockChanged(world, endX, y, endZ, block, x, y, z, scratchPos, sourcePos);
             }
             notifyNeighborChanged(world, x, y - 1, z, block, scratchPos);
             if (hasEndPos) {
-                notifyBlockChanged(world, endX, y - 1, endZ, block, scratchPos);
+                notifyBlockChanged(world, endX, y - 1, endZ, block, x, y - 1, z, scratchPos, sourcePos);
             }
         }
     }
