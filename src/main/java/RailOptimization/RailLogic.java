@@ -425,8 +425,7 @@ public final class RailLogic {
             RailShape railShape, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails) {
         Direction[] directions = getRailDirections(railShape);
         if (directions != null && !changedRails.hasSlope()) {
-            RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState,
-                    firstDirectionCount,
+            RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState, firstDirectionCount,
                     secondDirectionCount);
             return;
         }
