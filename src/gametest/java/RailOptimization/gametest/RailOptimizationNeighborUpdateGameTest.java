@@ -5,6 +5,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.PoweredRailBlock;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGameTestSupport {
@@ -116,6 +122,35 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
                 .thenIdle(4)
                 .thenExecute(() -> assertEndpointCascadeCountsMatch(
                         helper, endpoint, cascadeNeighbors, "after depower"))
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_49", maxTicks = 140, padding = 40)
+    public void poweredRailDropsWhenPistonSupportExtends(GameTestHelper helper) {
+        BlockPos stone = new BlockPos(2, 2, 2);
+        BlockPos lever = stone.above();
+        BlockPos piston = stone.east().below();
+        BlockPos rail = stone.east();
+
+        helper.setBlock(stone, Blocks.SMOOTH_STONE);
+        helper.setBlock(lever, Blocks.LEVER.defaultBlockState()
+                .setValue(FaceAttachedHorizontalDirectionalBlock.FACE, AttachFace.FLOOR)
+                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH)
+                .setValue(LeverBlock.POWERED, false));
+        helper.setBlock(piston, Blocks.PISTON.defaultBlockState()
+                .setValue(PistonBaseBlock.FACING, Direction.EAST));
+        helper.setBlock(rail, Blocks.POWERED_RAIL.defaultBlockState()
+                .setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
+
+        helper.startSequence()
+                .thenExecute(() -> helper.pullLever(lever))
+                .thenIdle(8)
+                .thenExecute(() -> {
+                    helper.assertBlockProperty(piston, PistonBaseBlock.EXTENDED, true);
+                    helper.assertBlockNotPresent(Blocks.POWERED_RAIL, rail);
+                    helper.assertItemEntityPresent(Blocks.POWERED_RAIL.asItem(), rail, 1.5);
+                })
                 .thenSucceed();
     }
 
