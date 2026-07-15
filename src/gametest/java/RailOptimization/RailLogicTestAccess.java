@@ -13,4 +13,8 @@ public final class RailLogicTestAccess {
     public static void forceVanillaAt(BlockPos pos) {
         RailLogic.forceVanillaAtForTesting(pos);
     }
+
+    public static void forcePowerLimitAt(BlockPos pos, int powerLimit) {
+        RailLogic.forcePowerLimitAtForTesting(pos, powerLimit);
+    }
 }

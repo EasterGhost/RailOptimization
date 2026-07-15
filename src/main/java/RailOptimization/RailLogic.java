@@ -2,6 +2,7 @@ package RailOptimization;
 
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
@@ -29,6 +30,7 @@ public final class RailLogic {
     private static boolean optimizationEnabled = true;
     private static boolean useTestVanillaPositions;
     private static final LongSet testVanillaPositions = new LongOpenHashSet();
+    private static final Long2IntOpenHashMap testPowerLimits = new Long2IntOpenHashMap();
 
     private RailLogic() {
     }
@@ -71,6 +73,7 @@ public final class RailLogic {
         optimizationEnabled = true;
         useTestVanillaPositions = true;
         testVanillaPositions.clear();
+        testPowerLimits.clear();
     }
 
     static void forceVanillaAtForTesting(BlockPos pos) {
@@ -79,8 +82,31 @@ public final class RailLogic {
         }
     }
 
-    @SuppressWarnings("null")
+    static void forcePowerLimitAtForTesting(BlockPos pos, int powerLimit) {
+        if (useTestVanillaPositions) {
+            testPowerLimits.put(pos.asLong(), Math.max(1, powerLimit));
+        }
+    }
+
     public static void customUpdateState(PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
+        int testPowerLimit = useTestVanillaPositions ? testPowerLimits.get(pos.asLong()) : 0;
+        if (testPowerLimit == 0) {
+            customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
+            return;
+        }
+
+        int configuredPowerLimit = railPowerLimit;
+        railPowerLimit = testPowerLimit;
+        try {
+            customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
+        } finally {
+            railPowerLimit = configuredPowerLimit;
+        }
+    }
+
+    @SuppressWarnings("null")
+    private static void customUpdateStateWithCurrentPowerLimit(
+            PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
         boolean supportsFastSearch = RailSignalSearcher.supportsFastSearch(railShape);
         Long2ByteOpenHashMap checkedPos = supportsFastSearch ? newCheckedMap() : null;

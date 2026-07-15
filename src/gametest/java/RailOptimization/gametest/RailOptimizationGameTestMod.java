@@ -117,7 +117,6 @@ public class RailOptimizationGameTestMod implements ModInitializer {
     }
 
     public static class CascadingNeighborCounterBlock extends NeighborCounterBlock {
-        @SuppressWarnings("null")
         public CascadingNeighborCounterBlock(Properties properties) {
             super(properties);
         }
@@ -138,7 +137,6 @@ public class RailOptimizationGameTestMod implements ModInitializer {
     }
 
     public static class OrderRecorderBlock extends Block {
-        @SuppressWarnings("null")
         public OrderRecorderBlock(Properties properties) {
             super(properties);
         }
