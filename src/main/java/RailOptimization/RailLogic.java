@@ -145,6 +145,7 @@ public final class RailLogic {
             return;
         }
 
+        context.beginPowering();
         RailSearchCache checkedPos = context.searchCache;
         RailPathScan railPath = scanRailPath(self, world, pos, mainState, context);
         if (!railPath.hasSlope()) {
@@ -174,6 +175,7 @@ public final class RailLogic {
             return;
         }
 
+        context.beginDepowering();
         RailPathScan railPath = scanRailPath(self, world, pos, mainState, context);
         if (!railPath.hasSlope()) {
             dePowerStraightLane(self, world, pos, mainState, railShape, context, railPath);

@@ -13,6 +13,7 @@ final class RailSearchCache {
     private final long[] positions;
     private final byte[] flags;
     private final byte[] states;
+    private final int[] distances;
     private int size;
 
     RailSearchCache(int railPowerLimit) {
@@ -22,15 +23,20 @@ final class RailSearchCache {
         positions = new long[capacity];
         flags = new byte[capacity];
         states = new byte[capacity];
+        distances = new int[capacity];
     }
 
     byte get(long position) {
-        return get(position, LANE);
+        return get(position, LANE, -1);
     }
 
     byte get(long position, byte flags) {
+        return get(position, flags, -1);
+    }
+
+    byte get(long position, byte flags, int distance) {
         for (int i = size - 1; i >= 0; --i) {
-            if (positions[i] == position && this.flags[i] == flags) {
+            if (positions[i] == position && this.flags[i] == flags && distances[i] == distance) {
                 return states[i];
             }
         }
@@ -38,12 +44,16 @@ final class RailSearchCache {
     }
 
     void put(long position, byte state) {
-        put(position, LANE, state);
+        put(position, LANE, -1, state);
     }
 
     void put(long position, byte flags, byte state) {
+        put(position, flags, -1, state);
+    }
+
+    void put(long position, byte flags, int distance, byte state) {
         for (int i = size - 1; i >= 0; --i) {
-            if (positions[i] == position && this.flags[i] == flags) {
+            if (positions[i] == position && this.flags[i] == flags && distances[i] == distance) {
                 states[i] = state;
                 return;
             }
@@ -57,6 +67,23 @@ final class RailSearchCache {
         positions[size] = position;
         this.flags[size] = flags;
         states[size] = state;
+        distances[size] = distance;
         ++size;
+    }
+
+    void retainSearchResults(byte state) {
+        int retained = 0;
+        for (int i = 0; i < size; ++i) {
+            if ((flags[i] & SEARCH) != 0 && states[i] != state) {
+                continue;
+            }
+
+            positions[retained] = positions[i];
+            flags[retained] = flags[i];
+            states[retained] = states[i];
+            distances[retained] = distances[i];
+            ++retained;
+        }
+        size = retained;
     }
 }

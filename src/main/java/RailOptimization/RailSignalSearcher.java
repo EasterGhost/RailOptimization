@@ -31,39 +31,37 @@ final class RailSignalSearcher {
 
     private static boolean findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z,
             boolean forward, int distance, RailShape expectedShape, RailUpdateContext context) {
-        RailSearchCache checkedPos = context.searchCache;
         long posKey = BlockPos.asLong(x, y, z);
         byte cacheFlags = checkedPosFlags(forward, expectedShape);
-        byte checked = checkedPos.get(posKey, cacheFlags);
+        byte checked = context.getSearchResult(posKey, cacheFlags, distance);
 
         if (checked == RailLogic.CHECKED_BLOCKED) {
             return false;
         }
 
+        if (checked == RailLogic.CHECKED_POWERED) {
+            return true;
+        }
+
         context.scratchPos.set(x, y, z);
         BlockState blockState = world.getBlockState(context.scratchPos);
 
-        if (checked == RailLogic.CHECKED_POWERED) {
-            return context.hasNeighborSignal(world, context.scratchPos) ||
-                    findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, context);
-        }
-
         if (!blockState.is(self)) {
+            context.cacheSearchResult(posKey, cacheFlags, distance, false);
             return false;
         }
 
         RailShape actualShape = blockState.getValue(PoweredRailBlock.SHAPE);
 
         if (isMismatchedRailAxis(expectedShape, actualShape) || !blockState.getValue(PoweredRailBlock.POWERED)) {
+            context.cacheSearchResult(posKey, cacheFlags, distance, false);
             return false;
         }
 
         boolean isPowered = context.hasNeighborSignal(world, context.scratchPos) ||
                 findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, context);
 
-        if (isPowered) {
-            checkedPos.put(posKey, cacheFlags, RailLogic.CHECKED_POWERED);
-        }
+        context.cacheSearchResult(posKey, cacheFlags, distance, isPowered);
 
         return isPowered;
     }
