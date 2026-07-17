@@ -1,6 +1,5 @@
 package RailOptimization;
 
-import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
@@ -9,30 +8,41 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 final class RailSignalSearcher {
-    private static final byte[] RAIL_AXIS = { 2, 1, 1, 1, 2, 2, 0, 0, 0, 0 };
-    private static final long CACHE_FORWARD_MASK = 0x4000_0000_0000_0000L;
-    private static final long CACHE_AXIS_MASK = 0x2000_0000_0000_0000L;
+    private static final byte AXIS_NONE = 0;
+    private static final byte AXIS_EAST_WEST = 1;
+    private static final byte AXIS_NORTH_SOUTH = 2;
+    private static final byte[] RAIL_AXIS = new byte[RailShape.values().length];
+
+    static {
+        RAIL_AXIS[RailShape.EAST_WEST.ordinal()] = AXIS_EAST_WEST;
+        RAIL_AXIS[RailShape.ASCENDING_EAST.ordinal()] = AXIS_EAST_WEST;
+        RAIL_AXIS[RailShape.ASCENDING_WEST.ordinal()] = AXIS_EAST_WEST;
+        RAIL_AXIS[RailShape.NORTH_SOUTH.ordinal()] = AXIS_NORTH_SOUTH;
+        RAIL_AXIS[RailShape.ASCENDING_NORTH.ordinal()] = AXIS_NORTH_SOUTH;
+        RAIL_AXIS[RailShape.ASCENDING_SOUTH.ordinal()] = AXIS_NORTH_SOUTH;
+    }
 
     private RailSignalSearcher() {
     }
 
     static boolean supportsFastSearch(RailShape railShape) {
-        return RAIL_AXIS[railShape.ordinal()] != 0;
+        return RAIL_AXIS[railShape.ordinal()] != AXIS_NONE;
     }
 
     static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level world, BlockPos pos,
             boolean forward, int distance, RailShape shape,
-            Long2ByteMap checkedPos) {
+            RailSearchCache checkedPos) {
         MutableBlockPos scratchPos = new MutableBlockPos();
         return findPoweredRailSignalAt(self, world, pos.getX(), pos.getY(), pos.getZ(), forward, distance, shape,
                 checkedPos, scratchPos);
     }
 
     private static boolean findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z,
-            boolean forward, int distance, RailShape expectedShape, Long2ByteMap checkedPos,
+            boolean forward, int distance, RailShape expectedShape, RailSearchCache checkedPos,
             MutableBlockPos scratchPos) {
-        long posKey = checkedPosKey(x, y, z, forward, expectedShape);
-        byte checked = checkedPos.get(posKey);
+        long posKey = BlockPos.asLong(x, y, z);
+        byte cacheFlags = checkedPosFlags(forward, expectedShape);
+        byte checked = checkedPos.get(posKey, cacheFlags);
 
         if (checked == RailLogic.CHECKED_BLOCKED) {
             return false;
@@ -62,7 +72,7 @@ final class RailSignalSearcher {
                         scratchPos);
 
         if (isPowered) {
-            checkedPos.put(posKey, RailLogic.CHECKED_POWERED);
+            checkedPos.put(posKey, cacheFlags, RailLogic.CHECKED_POWERED);
         }
 
         return isPowered;
@@ -72,27 +82,27 @@ final class RailSignalSearcher {
         return RAIL_AXIS[expected.ordinal()] != RAIL_AXIS[actual.ordinal()];
     }
 
-    private static long checkedPosKey(int x, int y, int z, boolean forward, RailShape expectedShape) {
-        long key = BlockPos.asLong(x, y, z);
+    private static byte checkedPosFlags(boolean forward, RailShape expectedShape) {
+        byte flags = RailSearchCache.SEARCH;
         if (forward) {
-            key ^= CACHE_FORWARD_MASK;
+            flags |= RailSearchCache.SEARCH_FORWARD;
         }
-        if (RAIL_AXIS[expectedShape.ordinal()] == 2) {
-            key ^= CACHE_AXIS_MASK;
+        if (RAIL_AXIS[expectedShape.ordinal()] == AXIS_NORTH_SOUTH) {
+            flags |= RailSearchCache.SEARCH_NORTH_SOUTH;
         }
-        return key;
+        return flags;
     }
 
     static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level,
             BlockPos pos, BlockState state, boolean forward, int distance,
-            Long2ByteMap checkedPos) {
+            RailSearchCache checkedPos) {
         MutableBlockPos scratchPos = new MutableBlockPos();
         return findPoweredRailSignalFromState(self, level, pos.getX(), pos.getY(), pos.getZ(), state, forward, distance,
                 checkedPos, scratchPos);
     }
 
     private static boolean findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z,
-            BlockState state, boolean forward, int distance, Long2ByteMap checkedPos, MutableBlockPos scratchPos) {
+            BlockState state, boolean forward, int distance, RailSearchCache checkedPos, MutableBlockPos scratchPos) {
         if (distance >= RailLogic.getRailPowerLimit()) {
             return false;
         }
