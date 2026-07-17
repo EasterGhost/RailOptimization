@@ -13,7 +13,7 @@ final class RailSearchCache {
     private final long[] positions;
     private final byte[] flags;
     private final byte[] states;
-    private final int[] distances;
+    private final int[] searchCosts;
     private int size;
 
     RailSearchCache(int railPowerLimit) {
@@ -23,67 +23,86 @@ final class RailSearchCache {
         positions = new long[capacity];
         flags = new byte[capacity];
         states = new byte[capacity];
-        distances = new int[capacity];
+        searchCosts = new int[capacity];
     }
 
     byte get(long position) {
-        return get(position, LANE, -1);
+        return get(position, LANE);
     }
 
     byte get(long position, byte flags) {
-        return get(position, flags, -1);
-    }
-
-    byte get(long position, byte flags, int distance) {
-        for (int i = size - 1; i >= 0; --i) {
-            if (positions[i] == position && this.flags[i] == flags && distances[i] == distance) {
-                return states[i];
-            }
-        }
-        return RailLogic.CHECKED_UNKNOWN;
+        int index = find(position, flags);
+        return index >= 0 ? states[index] : RailLogic.CHECKED_UNKNOWN;
     }
 
     void put(long position, byte state) {
-        put(position, LANE, -1, state);
+        put(position, LANE, state);
     }
 
     void put(long position, byte flags, byte state) {
-        put(position, flags, -1, state);
-    }
-
-    void put(long position, byte flags, int distance, byte state) {
-        for (int i = size - 1; i >= 0; --i) {
-            if (positions[i] == position && this.flags[i] == flags && distances[i] == distance) {
-                states[i] = state;
-                return;
-            }
-        }
-
-        if (size == positions.length) {
-            // Missing cache entries only cause repeated lookups; propagation remains unchanged.
+        int index = find(position, flags);
+        if (index >= 0) {
+            states[index] = state;
             return;
         }
 
-        positions[size] = position;
-        this.flags[size] = flags;
-        states[size] = state;
-        distances[size] = distance;
-        ++size;
+        if (!append(position, flags, state)) {
+            return;
+        }
     }
 
-    void retainSearchResults(byte state) {
+    int getPoweredSearchCost(long position, byte flags) {
+        int index = find(position, flags);
+        return index >= 0 ? searchCosts[index] : -1;
+    }
+
+    void putPoweredSearchCost(long position, byte flags, int searchCost) {
+        int index = find(position, flags);
+        if (index >= 0) {
+            searchCosts[index] = Math.min(searchCosts[index], searchCost);
+            return;
+        }
+
+        if (append(position, flags, RailLogic.CHECKED_POWERED)) {
+            searchCosts[size - 1] = searchCost;
+        }
+    }
+
+    void removeSearchResults() {
         int retained = 0;
         for (int i = 0; i < size; ++i) {
-            if ((flags[i] & SEARCH) != 0 && states[i] != state) {
+            if ((flags[i] & SEARCH) != 0) {
                 continue;
             }
 
             positions[retained] = positions[i];
             flags[retained] = flags[i];
             states[retained] = states[i];
-            distances[retained] = distances[i];
+            searchCosts[retained] = searchCosts[i];
             ++retained;
         }
         size = retained;
+    }
+
+    private int find(long position, byte flags) {
+        for (int i = size - 1; i >= 0; --i) {
+            if (positions[i] == position && this.flags[i] == flags) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean append(long position, byte flags, byte state) {
+        if (size == positions.length) {
+            // Missing cache entries only cause repeated lookups; propagation remains unchanged.
+            return false;
+        }
+
+        positions[size] = position;
+        this.flags[size] = flags;
+        states[size] = state;
+        ++size;
+        return true;
     }
 }

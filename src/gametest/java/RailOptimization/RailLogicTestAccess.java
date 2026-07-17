@@ -17,4 +17,12 @@ public final class RailLogicTestAccess {
     public static void forcePowerLimitAt(BlockPos pos, int powerLimit) {
         RailLogic.forcePowerLimitAtForTesting(pos, powerLimit);
     }
+
+    public static int clampPowerLimit(int powerLimit) {
+        return RailLogic.clampRailPowerLimit(powerLimit);
+    }
+
+    public static int maximumPowerLimit() {
+        return RailLogic.MAX_RAIL_POWER_LIMIT;
+    }
 }

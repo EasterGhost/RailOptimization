@@ -5,10 +5,21 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationPowerLimitGameTest extends RailOptimizationGameTestSupport {
+    @GameTest(environment = "railoptimization-gametest:serial_57", maxTicks = 1)
+    public void powerLimitIsClampedToSafeRange(GameTestHelper helper) {
+        helper.assertTrue(RailLogicTestAccess.clampPowerLimit(Integer.MIN_VALUE) == 1,
+                Component.literal("power limit below one was not clamped"));
+        helper.assertTrue(
+                RailLogicTestAccess.clampPowerLimit(Integer.MAX_VALUE) == RailLogicTestAccess.maximumPowerLimit(),
+                Component.literal("power limit above the supported maximum was not clamped"));
+        helper.succeed();
+    }
+
     @GameTest(environment = "railoptimization-gametest:serial_50", maxTicks = 140, padding = 40)
     public void powerLimitOnePowersOneConnectedRail(GameTestHelper helper) {
         BlockPos start = new BlockPos(1, RAIL_Y, 3);
