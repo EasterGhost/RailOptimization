@@ -29,17 +29,9 @@ final class RailSignalSearcher {
         return RAIL_AXIS[railShape.ordinal()] != AXIS_NONE;
     }
 
-    static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level world, BlockPos pos,
-            boolean forward, int distance, RailShape shape,
-            RailSearchCache checkedPos) {
-        MutableBlockPos scratchPos = new MutableBlockPos();
-        return findPoweredRailSignalAt(self, world, pos.getX(), pos.getY(), pos.getZ(), forward, distance, shape,
-                checkedPos, scratchPos);
-    }
-
     private static boolean findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z,
-            boolean forward, int distance, RailShape expectedShape, RailSearchCache checkedPos,
-            MutableBlockPos scratchPos) {
+            boolean forward, int distance, RailShape expectedShape, RailUpdateContext context) {
+        RailSearchCache checkedPos = context.searchCache;
         long posKey = BlockPos.asLong(x, y, z);
         byte cacheFlags = checkedPosFlags(forward, expectedShape);
         byte checked = checkedPos.get(posKey, cacheFlags);
@@ -48,13 +40,12 @@ final class RailSignalSearcher {
             return false;
         }
 
-        scratchPos.set(x, y, z);
-        BlockState blockState = world.getBlockState(scratchPos);
+        context.scratchPos.set(x, y, z);
+        BlockState blockState = world.getBlockState(context.scratchPos);
 
         if (checked == RailLogic.CHECKED_POWERED) {
-            return world.hasNeighborSignal(scratchPos) ||
-                    findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, checkedPos,
-                            scratchPos);
+            return world.hasNeighborSignal(context.scratchPos) ||
+                    findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, context);
         }
 
         if (!blockState.is(self)) {
@@ -67,9 +58,8 @@ final class RailSignalSearcher {
             return false;
         }
 
-        boolean isPowered = world.hasNeighborSignal(scratchPos) ||
-                findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, checkedPos,
-                        scratchPos);
+        boolean isPowered = world.hasNeighborSignal(context.scratchPos) ||
+                findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, context);
 
         if (isPowered) {
             checkedPos.put(posKey, cacheFlags, RailLogic.CHECKED_POWERED);
@@ -95,14 +85,13 @@ final class RailSignalSearcher {
 
     static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level,
             BlockPos pos, BlockState state, boolean forward, int distance,
-            RailSearchCache checkedPos) {
-        MutableBlockPos scratchPos = new MutableBlockPos();
+            RailUpdateContext context) {
         return findPoweredRailSignalFromState(self, level, pos.getX(), pos.getY(), pos.getZ(), state, forward, distance,
-                checkedPos, scratchPos);
+                context);
     }
 
     private static boolean findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z,
-            BlockState state, boolean forward, int distance, RailSearchCache checkedPos, MutableBlockPos scratchPos) {
+            BlockState state, boolean forward, int distance, RailUpdateContext context) {
         if (distance >= RailLogic.getRailPowerLimit()) {
             return false;
         }
@@ -168,10 +157,9 @@ final class RailSignalSearcher {
             }
         }
 
-        if (findPoweredRailSignalAt(self, level, x, y, z, forward, distance, railShape, checkedPos, scratchPos))
+        if (findPoweredRailSignalAt(self, level, x, y, z, forward, distance, railShape, context))
             return true;
-        return checkBelow && findPoweredRailSignalAt(self, level, x, y - 1, z, forward, distance, railShape, checkedPos,
-                scratchPos);
+        return checkBelow && findPoweredRailSignalAt(self, level, x, y - 1, z, forward, distance, railShape, context);
     }
 
     static BlockState findNextRailState(PoweredRailBlock self, Level level, MutableBlockPos railPos, BlockState state,

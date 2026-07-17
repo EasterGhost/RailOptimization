@@ -44,8 +44,8 @@ public final class RailLogic {
         return RAIL_ASCENDING[railShape.ordinal()];
     }
 
-    private static RailSearchCache newSearchCache() {
-        return new RailSearchCache(railPowerLimit);
+    private static RailUpdateContext newUpdateContext() {
+        return new RailUpdateContext(railPowerLimit);
     }
 
     public static void setRailPowerLimit(int powerLimit) {
@@ -112,87 +112,89 @@ public final class RailLogic {
             PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
         boolean supportsFastSearch = RailSignalSearcher.supportsFastSearch(railShape);
-        RailSearchCache checkedPos = supportsFastSearch ? newSearchCache() : null;
+        RailUpdateContext context = supportsFastSearch ? newUpdateContext() : null;
         boolean shouldBePowered = level.hasNeighborSignal(pos) ||
                 (supportsFastSearch
-                        ? RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, checkedPos)
+                        ? RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, context)
                                 ||
                                 RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, false, 0,
-                                        checkedPos)
+                                        context)
                         : ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, true, 0) ||
                                 ((PoweredRailBlockInvoker) self).invokeFindPoweredRailSignal(level, pos, state, false,
                                         0));
 
         if (shouldBePowered != state.getValue(POWERED)) {
             if (shouldBePowered) {
-                powerLane(self, level, pos, state, railShape, checkedPos);
+                powerLane(self, level, pos, state, railShape, context);
             } else {
-                dePowerLane(self, level, pos, state, railShape, checkedPos);
+                dePowerLane(self, level, pos, state, railShape, context);
             }
         }
     }
 
     public static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape) {
-        powerLane(self, world, pos, mainState, railShape, newSearchCache());
+        powerLane(self, world, pos, mainState, railShape, newUpdateContext());
     }
 
     @SuppressWarnings("null")
     private static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
-            BlockState mainState, RailShape railShape, RailSearchCache checkedPos) {
+            BlockState mainState, RailShape railShape, RailUpdateContext context) {
         if (!RailSignalSearcher.supportsFastSearch(railShape)) {
             return;
         }
 
-        RailPathScan railPath = scanRailPath(self, world, pos, mainState);
+        RailSearchCache checkedPos = context.searchCache;
+        RailPathScan railPath = scanRailPath(self, world, pos, mainState, context);
         if (!railPath.hasSlope()) {
-            powerStraightLane(self, world, pos, mainState, railShape, checkedPos, railPath);
+            powerStraightLane(self, world, pos, mainState, railShape, context, railPath);
             return;
         }
 
         RailChangeList changedRails = new RailChangeList(railPowerLimit * 2 + 1);
         setRailPowerState(world, pos, mainState, true, changedRails);
         checkedPos.put(pos.asLong(), CHECKED_POWERED);
-        int firstDirectionCount = setRailPositionsPower(self, world, checkedPos, true, changedRails, railPath);
-        int secondDirectionCount = setRailPositionsPower(self, world, checkedPos, false, changedRails, railPath);
+        int firstDirectionCount = setRailPositionsPower(self, world, context, true, changedRails, railPath);
+        int secondDirectionCount = setRailPositionsPower(self, world, context, false, changedRails, railPath);
 
         updateChangedRails(self, world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount,
-                changedRails);
+                changedRails, context);
     }
 
     public static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape) {
-        dePowerLane(self, world, pos, mainState, railShape, newSearchCache());
+        dePowerLane(self, world, pos, mainState, railShape, newUpdateContext());
     }
 
     @SuppressWarnings("null")
     private static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
-            BlockState mainState, RailShape railShape, RailSearchCache checkedPos) {
+            BlockState mainState, RailShape railShape, RailUpdateContext context) {
         if (!RailSignalSearcher.supportsFastSearch(railShape)) {
             return;
         }
 
-        RailPathScan railPath = scanRailPath(self, world, pos, mainState);
+        RailPathScan railPath = scanRailPath(self, world, pos, mainState, context);
         if (!railPath.hasSlope()) {
-            dePowerStraightLane(self, world, pos, mainState, railShape, checkedPos, railPath);
+            dePowerStraightLane(self, world, pos, mainState, railShape, context, railPath);
             return;
         }
 
         RailChangeList changedRails = new RailChangeList(railPowerLimit * 2 + 1);
         setRailPowerState(world, pos, mainState, false, changedRails);
 
-        int firstDirectionCount = setRailPositionsDePower(self, world, true, checkedPos, changedRails, railPath);
-        int secondDirectionCount = setRailPositionsDePower(self, world, false, checkedPos, changedRails, railPath);
+        int firstDirectionCount = setRailPositionsDePower(self, world, true, context, changedRails, railPath);
+        int secondDirectionCount = setRailPositionsDePower(self, world, false, context, changedRails, railPath);
 
         updateChangedRails(self, world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount,
-                changedRails);
+                changedRails, context);
     }
 
-    private static RailPathScan scanRailPath(PoweredRailBlock self, Level world, BlockPos pos, BlockState state) {
+    private static RailPathScan scanRailPath(PoweredRailBlock self, Level world, BlockPos pos, BlockState state,
+            RailUpdateContext context) {
         RailPathScan railPath = new RailPathScan(railPowerLimit - 1,
                 isAscending(state.getValue(PoweredRailBlock.SHAPE)));
-        MutableBlockPos cursor = new MutableBlockPos();
-        MutableBlockPos scratchPos = new MutableBlockPos();
+        MutableBlockPos cursor = context.railCursor;
+        MutableBlockPos scratchPos = context.scratchPos;
 
         for (int directionIndex = 0; directionIndex < 2; ++directionIndex) {
             boolean forward = directionIndex == 0;
@@ -216,24 +218,24 @@ public final class RailLogic {
 
     @SuppressWarnings("null")
     private static void powerStraightLane(PoweredRailBlock self, Level world, BlockPos pos,
-            BlockState mainState, RailShape railShape, RailSearchCache checkedPos, RailPathScan railPath) {
+            BlockState mainState, RailShape railShape, RailUpdateContext context, RailPathScan railPath) {
         Direction[] directions = getRailDirections(railShape);
         if (directions == null)
             return;
 
         world.setBlock(pos, mainState.setValue(POWERED, true), UPDATE_FORCE_PLACE);
-        checkedPos.put(pos.asLong(), CHECKED_POWERED);
-        int firstDirectionCount = setStraightRailPositionsPower(self, world, checkedPos, true, railPath);
-        int secondDirectionCount = setStraightRailPositionsPower(self, world, checkedPos, false, railPath);
+        context.searchCache.put(pos.asLong(), CHECKED_POWERED);
+        int firstDirectionCount = setStraightRailPositionsPower(self, world, context, true, railPath);
+        int secondDirectionCount = setStraightRailPositionsPower(self, world, context, false, railPath);
 
         RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState,
                 firstDirectionCount,
-                secondDirectionCount);
+                secondDirectionCount, context.scratchPos);
     }
 
     @SuppressWarnings("null")
     private static void dePowerStraightLane(PoweredRailBlock self, Level world, BlockPos pos,
-            BlockState mainState, RailShape railShape, RailSearchCache checkedPos, RailPathScan railPath) {
+            BlockState mainState, RailShape railShape, RailUpdateContext context, RailPathScan railPath) {
         Direction[] directions = getRailDirections(railShape);
         if (directions == null) {
             return;
@@ -241,12 +243,12 @@ public final class RailLogic {
 
         world.setBlock(pos, mainState.setValue(POWERED, false), UPDATE_FORCE_PLACE);
 
-        int firstDirectionCount = setStraightRailPositionsDePower(self, world, checkedPos, true, railPath);
-        int secondDirectionCount = setStraightRailPositionsDePower(self, world, checkedPos, false, railPath);
+        int firstDirectionCount = setStraightRailPositionsDePower(self, world, context, true, railPath);
+        int secondDirectionCount = setStraightRailPositionsDePower(self, world, context, false, railPath);
 
         RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState,
                 firstDirectionCount,
-                secondDirectionCount);
+                secondDirectionCount, context.scratchPos);
     }
 
     private static Direction[] getRailDirections(RailShape railShape) {
@@ -259,9 +261,10 @@ public final class RailLogic {
 
     @SuppressWarnings("null")
     private static int setStraightRailPositionsPower(PoweredRailBlock self, Level world,
-            RailSearchCache checkedPos, boolean forward, RailPathScan railPath) {
+            RailUpdateContext context, boolean forward, RailPathScan railPath) {
         int count = 0;
-        MutableBlockPos cursor = new MutableBlockPos();
+        RailSearchCache checkedPos = context.searchCache;
+        MutableBlockPos cursor = context.railCursor;
 
         for (int i = 0; i < railPath.count(forward); ++i) {
             long posKey = railPath.position(forward, i);
@@ -278,8 +281,8 @@ public final class RailLogic {
             BlockState state = railPath.state(forward, i);
 
             if (state.getValue(POWERED) || !(world.hasNeighborSignal(cursor) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, checkedPos) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, checkedPos))) {
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context))) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
                 break;
             }
@@ -294,9 +297,10 @@ public final class RailLogic {
 
     @SuppressWarnings("null")
     private static int setStraightRailPositionsDePower(PoweredRailBlock self, Level world,
-            RailSearchCache checkedPos, boolean forward, RailPathScan railPath) {
+            RailUpdateContext context, boolean forward, RailPathScan railPath) {
         int count = 0;
-        MutableBlockPos cursor = new MutableBlockPos();
+        RailSearchCache checkedPos = context.searchCache;
+        MutableBlockPos cursor = context.railCursor;
 
         for (int i = 0; i < railPath.count(forward); ++i) {
             long posKey = railPath.position(forward, i);
@@ -311,8 +315,8 @@ public final class RailLogic {
 
             if (!state.getValue(POWERED) ||
                     world.hasNeighborSignal(cursor) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, checkedPos) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, checkedPos)) {
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
                 break;
             }
@@ -327,9 +331,10 @@ public final class RailLogic {
 
     @SuppressWarnings("null")
     private static int setRailPositionsPower(PoweredRailBlock self, Level world,
-            RailSearchCache checkedPos, boolean forward, RailChangeList changedRails, RailPathScan railPath) {
+            RailUpdateContext context, boolean forward, RailChangeList changedRails, RailPathScan railPath) {
         int count = 0;
-        MutableBlockPos cursor = new MutableBlockPos();
+        RailSearchCache checkedPos = context.searchCache;
+        MutableBlockPos cursor = context.railCursor;
 
         for (int i = 0; i < railPath.count(forward); ++i) {
             long posKey = railPath.position(forward, i);
@@ -345,8 +350,8 @@ public final class RailLogic {
             setCursor(cursor, posKey);
             BlockState state = railPath.state(forward, i);
             if (state.getValue(POWERED) || !(world.hasNeighborSignal(cursor) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, checkedPos) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, checkedPos))) {
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context))) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
                 break;
             }
@@ -361,9 +366,10 @@ public final class RailLogic {
 
     @SuppressWarnings("null")
     private static int setRailPositionsDePower(PoweredRailBlock self, Level world,
-            boolean forward, RailSearchCache checkedPos, RailChangeList changedRails, RailPathScan railPath) {
+            boolean forward, RailUpdateContext context, RailChangeList changedRails, RailPathScan railPath) {
         int count = 0;
-        MutableBlockPos cursor = new MutableBlockPos();
+        RailSearchCache checkedPos = context.searchCache;
+        MutableBlockPos cursor = context.railCursor;
 
         for (int i = 0; i < railPath.count(forward); ++i) {
             long posKey = railPath.position(forward, i);
@@ -377,8 +383,8 @@ public final class RailLogic {
             BlockState state = railPath.state(forward, i);
             if (!state.getValue(POWERED) ||
                     world.hasNeighborSignal(cursor) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, checkedPos) ||
-                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, checkedPos)) {
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
+                    RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
                 break;
             }
@@ -403,17 +409,18 @@ public final class RailLogic {
     }
 
     private static void updateChangedRails(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState,
-            RailShape railShape, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails) {
+            RailShape railShape, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails,
+            RailUpdateContext context) {
         Direction[] directions = getRailDirections(railShape);
         if (directions != null && !changedRails.hasSlope()) {
             RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState,
                     firstDirectionCount,
-                    secondDirectionCount);
+                    secondDirectionCount, context.scratchPos);
             return;
         }
 
         Block block = mainState.getBlock();
-        MutableBlockPos scratchPos = new MutableBlockPos();
+        MutableBlockPos scratchPos = context.scratchPos;
         for (int i = changedRails.size() - 1; i >= 0; i--) {
             BlockPos railPos = changedRails.pos(i);
             BlockState state = changedRails.state(i);
