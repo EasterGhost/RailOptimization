@@ -113,7 +113,8 @@ public final class RailLogic {
         RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
         boolean supportsFastSearch = RailSignalSearcher.supportsFastSearch(railShape);
         RailUpdateContext context = supportsFastSearch ? newUpdateContext() : null;
-        boolean shouldBePowered = level.hasNeighborSignal(pos) ||
+        boolean shouldBePowered = (supportsFastSearch ? context.hasNeighborSignal(level, pos)
+                : level.hasNeighborSignal(pos)) ||
                 (supportsFastSearch
                         ? RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, context)
                                 ||
@@ -280,7 +281,7 @@ public final class RailLogic {
             setCursor(cursor, posKey);
             BlockState state = railPath.state(forward, i);
 
-            if (state.getValue(POWERED) || !(world.hasNeighborSignal(cursor) ||
+            if (state.getValue(POWERED) || !(context.hasNeighborSignal(world, cursor) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context))) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
@@ -314,7 +315,7 @@ public final class RailLogic {
             BlockState state = railPath.state(forward, i);
 
             if (!state.getValue(POWERED) ||
-                    world.hasNeighborSignal(cursor) ||
+                    context.hasNeighborSignal(world, cursor) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
@@ -349,7 +350,7 @@ public final class RailLogic {
 
             setCursor(cursor, posKey);
             BlockState state = railPath.state(forward, i);
-            if (state.getValue(POWERED) || !(world.hasNeighborSignal(cursor) ||
+            if (state.getValue(POWERED) || !(context.hasNeighborSignal(world, cursor) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context))) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);
@@ -382,7 +383,7 @@ public final class RailLogic {
             setCursor(cursor, posKey);
             BlockState state = railPath.state(forward, i);
             if (!state.getValue(POWERED) ||
-                    world.hasNeighborSignal(cursor) ||
+                    context.hasNeighborSignal(world, cursor) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
                     RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)) {
                 checkedPos.put(posKey, CHECKED_BLOCKED);

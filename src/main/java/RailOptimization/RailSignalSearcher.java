@@ -44,7 +44,7 @@ final class RailSignalSearcher {
         BlockState blockState = world.getBlockState(context.scratchPos);
 
         if (checked == RailLogic.CHECKED_POWERED) {
-            return world.hasNeighborSignal(context.scratchPos) ||
+            return context.hasNeighborSignal(world, context.scratchPos) ||
                     findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, context);
         }
 
@@ -58,7 +58,7 @@ final class RailSignalSearcher {
             return false;
         }
 
-        boolean isPowered = world.hasNeighborSignal(context.scratchPos) ||
+        boolean isPowered = context.hasNeighborSignal(world, context.scratchPos) ||
                 findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, context);
 
         if (isPowered) {

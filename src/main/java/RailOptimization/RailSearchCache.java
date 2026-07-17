@@ -5,6 +5,7 @@ final class RailSearchCache {
     static final byte SEARCH = 1;
     static final byte SEARCH_FORWARD = 1 << 1;
     static final byte SEARCH_NORTH_SOUTH = 1 << 2;
+    static final byte DIRECT_SIGNAL = 1 << 3;
 
     private static final int MIN_CAPACITY = 8;
     private static final int MAX_CAPACITY = 256;
