@@ -143,7 +143,6 @@ public final class RailLogic {
         powerLane(self, world, pos, mainState, railShape, newUpdateContext());
     }
 
-    @SuppressWarnings("null")
     private static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape, RailUpdateContext context) {
         if (!RailSignalSearcher.supportsFastSearch(railShape)) {
@@ -167,7 +166,6 @@ public final class RailLogic {
         dePowerLane(self, world, pos, mainState, railShape, newUpdateContext());
     }
 
-    @SuppressWarnings("null")
     private static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape, RailUpdateContext context) {
         if (!RailSignalSearcher.supportsFastSearch(railShape)) {
