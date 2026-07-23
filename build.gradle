@@ -40,29 +40,27 @@ gradle.projectsEvaluated {
     }
 }
 
+def resourceExpansionProperties = [
+        "version"          : project.version.toString(),
+        "minecraft_version": project.minecraft_version.toString(),
+        "loader_version"   : project.loader_version.toString()
+]
+
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
-    inputs.property "loader_version", project.loader_version
+    inputs.properties resourceExpansionProperties
     filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
+        expand resourceExpansionProperties
     }
 }
 
 processGametestResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
-    inputs.property "loader_version", project.loader_version
+    inputs.properties resourceExpansionProperties
     filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
+        expand resourceExpansionProperties
     }
 }
 
