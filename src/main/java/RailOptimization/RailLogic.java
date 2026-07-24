@@ -316,7 +316,6 @@ public final class RailLogic {
         return count;
     }
 
-    @SuppressWarnings("null")
     private static int setStraightRailPositionsDePower(
             Level world, BlockPos pos, RailShape railShape, boolean forward, int count,
             RailUpdateContext context, RailChangeList changedRails) {
