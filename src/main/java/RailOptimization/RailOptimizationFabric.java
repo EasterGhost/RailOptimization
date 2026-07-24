@@ -1,11 +1,14 @@
 package RailOptimization;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
 public class RailOptimizationFabric implements ModInitializer {
+    @SuppressWarnings("null")
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
@@ -16,17 +19,29 @@ public class RailOptimizationFabric implements ModInitializer {
                                 .executes(context -> setEnabled(context.getSource(), true)))
                         .then(Commands.literal("off")
                                 .requires(source -> source.hasPermission(2))
-                                .executes(context -> setEnabled(context.getSource(), false)))));
+                                .executes(context -> setEnabled(context.getSource(), false)))
+                        .then(Commands.literal("powerLimit")
+                                .requires(source -> source.hasPermission(2))
+                                .then(Commands.argument("value", IntegerArgumentType.integer())
+                                        .executes(context -> setPowerLimit(
+                                                context.getSource(),
+                                                IntegerArgumentType.getInteger(context, "value")))))));
     }
 
-    private static int setEnabled(net.minecraft.commands.CommandSourceStack source, boolean enabled) {
+    private static int setEnabled(CommandSourceStack source, boolean enabled) {
         RailLogic.setOptimizationEnabled(enabled);
         return sendStatus(source);
     }
 
-    private static int sendStatus(net.minecraft.commands.CommandSourceStack source) {
+    private static int setPowerLimit(CommandSourceStack source, int powerLimit) {
+        RailLogic.setRailPowerLimit(powerLimit);
+        return sendStatus(source);
+    }
+
+    private static int sendStatus(CommandSourceStack source) {
         source.sendSuccess(() -> Component.literal(
                 "RailOptimization is " + (RailLogic.isOptimizationEnabled() ? "on" : "off")
+                        + "; powerLimit=" + RailLogic.getRailPowerLimit()
         ), false);
         return 1;
     }
