@@ -26,13 +26,13 @@ final class RailUpdateNotifier {
     }
 
     static void updateRails(boolean eastWest, Level world, BlockPos pos,
-            BlockState mainState, int firstDirectionCount, int secondDirectionCount) {
+            BlockState mainState, int firstDirectionCount, int secondDirectionCount, MutableBlockPos scratchPos) {
         Block block = mainState.getBlock();
         Direction[] directions = eastWest ? RailLogic.EAST_WEST_DIR : RailLogic.NORTH_SOUTH_DIR;
 
         if (firstDirectionCount == 0 && secondDirectionCount > 0) {
-            updateRailSection(world, pos, block, directions[1], 1, secondDirectionCount);
-            updateRailSection(world, pos, block, directions[0], 0, firstDirectionCount);
+            updateRailSection(world, pos, block, directions[1], 1, secondDirectionCount, scratchPos);
+            updateRailSection(world, pos, block, directions[0], 0, firstDirectionCount, scratchPos);
             return;
         }
 
@@ -43,20 +43,18 @@ final class RailUpdateNotifier {
                 continue;
             }
 
-            updateRailSection(world, pos, block, directions[i], i, countAmt);
+            updateRailSection(world, pos, block, directions[i], i, countAmt, scratchPos);
         }
     }
 
     private static void updateRailSection(Level world, BlockPos pos, Block block, Direction dir,
-            int directionIndex, int countAmt) {
+            int directionIndex, int countAmt, MutableBlockPos scratchPos) {
         final int baseX = pos.getX();
         final int baseY = pos.getY();
         final int baseZ = pos.getZ();
 
         final int stepX = dir.getStepX();
         final int stepZ = dir.getStepZ();
-
-        MutableBlockPos scratchPos = new MutableBlockPos();
 
         for (int c = countAmt; c >= directionIndex; c--) {
             int x = baseX + stepX * c;
