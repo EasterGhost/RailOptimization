@@ -104,6 +104,7 @@ final class RailSignalSearcher {
                 RailLogic.getRailPowerLimit(), scratchPos);
     }
 
+    @SuppressWarnings("null")
     static int countStraightRailsToDepower(
             PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape,
             boolean forward, RailUpdateContext context) {

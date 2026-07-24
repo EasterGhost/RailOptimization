@@ -195,6 +195,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
                 .thenSucceed();
     }
 
+    @SuppressWarnings("null")
     @GameTest(environment = "railoptimization-gametest:serial_61", maxTicks = 200, padding = 150)
     public void extendedRangeStraightRailUpdateCostIsMeasured(GameTestHelper helper) {
         int lineLength = EXTENDED_POWER_LIMIT * 2 + 1;
