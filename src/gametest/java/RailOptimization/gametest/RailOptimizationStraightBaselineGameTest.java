@@ -47,6 +47,40 @@ public class RailOptimizationStraightBaselineGameTest extends RailOptimizationGa
                 .thenSucceed();
     }
 
+    @GameTest(environment = "railoptimization-gametest:serial_60", maxTicks = 200, padding = 50)
+    public void removingSourcePreservesRailsReachedByDistantSource(GameTestHelper helper) {
+        BlockPos start = new BlockPos(1, RAIL_Y, 3);
+        int length = 20;
+        BlockPos firstSource = start.north();
+        BlockPos secondSource = start.relative(Direction.EAST, 10).north();
+
+        placeRailLinePair(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    placeSourcePair(helper, firstSource);
+                    placeSourcePair(helper, secondSource);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> assertMatchingRailLinePower(
+                        helper, mirrorCopy(start), start, Direction.EAST, length))
+                .thenExecute(() -> removeSourcePair(helper, firstSource))
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, length);
+                    assertRailLinePowered(helper, start, Direction.EAST, 2, false);
+                    assertRailLinePowered(helper, start.relative(Direction.EAST, 2), Direction.EAST, 17, true);
+                    assertRailLinePowered(helper, start.relative(Direction.EAST, 19), Direction.EAST, 1, false);
+                })
+                .thenExecute(() -> removeSourcePair(helper, secondSource))
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, length);
+                    assertRailLinePowered(helper, start, Direction.EAST, length, false);
+                })
+                .thenSucceed();
+    }
+
     @SuppressWarnings("null")
     private static void placeSourcePair(GameTestHelper helper, BlockPos source) {
         helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);

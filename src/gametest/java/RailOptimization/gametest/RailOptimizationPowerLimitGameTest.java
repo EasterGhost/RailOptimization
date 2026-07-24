@@ -10,8 +10,30 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationPowerLimitGameTest extends RailOptimizationGameTestSupport {
+    @GameTest(environment = "railoptimization-gametest:serial_62", maxTicks = 1)
+    public void powerLimitCommandClampsToSupportedRange(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        var source = server.createCommandSourceStack();
+
+        try {
+            server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 999");
+            helper.assertTrue(RailLogicTestAccess.currentPowerLimit() == 64,
+                    Component.literal("powerLimit command did not clamp to 64"));
+
+            server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 0");
+            helper.assertTrue(RailLogicTestAccess.currentPowerLimit() == 1,
+                    Component.literal("powerLimit command did not clamp to 1"));
+        } finally {
+            server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 8");
+        }
+
+        helper.succeed();
+    }
+
     @GameTest(environment = "railoptimization-gametest:serial_57", maxTicks = 1)
     public void powerLimitIsClampedToSafeRange(GameTestHelper helper) {
+        helper.assertTrue(RailLogicTestAccess.maximumPowerLimit() == 64,
+                Component.literal("maximum power limit must remain 64"));
         helper.assertTrue(RailLogicTestAccess.clampPowerLimit(Integer.MIN_VALUE) == 1,
                 Component.literal("power limit below one was not clamped"));
         helper.assertTrue(

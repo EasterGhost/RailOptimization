@@ -24,6 +24,7 @@ This fork maintains the Fabric version with bug fixes, cross-version builds, and
 - Optimized propagation for straight rails and ascending/descending rail chains.
 - Vanilla-compatible fallback boundaries for unsupported rail shapes.
 - Runtime toggle command for debugging or compatibility checks.
+- Configurable powered and activator rail signal range.
 - GameTest coverage for straight rails, slopes, observer updates, BUD-sensitive behavior, and vanilla/optimized comparisons.
 
 ## Compatibility
@@ -44,9 +45,10 @@ Fabric Loader and Fabric API are required.
 
 | Command | Permission | Description |
 | --- | --- | --- |
-| `/railoptimization` | everyone | Shows whether the optimization is enabled |
+| `/railoptimization` | everyone | Shows the optimization state and current power limit |
 | `/railoptimization on` | admin | Enables the optimized update path |
 | `/railoptimization off` | admin | Disables the optimization and uses vanilla behavior |
+| `/railoptimization powerLimit <value>` | admin | Sets the runtime rail power limit from 1 to 64 (default: 8) |
 
 ## Build
 

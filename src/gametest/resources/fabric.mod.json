@@ -19,6 +19,7 @@
       "RailOptimization.gametest.RailOptimizationUpdateOrderGameTest",
       "RailOptimization.gametest.RailOptimizationPowerLimitGameTest",
       "RailOptimization.gametest.RailOptimizationStraightBaselineGameTest",
+      "RailOptimization.gametest.RailOptimizationPerformanceGameTest",
       "RailOptimization.gametest.RailOptimizationActivatorRailGameTest",
       "RailOptimization.gametest.RailOptimizationTransitionGameTest"
     ]

@@ -25,4 +25,8 @@ public final class RailLogicTestAccess {
     public static int maximumPowerLimit() {
         return RailLogic.MAX_RAIL_POWER_LIMIT;
     }
+
+    public static int currentPowerLimit() {
+        return RailLogic.getRailPowerLimit();
+    }
 }
