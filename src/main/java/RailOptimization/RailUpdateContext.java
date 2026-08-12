@@ -21,7 +21,7 @@ final class RailUpdateContext {
             return cached == RailLogic.CHECKED_POWERED;
         }
 
-        boolean powered = level.hasNeighborSignal(pos);
+        boolean powered = RailSignalSearcher.hasNeighborSignalFast(level, pos, scratchPos);
         searchCache.put(position, RailSearchCache.DIRECT_SIGNAL,
                 powered ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
         return powered;

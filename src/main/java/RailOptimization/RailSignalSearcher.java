@@ -2,10 +2,12 @@ package RailOptimization;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 final class RailSignalSearcher {
     static final int COMPLEX_PATH = -1;
@@ -14,6 +16,10 @@ final class RailSignalSearcher {
     private static final byte AXIS_EAST_WEST = 1;
     private static final byte AXIS_NORTH_SOUTH = 2;
     private static final byte[] RAIL_AXIS = new byte[RailShape.values().length];
+    private static final Direction[] SIGNAL_DIRECTIONS = new Direction[] {
+            Direction.DOWN, Direction.UP, Direction.NORTH,
+            Direction.SOUTH, Direction.WEST, Direction.EAST
+    };
 
     static {
         RAIL_AXIS[RailShape.EAST_WEST.ordinal()] = AXIS_EAST_WEST;
@@ -29,6 +35,55 @@ final class RailSignalSearcher {
 
     static boolean supportsFastSearch(RailShape railShape) {
         return RAIL_AXIS[railShape.ordinal()] != AXIS_NONE;
+    }
+
+    static boolean hasNeighborSignalFast(
+            Level level, BlockPos pos, MutableBlockPos scratchPos) {
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
+        int chunkX = x >> 4;
+        int chunkZ = z >> 4;
+        LevelChunk chunk = level.getChunk(chunkX, chunkZ);
+
+        for (Direction direction : SIGNAL_DIRECTIONS) {
+            int neighborX = x + direction.getStepX();
+            int neighborY = y + direction.getStepY();
+            int neighborZ = z + direction.getStepZ();
+            scratchPos.set(neighborX, neighborY, neighborZ);
+            BlockState neighborState = getBlockState(
+                    level, chunk, chunkX, chunkZ, scratchPos);
+
+            if (neighborState.getSignal(level, scratchPos, direction) > 0) {
+                return true;
+            }
+            if (!neighborState.isRedstoneConductor(level, scratchPos)) {
+                continue;
+            }
+
+            for (Direction directDirection : SIGNAL_DIRECTIONS) {
+                scratchPos.set(
+                        neighborX + directDirection.getStepX(),
+                        neighborY + directDirection.getStepY(),
+                        neighborZ + directDirection.getStepZ());
+                BlockState directState = getBlockState(
+                        level, chunk, chunkX, chunkZ, scratchPos);
+                if (directState.getDirectSignal(level, scratchPos, directDirection) > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static BlockState getBlockState(
+            Level level, LevelChunk chunk, int chunkX, int chunkZ, BlockPos pos) {
+        if ((pos.getX() >> 4) == chunkX
+                && (pos.getZ() >> 4) == chunkZ
+                && level.isInValidBounds(pos)) {
+            return chunk.getBlockState(pos);
+        }
+        return level.getBlockState(pos);
     }
 
     private static int findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z,
@@ -169,7 +224,7 @@ final class RailSignalSearcher {
             return false;
         }
 
-        return level.hasNeighborSignal(scratchPos)
+        return hasNeighborSignalFast(level, scratchPos, scratchPos)
                 || findPoweredRailSignalFromStateWithoutCache(
                         self, level, x, y, z, blockState, forward, distance + 1, powerLimit, scratchPos);
     }

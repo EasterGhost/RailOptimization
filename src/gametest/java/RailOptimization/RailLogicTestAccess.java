@@ -1,6 +1,8 @@
 package RailOptimization;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraft.world.level.Level;
 
 public final class RailLogicTestAccess {
     private RailLogicTestAccess() {
@@ -28,5 +30,10 @@ public final class RailLogicTestAccess {
 
     public static int currentPowerLimit() {
         return RailLogic.getRailPowerLimit();
+    }
+
+    public static boolean hasNeighborSignalFast(Level level, BlockPos pos) {
+        return RailSignalSearcher.hasNeighborSignalFast(
+                level, pos, new MutableBlockPos());
     }
 }

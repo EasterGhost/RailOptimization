@@ -122,7 +122,8 @@ public final class RailLogic {
     private static void customUpdateStateWithCurrentPowerLimit(
             PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         boolean currentlyPowered = state.getValue(POWERED);
-        boolean directlyPowered = level.hasNeighborSignal(pos);
+        MutableBlockPos scratchPos = new MutableBlockPos();
+        boolean directlyPowered = RailSignalSearcher.hasNeighborSignalFast(level, pos, scratchPos);
         if (currentlyPowered && directlyPowered) {
             return;
         }
@@ -130,7 +131,6 @@ public final class RailLogic {
         RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
         boolean shouldBePowered = directlyPowered;
         if (!shouldBePowered) {
-            MutableBlockPos scratchPos = new MutableBlockPos();
             shouldBePowered = RailSignalSearcher.findPoweredRailSignalWithoutCache(
                     self, level, pos, state, true, 0, scratchPos)
                     || RailSignalSearcher.findPoweredRailSignalWithoutCache(
