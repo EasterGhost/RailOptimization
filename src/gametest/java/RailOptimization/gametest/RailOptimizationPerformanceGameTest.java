@@ -2,6 +2,7 @@ package RailOptimization.gametest;
 
 import RailOptimization.RailLogicTestAccess;
 import com.mojang.logging.LogUtils;
+import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.LongSupplier;
@@ -228,11 +229,61 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
                     long nanosPerOperation = stats.medianNanos() / EXTENDED_TOGGLES_PER_ROUND;
                     LOGGER.info(
                             "RailOptimization benchmark [powerLimit={} straight state changes]: "
-                                    + "optimized={} ns/op (MAD={}%), {} ns/changed-rail",
+                                    + "optimized={} ns/op (MAD={}%), {} ns/changed-rail, {} allocated bytes/op",
                             EXTENDED_POWER_LIMIT,
                             nanosPerOperation,
                             stats.relativeMedianAbsoluteDeviation(),
-                            nanosPerOperation / lineLength
+                            nanosPerOperation / lineLength,
+                            allocatedBytesPerOperation(
+                                    helper, lever, EXTENDED_TOGGLES_PER_ROUND)
+                    );
+
+                    assertLeverOff(helper, lever);
+                    assertRailsPowered(helper, rails, false);
+                })
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_65", maxTicks = 200, padding = 150)
+    public void extendedRangeMixedSlopeUpdateCostIsMeasured(GameTestHelper helper) {
+        int lineLength = EXTENDED_POWER_LIMIT * 2 + 1;
+        BlockPos[] rails = extendedMixedSlopeRails(lineLength);
+        RailShape[] shapes = extendedMixedSlopeShapes(lineLength);
+        BlockPos center = rails[EXTENDED_POWER_LIMIT];
+        BlockPos lever = center.north();
+
+        placeRailPath(helper, rails, shapes);
+        for (BlockPos rail : rails) {
+            RailLogicTestAccess.forcePowerLimitAt(helper.absolutePos(rail), EXTENDED_POWER_LIMIT);
+        }
+        placeLever(helper, lever);
+
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
+                .thenIdle(4)
+                .thenExecute(() -> runLeverToggles(
+                        helper, lever, STATE_CHANGE_STABILIZATION_OPERATIONS))
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    long[] samples = new long[MEASUREMENT_ROUNDS];
+                    for (int round = 0; round < MEASUREMENT_ROUNDS; round++) {
+                        samples[round] = measureLeverToggles(
+                                helper, lever, EXTENDED_TOGGLES_PER_ROUND);
+                    }
+
+                    SampleStats stats = sampleStats(samples);
+                    long nanosPerOperation = stats.medianNanos() / EXTENDED_TOGGLES_PER_ROUND;
+                    LOGGER.info(
+                            "RailOptimization benchmark [powerLimit={} mixed-slope state changes]: "
+                                    + "optimized={} ns/op (MAD={}%), {} ns/changed-rail, {} allocated bytes/op",
+                            EXTENDED_POWER_LIMIT,
+                            nanosPerOperation,
+                            stats.relativeMedianAbsoluteDeviation(),
+                            nanosPerOperation / lineLength,
+                            allocatedBytesPerOperation(
+                                    helper, lever, EXTENDED_TOGGLES_PER_ROUND)
                     );
 
                     assertLeverOff(helper, lever);
@@ -481,6 +532,49 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
                 RailShape.EAST_WEST,
                 RailShape.EAST_WEST
         };
+    }
+
+    private static String allocatedBytesPerOperation(
+            GameTestHelper helper, BlockPos lever, int operations) {
+        if (!(ManagementFactory.getThreadMXBean() instanceof com.sun.management.ThreadMXBean threadBean)
+                || !threadBean.isThreadAllocatedMemorySupported()) {
+            return "unavailable";
+        }
+        if (!threadBean.isThreadAllocatedMemoryEnabled()) {
+            threadBean.setThreadAllocatedMemoryEnabled(true);
+        }
+        long before = threadBean.getCurrentThreadAllocatedBytes();
+        runLeverToggles(helper, lever, operations);
+        long allocatedBytes = threadBean.getCurrentThreadAllocatedBytes() - before;
+        return Long.toString(allocatedBytes / operations);
+    }
+
+    private static BlockPos[] extendedMixedSlopeRails(int length) {
+        int[] heightOffsets = new int[] { 3, 2, 1, 0, 0, 1, 2, 3 };
+        BlockPos[] rails = new BlockPos[length];
+        for (int index = 0; index < length; index++) {
+            rails[index] = new BlockPos(
+                    2 + index, RAIL_Y + heightOffsets[index & 7], 3);
+        }
+        return rails;
+    }
+
+    private static RailShape[] extendedMixedSlopeShapes(int length) {
+        RailShape[] shapeCycle = new RailShape[] {
+                RailShape.EAST_WEST,
+                RailShape.ASCENDING_WEST,
+                RailShape.ASCENDING_WEST,
+                RailShape.ASCENDING_WEST,
+                RailShape.ASCENDING_EAST,
+                RailShape.ASCENDING_EAST,
+                RailShape.ASCENDING_EAST,
+                RailShape.EAST_WEST
+        };
+        RailShape[] shapes = new RailShape[length];
+        for (int index = 0; index < length; index++) {
+            shapes[index] = shapeCycle[index & 7];
+        }
+        return shapes;
     }
 
     private record BenchmarkResult(SampleStats vanilla, SampleStats optimized) {

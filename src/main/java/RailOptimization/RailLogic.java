@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.RailShape;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 public final class RailLogic {
     private static final BooleanProperty POWERED = PoweredRailBlock.POWERED;
@@ -123,7 +124,11 @@ public final class RailLogic {
             PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         boolean currentlyPowered = state.getValue(POWERED);
         MutableBlockPos scratchPos = new MutableBlockPos();
-        boolean directlyPowered = RailSignalSearcher.hasNeighborSignalFast(level, pos, scratchPos);
+        int chunkX = pos.getX() >> 4;
+        int chunkZ = pos.getZ() >> 4;
+        LevelChunk chunk = level.getChunk(chunkX, chunkZ);
+        boolean directlyPowered = RailSignalSearcher.hasNeighborSignalFast(
+                level, pos, scratchPos, chunk, chunkX, chunkZ);
         if (currentlyPowered && directlyPowered) {
             return;
         }
@@ -132,9 +137,9 @@ public final class RailLogic {
         boolean shouldBePowered = directlyPowered;
         if (!shouldBePowered) {
             shouldBePowered = RailSignalSearcher.findPoweredRailSignalWithoutCache(
-                    self, level, pos, state, true, 0, scratchPos)
+                    self, level, pos, state, true, 0, scratchPos, chunk, chunkX, chunkZ)
                     || RailSignalSearcher.findPoweredRailSignalWithoutCache(
-                            self, level, pos, state, false, 0, scratchPos);
+                            self, level, pos, state, false, 0, scratchPos, chunk, chunkX, chunkZ);
         }
 
         if (shouldBePowered != currentlyPowered) {
@@ -187,8 +192,10 @@ public final class RailLogic {
         RailChangeList changedRails = new RailChangeList(railPowerLimit * 2 + 1);
         setRailPowerState(world, pos, mainState, false, changedRails);
 
-        int firstDirectionCount = setRailPositionsDePower(self, world, pos, mainState, true, context, changedRails);
-        int secondDirectionCount = setRailPositionsDePower(self, world, pos, mainState, false, context, changedRails);
+        int firstDirectionCount = setRailPositionsDePower(
+                self, world, pos, mainState, true, context, changedRails);
+        int secondDirectionCount = setRailPositionsDePower(
+                self, world, pos, mainState, false, context, changedRails);
 
         updateChangedRails(world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount,
                 changedRails, context);
@@ -209,7 +216,6 @@ public final class RailLogic {
         int count = 0;
         RailSearchCache checkedPos = context.searchCache;
         MutableBlockPos cursor = context.railCursor;
-        MutableBlockPos scratchPos = context.scratchPos;
         cursor.set(pos.getX(), pos.getY(), pos.getZ());
         BlockState previousState = sourceState;
         RailShape sourceShape = sourceState.getValue(PoweredRailBlock.SHAPE);
@@ -221,8 +227,8 @@ public final class RailLogic {
         for (int i = 1; i <= railPowerLimit; ++i) {
             long previousPos = cursor.asLong();
             int previousY = cursor.getY();
-            BlockState state = RailSignalSearcher.findNextRailState(self, world, cursor, previousState, forward,
-                    scratchPos);
+            BlockState state = RailSignalSearcher.findNextRailState(
+                    self, world, cursor, previousState, forward, context);
             if (state == null) {
                 break;
             }
@@ -235,7 +241,7 @@ public final class RailLogic {
             }
             boolean continuesDirectPath = directPath && (continuesDirectFlatPath ||
                     RailSignalSearcher.connectsBackTo(
-                            self, world, cursor, state, previousPos, previousState, scratchPos));
+                            self, world, cursor, state, previousPos, previousState, context));
             if (!continuesDirectPath) {
                 directPath = false;
             }
@@ -281,13 +287,12 @@ public final class RailLogic {
         int count = 0;
         RailSearchCache checkedPos = context.searchCache;
         MutableBlockPos cursor = context.railCursor;
-        MutableBlockPos scratchPos = context.scratchPos;
         cursor.set(pos.getX(), pos.getY(), pos.getZ());
         BlockState previousState = sourceState;
 
         for (int i = 1; i <= railPowerLimit; ++i) {
-            BlockState state = RailSignalSearcher.findNextRailState(self, world, cursor, previousState, forward,
-                    scratchPos);
+            BlockState state = RailSignalSearcher.findNextRailState(
+                    self, world, cursor, previousState, forward, context);
             if (state == null) {
                 break;
             }
@@ -330,7 +335,7 @@ public final class RailLogic {
             x += stepX;
             z += stepZ;
             cursor.set(x, y, z);
-            BlockState state = world.getBlockState(cursor);
+            BlockState state = context.getBlockState(world, cursor);
             setRailPowerState(world, cursor, state, false, changedRails);
             context.searchCache.put(cursor.asLong(), CHECKED_BLOCKED);
         }

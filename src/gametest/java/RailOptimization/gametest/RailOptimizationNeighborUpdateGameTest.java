@@ -9,8 +9,10 @@ import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.PoweredRailBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.properties.AttachFace;
+import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGameTestSupport {
@@ -152,6 +154,90 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
                     helper.assertItemEntityPresent(Blocks.POWERED_RAIL.asItem(), rail, 1.5);
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(environment = "railoptimization-gametest:serial_66", maxTicks = 140, padding = 40)
+    public void unsupportedRailDropsWhenPoweringAfterTrapdoorOpens(GameTestHelper helper) {
+        BlockPos rail = new BlockPos(3, RAIL_Y, 3);
+        BlockPos source = rail.north();
+        placeTrapdoorSupportedRailPair(helper, rail);
+
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> assertTrapdoorRailPairPresent(helper, rail, false, false))
+                .thenExecute(() -> openTrapdoorPair(helper, rail.below()))
+                .thenIdle(2)
+                .thenExecute(() -> assertTrapdoorRailPairPresent(helper, rail, false, true))
+                .thenExecute(() -> placeSourcePair(helper, source))
+                .thenIdle(4)
+                .thenExecute(() -> assertTrapdoorRailPairDropped(helper, rail))
+                .thenSucceed();
+    }
+
+    @GameTest(environment = "railoptimization-gametest:serial_67", maxTicks = 160, padding = 40)
+    public void unsupportedRailDropsWhenDepoweringAfterTrapdoorOpens(GameTestHelper helper) {
+        BlockPos rail = new BlockPos(3, RAIL_Y, 3);
+        BlockPos source = rail.north();
+        placeTrapdoorSupportedRailPair(helper, rail);
+
+        helper.startSequence()
+                .thenExecute(() -> placeSourcePair(helper, source))
+                .thenIdle(4)
+                .thenExecute(() -> assertTrapdoorRailPairPresent(helper, rail, true, false))
+                .thenExecute(() -> openTrapdoorPair(helper, rail.below()))
+                .thenIdle(2)
+                .thenExecute(() -> assertTrapdoorRailPairPresent(helper, rail, true, true))
+                .thenExecute(() -> removeSourcePair(helper, source))
+                .thenIdle(4)
+                .thenExecute(() -> assertTrapdoorRailPairDropped(helper, rail))
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    private static void placeTrapdoorSupportedRailPair(GameTestHelper helper, BlockPos rail) {
+        var trapdoorState = Blocks.OAK_TRAPDOOR.defaultBlockState()
+                .setValue(TrapDoorBlock.OPEN, false)
+                .setValue(TrapDoorBlock.HALF, Half.TOP)
+                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH);
+        helper.setBlock(rail.below(), trapdoorState);
+        helper.setBlock(mirrorCopy(rail).below(), trapdoorState);
+        markVanillaForMirrorRail(helper, mirrorCopy(rail));
+        helper.setBlock(rail, Blocks.POWERED_RAIL.defaultBlockState()
+                .setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
+        helper.setBlock(mirrorCopy(rail), Blocks.POWERED_RAIL.defaultBlockState()
+                .setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
+    }
+
+    private static void openTrapdoorPair(GameTestHelper helper, BlockPos trapdoor) {
+        helper.useBlock(trapdoor);
+        helper.useBlock(mirrorCopy(trapdoor));
+    }
+
+    @SuppressWarnings("null")
+    private static void assertTrapdoorRailPairPresent(
+            GameTestHelper helper, BlockPos rail, boolean powered, boolean trapdoorOpen) {
+        helper.assertBlockProperty(rail.below(), TrapDoorBlock.OPEN, trapdoorOpen);
+        helper.assertBlockProperty(mirrorCopy(rail).below(), TrapDoorBlock.OPEN, trapdoorOpen);
+        helper.assertBlockProperty(rail, PoweredRailBlock.POWERED, powered);
+        helper.assertBlockProperty(mirrorCopy(rail), PoweredRailBlock.POWERED, powered);
+    }
+
+    private static void assertTrapdoorRailPairDropped(GameTestHelper helper, BlockPos rail) {
+        helper.assertBlockNotPresent(Blocks.POWERED_RAIL, rail);
+        helper.assertBlockNotPresent(Blocks.POWERED_RAIL, mirrorCopy(rail));
+        helper.assertItemEntityPresent(Blocks.POWERED_RAIL.asItem(), rail, 1.5);
+        helper.assertItemEntityPresent(Blocks.POWERED_RAIL.asItem(), mirrorCopy(rail), 1.5);
+    }
+
+    @SuppressWarnings("null")
+    private static void placeSourcePair(GameTestHelper helper, BlockPos source) {
+        helper.placeBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK, Direction.UP);
+        helper.placeBlock(source, Blocks.REDSTONE_BLOCK, Direction.UP);
+    }
+
+    private static void removeSourcePair(GameTestHelper helper, BlockPos source) {
+        helper.destroyBlock(mirrorCopy(source));
+        helper.destroyBlock(source);
     }
 
     private static void assertEndpointCascadeCountsMatch(GameTestHelper helper, BlockPos endpoint,

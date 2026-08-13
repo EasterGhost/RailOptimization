@@ -3,12 +3,17 @@ package RailOptimization;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 final class RailUpdateContext {
     final RailSearchCache searchCache;
     final MutableBlockPos railCursor = new MutableBlockPos();
     final MutableBlockPos scratchPos = new MutableBlockPos();
     private boolean cachePoweredSearchResults = true;
+    private LevelChunk chunk;
+    private int chunkX;
+    private int chunkZ;
 
     RailUpdateContext(int railPowerLimit) {
         searchCache = new RailSearchCache(railPowerLimit);
@@ -21,10 +26,32 @@ final class RailUpdateContext {
             return cached == RailLogic.CHECKED_POWERED;
         }
 
-        boolean powered = RailSignalSearcher.hasNeighborSignalFast(level, pos, scratchPos);
+        int posChunkX = pos.getX() >> 4;
+        int posChunkZ = pos.getZ() >> 4;
+        boolean powered = RailSignalSearcher.hasNeighborSignalFast(
+                level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
         searchCache.put(position, RailSearchCache.DIRECT_SIGNAL,
                 powered ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
         return powered;
+    }
+
+    BlockState getBlockState(Level level, BlockPos pos) {
+        if (!level.isInValidBounds(pos)) {
+            return level.getBlockState(pos);
+        }
+
+        return getChunk(level, pos).getBlockState(pos);
+    }
+
+    private LevelChunk getChunk(Level level, BlockPos pos) {
+        int nextChunkX = pos.getX() >> 4;
+        int nextChunkZ = pos.getZ() >> 4;
+        if (chunk == null || nextChunkX != chunkX || nextChunkZ != chunkZ) {
+            chunk = level.getChunk(nextChunkX, nextChunkZ);
+            chunkX = nextChunkX;
+            chunkZ = nextChunkZ;
+        }
+        return chunk;
     }
 
     int getPoweredSearchCost(long position, byte flags) {
