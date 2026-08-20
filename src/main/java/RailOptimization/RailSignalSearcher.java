@@ -207,7 +207,7 @@ final class RailSignalSearcher {
 
     static int countStraightRailsToDepower(
             PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape,
-            boolean forward, RailUpdateContext context) {
+            boolean forward, RailUpdateContext context, BlockState[] railStates) {
         if (railShape != RailShape.EAST_WEST && railShape != RailShape.NORTH_SOUTH) {
             return COMPLEX_PATH;
         }
@@ -243,6 +243,9 @@ final class RailSignalSearcher {
                 if (context.hasNeighborSignal(level, context.scratchPos)) {
                     // Rail i reaches source j when j - i <= powerLimit.
                     return Math.max(0, Math.min(powerLimit, index - powerLimit - 1));
+                }
+                if (index - 1 < railStates.length) {
+                    railStates[index - 1] = state;
                 }
                 poweredLength = index;
                 continue;

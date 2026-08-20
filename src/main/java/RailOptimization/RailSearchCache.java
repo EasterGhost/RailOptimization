@@ -81,6 +81,11 @@ final class RailSearchCache {
         }
     }
 
+    void clear() {
+        Arrays.fill(flags, (byte) -1);
+        size = 0;
+    }
+
     private int find(long position, byte entryFlags) {
         int index = (int) ((position * 0x9E3779B97F4A7C15L + entryFlags) & mask);
         int indexShift = ((int) (position >>> 32) & mask) | 1;

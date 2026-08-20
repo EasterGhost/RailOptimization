@@ -10,13 +10,23 @@ final class RailUpdateContext {
     final RailSearchCache searchCache;
     final MutableBlockPos railCursor = new MutableBlockPos();
     final MutableBlockPos scratchPos = new MutableBlockPos();
+    final BlockState[] straightRailStates;
+    final int railPowerLimit;
     private boolean cachePoweredSearchResults = true;
     private LevelChunk chunk;
     private int chunkX;
     private int chunkZ;
 
     RailUpdateContext(int railPowerLimit) {
+        this.railPowerLimit = railPowerLimit;
         searchCache = new RailSearchCache(railPowerLimit);
+        straightRailStates = new BlockState[railPowerLimit];
+    }
+
+    void reset() {
+        searchCache.clear();
+        cachePoweredSearchResults = true;
+        chunk = null;
     }
 
     boolean hasNeighborSignal(Level level, BlockPos pos) {

@@ -30,6 +30,14 @@ public final class RailLogic {
     private static boolean useTestPositionModes;
     private static final Long2IntOpenHashMap testPositionModes = new Long2IntOpenHashMap();
 
+    private static final class ContextPool {
+        RailUpdateContext context;
+        RailChangeList changeList;
+    }
+
+    private static final ThreadLocal<Integer> WALK_DEPTH = ThreadLocal.withInitial(() -> 0);
+    private static final ThreadLocal<ContextPool> CONTEXT_POOL = ThreadLocal.withInitial(ContextPool::new);
+
     static {
         RAIL_ASCENDING[RailShape.ASCENDING_EAST.ordinal()] = true;
         RAIL_ASCENDING[RailShape.ASCENDING_WEST.ordinal()] = true;
@@ -45,7 +53,37 @@ public final class RailLogic {
     }
 
     private static RailUpdateContext newUpdateContext() {
-        return new RailUpdateContext(railPowerLimit);
+        if (WALK_DEPTH.get() > 0) {
+            return new RailUpdateContext(railPowerLimit);
+        }
+
+        WALK_DEPTH.set(1);
+        ContextPool pool = CONTEXT_POOL.get();
+        RailUpdateContext context = pool.context;
+        if (context == null || context.railPowerLimit != railPowerLimit) {
+            context = new RailUpdateContext(railPowerLimit);
+            pool.context = context;
+            pool.changeList = new RailChangeList(railPowerLimit * 2 + 1);
+        } else {
+            context.reset();
+            pool.changeList.reset();
+        }
+        return context;
+    }
+
+    private static void releaseUpdateContext(RailUpdateContext context) {
+        ContextPool pool = CONTEXT_POOL.get();
+        if (context == pool.context) {
+            WALK_DEPTH.set(0);
+        }
+    }
+
+    private static RailChangeList newChangeList(RailUpdateContext context) {
+        ContextPool pool = CONTEXT_POOL.get();
+        if (context == pool.context) {
+            return pool.changeList;
+        }
+        return new RailChangeList(railPowerLimit * 2 + 1);
     }
 
     public static void setRailPowerLimit(int powerLimit) {
@@ -128,32 +166,41 @@ public final class RailLogic {
             PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         boolean currentlyPowered = state.getValue(POWERED);
         RailUpdateContext context = newUpdateContext();
-        boolean directlyPowered = context.hasNeighborSignal(level, pos);
-        if (currentlyPowered && directlyPowered) {
-            return;
-        }
-
-        RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
-        boolean shouldBePowered = directlyPowered;
-        if (!shouldBePowered) {
-            shouldBePowered = RailSignalSearcher.findPoweredRailSignalFaster(
-                    self, level, pos, state, true, 0, context)
-                    || RailSignalSearcher.findPoweredRailSignalFaster(
-                            self, level, pos, state, false, 0, context);
-        }
-
-        if (shouldBePowered != currentlyPowered) {
-            if (shouldBePowered) {
-                powerLane(self, level, pos, state, railShape, context, directlyPowered);
-            } else {
-                dePowerLane(self, level, pos, state, railShape, context);
+        try {
+            boolean directlyPowered = context.hasNeighborSignal(level, pos);
+            if (currentlyPowered && directlyPowered) {
+                return;
             }
+
+            RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
+            boolean shouldBePowered = directlyPowered;
+            if (!shouldBePowered) {
+                shouldBePowered = RailSignalSearcher.findPoweredRailSignalFaster(
+                        self, level, pos, state, true, 0, context)
+                        || RailSignalSearcher.findPoweredRailSignalFaster(
+                                self, level, pos, state, false, 0, context);
+            }
+
+            if (shouldBePowered != currentlyPowered) {
+                if (shouldBePowered) {
+                    powerLane(self, level, pos, state, railShape, context, directlyPowered);
+                } else {
+                    dePowerLane(self, level, pos, state, railShape, context);
+                }
+            }
+        } finally {
+            releaseUpdateContext(context);
         }
     }
 
     public static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape) {
-        powerLane(self, world, pos, mainState, railShape, newUpdateContext(), false);
+        RailUpdateContext context = newUpdateContext();
+        try {
+            powerLane(self, world, pos, mainState, railShape, context, false);
+        } finally {
+            releaseUpdateContext(context);
+        }
     }
 
     private static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
@@ -165,7 +212,7 @@ public final class RailLogic {
         RailUpdateMemo.beginWalk();
         context.beginPowering();
         RailSearchCache checkedPos = context.searchCache;
-        RailChangeList changedRails = new RailChangeList(railPowerLimit * 2 + 1);
+        RailChangeList changedRails = newChangeList(context);
         setRailPowerState(world, pos, mainState, true, changedRails);
         checkedPos.put(pos.asLong(), CHECKED_POWERED);
         int firstDirectionCount = setRailPositionsPower(
@@ -179,7 +226,12 @@ public final class RailLogic {
 
     public static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
             BlockState mainState, RailShape railShape) {
-        dePowerLane(self, world, pos, mainState, railShape, newUpdateContext());
+        RailUpdateContext context = newUpdateContext();
+        try {
+            dePowerLane(self, world, pos, mainState, railShape, context);
+        } finally {
+            releaseUpdateContext(context);
+        }
     }
 
     private static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
@@ -190,7 +242,7 @@ public final class RailLogic {
 
         RailUpdateMemo.beginWalk();
         context.beginDepowering();
-        RailChangeList changedRails = new RailChangeList(railPowerLimit * 2 + 1);
+        RailChangeList changedRails = newChangeList(context);
         setRailPowerState(world, pos, mainState, false, changedRails);
 
         int firstDirectionCount = setRailPositionsDePower(
@@ -279,7 +331,7 @@ public final class RailLogic {
             BlockState sourceState, boolean forward, RailUpdateContext context, RailChangeList changedRails) {
         RailShape sourceShape = sourceState.getValue(PoweredRailBlock.SHAPE);
         int straightCount = RailSignalSearcher.countStraightRailsToDepower(
-                self, world, pos, sourceShape, forward, context);
+                self, world, pos, sourceShape, forward, context, context.straightRailStates);
         if (straightCount != RailSignalSearcher.COMPLEX_PATH) {
             return setStraightRailPositionsDePower(
                     world, pos, sourceShape, forward, straightCount, context, changedRails);
@@ -336,8 +388,7 @@ public final class RailLogic {
             x += stepX;
             z += stepZ;
             cursor.set(x, y, z);
-            BlockState state = context.getBlockState(world, cursor);
-            setRailPowerState(world, cursor, state, false, changedRails);
+            setRailPowerState(world, cursor, context.straightRailStates[index], false, changedRails);
             context.searchCache.put(cursor.asLong(), CHECKED_BLOCKED);
         }
         return count;
@@ -400,6 +451,11 @@ public final class RailLogic {
             ascending[size] = isAscending;
             hasSlope |= isAscending;
             size++;
+        }
+
+        private void reset() {
+            size = 0;
+            hasSlope = false;
         }
 
         private int size() {
