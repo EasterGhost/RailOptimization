@@ -5,3 +5,5 @@ build/
 .gradle/
 docs/
 run/
+CLAUDE.md
+*.ps1
