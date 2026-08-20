@@ -208,6 +208,7 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
                 .setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
     }
 
+    @SuppressWarnings("null")
     private static void openTrapdoorPair(GameTestHelper helper, BlockPos trapdoor) {
         helper.useBlock(trapdoor);
         helper.useBlock(mirrorCopy(trapdoor));
@@ -222,6 +223,7 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
         helper.assertBlockProperty(mirrorCopy(rail), PoweredRailBlock.POWERED, powered);
     }
 
+    @SuppressWarnings("null")
     private static void assertTrapdoorRailPairDropped(GameTestHelper helper, BlockPos rail) {
         helper.assertBlockNotPresent(Blocks.POWERED_RAIL, rail);
         helper.assertBlockNotPresent(Blocks.POWERED_RAIL, mirrorCopy(rail));
@@ -235,6 +237,7 @@ public class RailOptimizationNeighborUpdateGameTest extends RailOptimizationGame
         helper.placeBlock(source, Blocks.REDSTONE_BLOCK, Direction.UP);
     }
 
+    @SuppressWarnings("null")
     private static void removeSourcePair(GameTestHelper helper, BlockPos source) {
         helper.destroyBlock(mirrorCopy(source));
         helper.destroyBlock(source);

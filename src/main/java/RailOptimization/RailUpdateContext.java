@@ -35,6 +35,7 @@ final class RailUpdateContext {
         return powered;
     }
 
+    @SuppressWarnings("null")
     BlockState getBlockState(Level level, BlockPos pos) {
         if (!level.isInValidBounds(pos)) {
             return level.getBlockState(pos);

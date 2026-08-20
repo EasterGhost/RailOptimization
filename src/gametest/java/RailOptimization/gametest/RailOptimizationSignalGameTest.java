@@ -28,6 +28,7 @@ public class RailOptimizationSignalGameTest extends RailOptimizationGameTestSupp
         runIndirectPowerTest(helper, rail, rail.west(), RailShape.NORTH_SOUTH);
     }
 
+    @SuppressWarnings("null")
     private static void runIndirectPowerTest(
             GameTestHelper helper, BlockPos rail, BlockPos conductor, RailShape shape) {
         BlockPos lever = conductor.above();
@@ -48,6 +49,7 @@ public class RailOptimizationSignalGameTest extends RailOptimizationGameTestSupp
                 .thenSucceed();
     }
 
+    @SuppressWarnings("null")
     private static void assertPoweredStateMatches(
             GameTestHelper helper, BlockPos rail, boolean expected) {
         BlockPos absoluteRail = helper.absolutePos(rail);
@@ -63,6 +65,7 @@ public class RailOptimizationSignalGameTest extends RailOptimizationGameTestSupp
         assertRailsPowered(helper, new BlockPos[] { rail }, expected);
     }
 
+    @SuppressWarnings("null")
     private static void toggleLeverPair(GameTestHelper helper, BlockPos lever) {
         helper.pullLever(mirrorCopy(lever));
         helper.pullLever(lever);

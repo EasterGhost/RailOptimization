@@ -40,7 +40,7 @@ final class RailSignalSearcher {
     static boolean hasNeighborSignalFast(
             Level level, BlockPos pos, MutableBlockPos scratchPos) {
         int x = pos.getX();
-        int y = pos.getY();
+        //int y = pos.getY();
         int z = pos.getZ();
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
@@ -50,6 +50,7 @@ final class RailSignalSearcher {
                 level, pos, scratchPos, chunk, chunkX, chunkZ);
     }
 
+    @SuppressWarnings("null")
     static boolean hasNeighborSignalFast(
             Level level, BlockPos pos, MutableBlockPos scratchPos,
             LevelChunk chunk, int chunkX, int chunkZ) {
@@ -98,6 +99,7 @@ final class RailSignalSearcher {
         return false;
     }
 
+    @SuppressWarnings("null")
     private static boolean hasNeighborSignalInChunk(
             Level level, LevelChunk chunk, int x, int y, int z, MutableBlockPos scratchPos) {
         for (Direction direction : SIGNAL_DIRECTIONS) {
@@ -212,7 +214,6 @@ final class RailSignalSearcher {
                 RailLogic.getRailPowerLimit(), scratchPos, chunk, chunkX, chunkZ);
     }
 
-    @SuppressWarnings("null")
     static int countStraightRailsToDepower(
             PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape,
             boolean forward, RailUpdateContext context) {
