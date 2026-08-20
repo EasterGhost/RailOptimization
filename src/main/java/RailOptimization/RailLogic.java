@@ -10,7 +10,6 @@ import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.RailShape;
-import net.minecraft.world.level.chunk.LevelChunk;
 
 public final class RailLogic {
     private static final BooleanProperty POWERED = PoweredRailBlock.POWERED;
@@ -104,6 +103,11 @@ public final class RailLogic {
             return false;
         }
 
+        int effectiveLimit = testMode == TEST_MODE_OPTIMIZED ? railPowerLimit : testMode;
+        if (RailUpdateMemo.isConfirmed(pos.asLong(), effectiveLimit, state.getValue(POWERED))) {
+            return true;
+        }
+
         if (testMode == TEST_MODE_OPTIMIZED) {
             customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
             return true;
@@ -123,12 +127,8 @@ public final class RailLogic {
     private static void customUpdateStateWithCurrentPowerLimit(
             PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
         boolean currentlyPowered = state.getValue(POWERED);
-        MutableBlockPos scratchPos = new MutableBlockPos();
-        int chunkX = pos.getX() >> 4;
-        int chunkZ = pos.getZ() >> 4;
-        LevelChunk chunk = level.getChunk(chunkX, chunkZ);
-        boolean directlyPowered = RailSignalSearcher.hasNeighborSignalFast(
-                level, pos, scratchPos, chunk, chunkX, chunkZ);
+        RailUpdateContext context = newUpdateContext();
+        boolean directlyPowered = context.hasNeighborSignal(level, pos);
         if (currentlyPowered && directlyPowered) {
             return;
         }
@@ -136,14 +136,13 @@ public final class RailLogic {
         RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
         boolean shouldBePowered = directlyPowered;
         if (!shouldBePowered) {
-            shouldBePowered = RailSignalSearcher.findPoweredRailSignalWithoutCache(
-                    self, level, pos, state, true, 0, scratchPos, chunk, chunkX, chunkZ)
-                    || RailSignalSearcher.findPoweredRailSignalWithoutCache(
-                            self, level, pos, state, false, 0, scratchPos, chunk, chunkX, chunkZ);
+            shouldBePowered = RailSignalSearcher.findPoweredRailSignalFaster(
+                    self, level, pos, state, true, 0, context)
+                    || RailSignalSearcher.findPoweredRailSignalFaster(
+                            self, level, pos, state, false, 0, context);
         }
 
         if (shouldBePowered != currentlyPowered) {
-            RailUpdateContext context = newUpdateContext();
             if (shouldBePowered) {
                 powerLane(self, level, pos, state, railShape, context, directlyPowered);
             } else {
@@ -163,6 +162,7 @@ public final class RailLogic {
             return;
         }
 
+        RailUpdateMemo.beginWalk();
         context.beginPowering();
         RailSearchCache checkedPos = context.searchCache;
         RailChangeList changedRails = new RailChangeList(railPowerLimit * 2 + 1);
@@ -188,6 +188,7 @@ public final class RailLogic {
             return;
         }
 
+        RailUpdateMemo.beginWalk();
         context.beginDepowering();
         RailChangeList changedRails = new RailChangeList(railPowerLimit * 2 + 1);
         setRailPowerState(world, pos, mainState, false, changedRails);
@@ -345,7 +346,13 @@ public final class RailLogic {
     @SuppressWarnings("null")
     private static void setRailPowerState(Level world, BlockPos pos, BlockState state, boolean powered,
             RailChangeList changedRails) {
-        world.setBlock(pos, state.setValue(POWERED, powered), UPDATE_FORCE_PLACE);
+        RailUpdateMemo.beginLaneWrite();
+        try {
+            world.setBlock(pos, state.setValue(POWERED, powered), UPDATE_FORCE_PLACE);
+        } finally {
+            RailUpdateMemo.endLaneWrite();
+        }
+        RailUpdateMemo.confirm(pos, powered, getRailPowerLimit());
         changedRails.add(pos, state);
     }
 

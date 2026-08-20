@@ -4,7 +4,8 @@
   "package": "RailOptimization.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "PoweredRailBlockMixin"
+    "PoweredRailBlockMixin",
+    "LevelChunkMixin"
   ],
   "client": [
   ],

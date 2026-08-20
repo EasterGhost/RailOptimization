@@ -205,15 +205,6 @@ final class RailSignalSearcher {
                 distance, context) != SEARCH_NOT_FOUND;
     }
 
-    static boolean findPoweredRailSignalWithoutCache(
-            PoweredRailBlock self, Level level, BlockPos pos, BlockState state,
-            boolean forward, int distance, MutableBlockPos scratchPos,
-            LevelChunk chunk, int chunkX, int chunkZ) {
-        return findPoweredRailSignalFromStateWithoutCache(
-                self, level, pos.getX(), pos.getY(), pos.getZ(), state, forward, distance,
-                RailLogic.getRailPowerLimit(), scratchPos, chunk, chunkX, chunkZ);
-    }
-
     static int countStraightRailsToDepower(
             PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape,
             boolean forward, RailUpdateContext context) {
@@ -266,106 +257,6 @@ final class RailSignalSearcher {
         }
 
         return Math.min(powerLimit, poweredLength);
-    }
-
-    private static boolean findPoweredRailSignalAtWithoutCache(
-            PoweredRailBlock self, Level level, int x, int y, int z,
-            boolean forward, int distance, int powerLimit,
-            RailShape expectedShape, MutableBlockPos scratchPos,
-            LevelChunk chunk, int chunkX, int chunkZ) {
-        scratchPos.set(x, y, z);
-        if (!level.isInValidBounds(scratchPos)) {
-            return false;
-        }
-
-        int nextChunkX = x >> 4;
-        int nextChunkZ = z >> 4;
-        if (nextChunkX != chunkX || nextChunkZ != chunkZ) {
-            chunk = level.getChunk(nextChunkX, nextChunkZ);
-            chunkX = nextChunkX;
-            chunkZ = nextChunkZ;
-        }
-
-        BlockState blockState = chunk.getBlockState(scratchPos);
-        if (!isPoweredRailWithAxis(self, blockState, expectedShape)) {
-            return false;
-        }
-
-        return hasNeighborSignalFast(
-                level, scratchPos, scratchPos, chunk, chunkX, chunkZ)
-                || findPoweredRailSignalFromStateWithoutCache(
-                        self, level, x, y, z, blockState, forward, distance + 1, powerLimit,
-                        scratchPos, chunk, chunkX, chunkZ);
-    }
-
-    private static boolean findPoweredRailSignalFromStateWithoutCache(
-            PoweredRailBlock self, Level level, int x, int y, int z,
-            BlockState state, boolean forward, int distance, int powerLimit, MutableBlockPos scratchPos,
-            LevelChunk chunk, int chunkX, int chunkZ) {
-        if (distance >= powerLimit) {
-            return false;
-        }
-
-        boolean checkBelow = true;
-        RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
-
-        switch (railShape) {
-            case NORTH_SOUTH -> z += forward ? 1 : -1;
-            case EAST_WEST -> x += forward ? -1 : 1;
-            case ASCENDING_EAST -> {
-                if (forward) {
-                    --x;
-                } else {
-                    ++x;
-                    ++y;
-                    checkBelow = false;
-                }
-                railShape = RailShape.EAST_WEST;
-            }
-            case ASCENDING_WEST -> {
-                if (forward) {
-                    --x;
-                    ++y;
-                    checkBelow = false;
-                } else {
-                    ++x;
-                }
-                railShape = RailShape.EAST_WEST;
-            }
-            case ASCENDING_NORTH -> {
-                if (forward) {
-                    ++z;
-                } else {
-                    --z;
-                    ++y;
-                    checkBelow = false;
-                }
-                railShape = RailShape.NORTH_SOUTH;
-            }
-            case ASCENDING_SOUTH -> {
-                if (forward) {
-                    ++z;
-                    ++y;
-                    checkBelow = false;
-                } else {
-                    --z;
-                }
-                railShape = RailShape.NORTH_SOUTH;
-            }
-            default -> {
-                return false;
-            }
-        }
-
-        if (findPoweredRailSignalAtWithoutCache(
-                self, level, x, y, z, forward, distance, powerLimit, railShape,
-                scratchPos, chunk, chunkX, chunkZ)) {
-            return true;
-        }
-
-        return checkBelow && findPoweredRailSignalAtWithoutCache(
-                self, level, x, y - 1, z, forward, distance, powerLimit, railShape,
-                scratchPos, chunk, chunkX, chunkZ);
     }
 
     private static int findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z,
