@@ -7,3 +7,4 @@ docs/
 run/
 CLAUDE.md
 *.ps1
+*.log
