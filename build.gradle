@@ -52,7 +52,7 @@ gradle.projectsEvaluated {
 }
 
 def resourceExpansionProperties = [
-        "version"          : project.version.toString(),
+        "version"          : project.mod_version.toString(),
         "minecraft_version": project.minecraft_version.toString(),
         "loader_version"   : project.loader_version.toString()
 ]
