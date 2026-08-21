@@ -202,8 +202,10 @@ final class RailSignalSearcher {
 		long posKey = BlockPos.asLong(x, y, z);
 		byte cacheFlags = checkedPosFlags(forward, expectedShape);
 		int cachedCost = context.getPoweredSearchCost(posKey, cacheFlags);
-		if (cachedCost >= 0 && distance + cachedCost < RailLogic.getRailPowerLimit()) {
-			return distance + cachedCost;
+		if (cachedCost >= 0) {
+			return distance + cachedCost < RailLogic.getRailPowerLimit()
+					? distance + cachedCost
+					: SEARCH_NOT_FOUND;
 		}
 
 		context.scratchPos.set(x, y, z);
