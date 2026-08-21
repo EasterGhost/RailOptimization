@@ -12,9 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = LevelChunk.class, priority = 990)
 public abstract class LevelChunkMixin {
 
-    @Inject(method = "setBlockState", at = @At("HEAD"))
-    private void railoptimization$setBlockState(
-            BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> cir) {
-        RailUpdateMemo.onBlockStateChanged();
-    }
+	@Inject(method = "setBlockState", at = @At("HEAD"))
+	private void railoptimization$setBlockState(
+			BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> cir) {
+		RailUpdateMemo.onBlockStateChanged();
+	}
 }

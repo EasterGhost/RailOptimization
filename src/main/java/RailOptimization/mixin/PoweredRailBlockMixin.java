@@ -15,11 +15,11 @@ import org.spongepowered.asm.mixin.Mixin;
 @Mixin(value = PoweredRailBlock.class, priority = 990)
 public abstract class PoweredRailBlockMixin {
 
-    @WrapMethod(method = "updateState")
-    private void railoptimization$updateState(
-            BlockState state, Level level, BlockPos pos, Block block, Operation<Void> original) {
-        if (!RailLogic.tryCustomUpdateState((PoweredRailBlock) (Object) this, state, level, pos)) {
-            original.call(state, level, pos, block);
-        }
-    }
+	@WrapMethod(method = "updateState")
+	private void railoptimization$updateState(
+			BlockState state, Level level, BlockPos pos, Block block, Operation<Void> original) {
+		if (!RailLogic.tryCustomUpdateState((PoweredRailBlock) (Object) this, state, level, pos)) {
+			original.call(state, level, pos, block);
+		}
+	}
 }
