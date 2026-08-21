@@ -26,7 +26,8 @@
       "RailOptimization.gametest.RailOptimizationUpdateBehaviorGameTest",
       "RailOptimization.gametest.RailOptimizationDuplicatorGameTest",
       "RailOptimization.gametest.RailOptimizationEdgeCaseGameTest",
-      "RailOptimization.gametest.RailOptimizationInstantRailGameTest"
+      "RailOptimization.gametest.RailOptimizationInstantRailGameTest",
+      "RailOptimization.gametest.RailOptimizationMonotonicSlopeGameTest"
     ]
   },
   "depends": {

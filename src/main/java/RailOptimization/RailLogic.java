@@ -360,8 +360,10 @@ public final class RailLogic {
 	private static int setStraightRailPositionsDePower(
 			Level world, BlockPos pos, RailShape railShape, boolean forward, int count,
 			RailUpdateContext context, RailChangeList changedRails) {
-		int stepX = railShape == RailShape.EAST_WEST ? (forward ? -1 : 1) : 0;
-		int stepZ = railShape == RailShape.NORTH_SOUTH ? (forward ? 1 : -1) : 0;
+		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		int stepX = RailSignalSearcher.STEP_X[stepIndex];
+		int stepY = RailSignalSearcher.STEP_Y[stepIndex];
+		int stepZ = RailSignalSearcher.STEP_Z[stepIndex];
 		MutableBlockPos cursor = context.railCursor;
 		int x = pos.getX();
 		int y = pos.getY();
@@ -369,6 +371,7 @@ public final class RailLogic {
 
 		for (int index = 0; index < count; ++index) {
 			x += stepX;
+			y += stepY;
 			z += stepZ;
 			cursor.set(x, y, z);
 			setRailPowerState(world, cursor, context.straightRailStates[index], false, changedRails, context);

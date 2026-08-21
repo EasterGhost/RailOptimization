@@ -16,11 +16,11 @@ final class RailSignalSearcher {
 	private static final byte AXIS_EAST_WEST = 1;
 	private static final byte AXIS_NORTH_SOUTH = 2;
 	private static final byte[] RAIL_AXIS = new byte[RailShape.values().length];
-	private static final byte[] STEP_X;
-	private static final byte[] STEP_Y;
-	private static final byte[] STEP_Z;
-	private static final byte[] STEP_BELOW;
-	private static final RailShape[] STEP_FLAT;
+	static final byte[] STEP_X;
+	static final byte[] STEP_Y;
+	static final byte[] STEP_Z;
+	static final byte[] STEP_BELOW;
+	static final RailShape[] STEP_FLAT;
 	private static final Direction[] SIGNAL_DIRECTIONS = new Direction[] {
 			Direction.DOWN, Direction.UP, Direction.NORTH,
 			Direction.SOUTH, Direction.WEST, Direction.EAST
@@ -261,37 +261,46 @@ final class RailSignalSearcher {
 	static int countStraightRailsToDepower(
 			PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape,
 			boolean forward, RailUpdateContext context, BlockState[] railStates) {
-		if (railShape != RailShape.EAST_WEST && railShape != RailShape.NORTH_SOUTH) {
+		byte axis = RAIL_AXIS[railShape.ordinal()];
+		if (axis == AXIS_NONE) {
 			return COMPLEX_PATH;
 		}
+
+		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		int stepX = STEP_X[stepIndex];
+		int stepY = STEP_Y[stepIndex];
+		int stepZ = STEP_Z[stepIndex];
+		boolean stepBelow = STEP_BELOW[stepIndex] != 0;
+		RailShape flatShape = axis == AXIS_EAST_WEST ? RailShape.EAST_WEST : RailShape.NORTH_SOUTH;
 
 		int x = pos.getX();
 		int y = pos.getY();
 		int z = pos.getZ();
-		int stepX = railShape == RailShape.EAST_WEST ? (forward ? -1 : 1) : 0;
-		int stepZ = railShape == RailShape.NORTH_SOUTH ? (forward ? 1 : -1) : 0;
 		int powerLimit = RailLogic.getRailPowerLimit();
 		int poweredLength = 0;
 
 		context.scratchPos.set(x, y - 1, z);
-		if (isPoweredRailWithAxis(self, context.getBlockState(level, context.scratchPos), railShape)) {
+		if (isPoweredRailWithAxis(self, context.getBlockState(level, context.scratchPos), flatShape)) {
 			return COMPLEX_PATH;
 		}
 
 		for (int index = 1; index <= powerLimit * 2; ++index) {
 			x += stepX;
+			y += stepY;
 			z += stepZ;
 			context.scratchPos.set(x, y, z);
 			BlockState state = context.getBlockState(level, context.scratchPos);
-			if (isPoweredRailWithAxis(self, state, railShape)) {
+			if (isPoweredRailWithAxis(self, state, flatShape)) {
 				if (state.getValue(PoweredRailBlock.SHAPE) != railShape) {
 					return COMPLEX_PATH;
 				}
-				context.scratchPos.set(x, y - 1, z);
-				if (isPoweredRailWithAxis(self, context.getBlockState(level, context.scratchPos), railShape)) {
-					return COMPLEX_PATH;
+				if (stepBelow) {
+					context.scratchPos.set(x, y - 1, z);
+					if (isPoweredRailWithAxis(self, context.getBlockState(level, context.scratchPos), flatShape)) {
+						return COMPLEX_PATH;
+					}
+					context.scratchPos.set(x, y, z);
 				}
-				context.scratchPos.set(x, y, z);
 				if (context.hasNeighborSignal(level, context.scratchPos)) {
 					return Math.max(0, Math.min(powerLimit, index - powerLimit - 1));
 				}
@@ -304,7 +313,7 @@ final class RailSignalSearcher {
 
 			context.scratchPos.set(x, y - 1, z);
 			BlockState belowState = context.getBlockState(level, context.scratchPos);
-			if (isPoweredRailWithAxis(self, belowState, railShape)) {
+			if (isPoweredRailWithAxis(self, belowState, flatShape)) {
 				return COMPLEX_PATH;
 			}
 			break;
