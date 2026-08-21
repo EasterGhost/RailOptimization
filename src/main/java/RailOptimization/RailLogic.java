@@ -194,16 +194,6 @@ public final class RailLogic {
 		}
 	}
 
-	public static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
-			BlockState mainState, RailShape railShape) {
-		RailUpdateContext context = newUpdateContext();
-		try {
-			powerLane(self, world, pos, mainState, railShape, context, false);
-		} finally {
-			releaseUpdateContext(context);
-		}
-	}
-
 	private static void powerLane(PoweredRailBlock self, Level world, BlockPos pos,
 			BlockState mainState, RailShape railShape, RailUpdateContext context, boolean directlyPowered) {
 		if (!RailSignalSearcher.supportsFastSearch(railShape)) {
@@ -224,16 +214,6 @@ public final class RailLogic {
 
 		updateChangedRails(world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount,
 				changedRails, context);
-	}
-
-	public static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
-			BlockState mainState, RailShape railShape) {
-		RailUpdateContext context = newUpdateContext();
-		try {
-			dePowerLane(self, world, pos, mainState, railShape, context);
-		} finally {
-			releaseUpdateContext(context);
-		}
 	}
 
 	private static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos,
