@@ -11,6 +11,7 @@ public final class RailUpdateMemo {
 
 	private static final ThreadLocal<Integer> LANE_WRITE_DEPTH = ThreadLocal.withInitial(() -> 0);
 	private static final ThreadLocal<List<RailUpdateMemo>> MEMOS = ThreadLocal.withInitial(ArrayList::new);
+	private static final ThreadLocal<RailUpdateMemo> TOP = new ThreadLocal<>();
 	private static volatile int blockChangeEpoch;
 
 	private final long[] keys = new long[CAPACITY];
@@ -47,12 +48,24 @@ public final class RailUpdateMemo {
 			}
 		}
 		memos.add(memo);
+		TOP.set(memo);
 	}
 
 	static boolean isConfirmed(long position, int powerLimit, boolean currentPowered) {
+		RailUpdateMemo top = TOP.get();
+		if (top != null) {
+			int result = top.checkEntry(position, powerLimit, currentPowered);
+			if (result != 0) {
+				return result > 0;
+			}
+		}
 		List<RailUpdateMemo> memos = MEMOS.get();
 		for (int i = memos.size() - 1; i >= 0; --i) {
-			int result = memos.get(i).checkEntry(position, powerLimit, currentPowered);
+			RailUpdateMemo memo = memos.get(i);
+			if (memo == top) {
+				continue;
+			}
+			int result = memo.checkEntry(position, powerLimit, currentPowered);
 			if (result != 0) {
 				return result > 0;
 			}
@@ -94,20 +107,30 @@ public final class RailUpdateMemo {
 
 	private int checkEntry(long position, int powerLimit, boolean currentPowered) {
 		int index = (int) (position * 0x9E3779B97F4A7C15L) & MASK;
-		for (int probes = CAPACITY; probes > 0; --probes) {
+		if (used[index] == 0) {
+			return 0;
+		}
+		if (keys[index] == position) {
+			return checkMatch(index, powerLimit, currentPowered);
+		}
+		for (int probes = CAPACITY - 1; probes > 0; --probes) {
+			index = (index + 1) & MASK;
 			if (used[index] == 0) {
 				return 0;
 			}
 			if (keys[index] == position) {
-				if (powerLimits[index] == powerLimit
-						&& epochs[index] == blockChangeEpoch
-						&& (poweredFlags[index] == 1) == currentPowered) {
-					return 1;
-				}
-				return -1;
+				return checkMatch(index, powerLimit, currentPowered);
 			}
-			index = (index + 1) & MASK;
 		}
 		return 0;
+	}
+
+	private int checkMatch(int index, int powerLimit, boolean currentPowered) {
+		if (powerLimits[index] == powerLimit
+				&& epochs[index] == blockChangeEpoch
+				&& (poweredFlags[index] == 1) == currentPowered) {
+			return 1;
+		}
+		return -1;
 	}
 }
