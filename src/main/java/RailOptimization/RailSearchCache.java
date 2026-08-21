@@ -17,7 +17,6 @@ final class RailSearchCache {
 	private final byte[] states;
 	private final int[] searchCosts;
 	private final int mask;
-	private int size;
 
 	RailSearchCache(int railPowerLimit) {
 		int capacity = railPowerLimit >= MAX_CAPACITY / 8
@@ -38,7 +37,7 @@ final class RailSearchCache {
 	}
 
 	byte get(long position, byte entryFlags) {
-		int index = find(position, entryFlags);
+		int index = findOrEmpty(position, entryFlags);
 		return index >= 0 ? states[index] : RailLogic.CHECKED_UNKNOWN;
 	}
 
@@ -47,28 +46,42 @@ final class RailSearchCache {
 	}
 
 	void put(long position, byte entryFlags, byte state) {
-		int index = find(position, entryFlags);
+		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
 			states[index] = state;
 			return;
 		}
+		if (index == -1) {
+			return;
+		}
 
-		insert(position, entryFlags, state, -1);
+		index = -index - 2;
+		keys[index] = position;
+		flags[index] = entryFlags;
+		states[index] = state;
+		searchCosts[index] = -1;
 	}
 
 	int getPoweredSearchCost(long position, byte entryFlags) {
-		int index = find(position, entryFlags);
+		int index = findOrEmpty(position, entryFlags);
 		return index >= 0 ? searchCosts[index] : -1;
 	}
 
 	void putPoweredSearchCost(long position, byte entryFlags, int searchCost) {
-		int index = find(position, entryFlags);
+		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
 			searchCosts[index] = Math.min(searchCosts[index], searchCost);
 			return;
 		}
+		if (index == -1) {
+			return;
+		}
 
-		insert(position, entryFlags, RailLogic.CHECKED_POWERED, searchCost);
+		index = -index - 2;
+		keys[index] = position;
+		flags[index] = entryFlags;
+		states[index] = RailLogic.CHECKED_POWERED;
+		searchCosts[index] = searchCost;
 	}
 
 	void removeSearchResults() {
@@ -76,23 +89,21 @@ final class RailSearchCache {
 			if (flags[i] != -1 && (flags[i] & SEARCH) != 0) {
 				flags[i] = -1;
 				searchCosts[i] = -1;
-				--size;
 			}
 		}
 	}
 
 	void clear() {
 		Arrays.fill(flags, (byte) -1);
-		size = 0;
 	}
 
-	private int find(long position, byte entryFlags) {
+	private int findOrEmpty(long position, byte entryFlags) {
 		int index = (int) ((position * 0x9E3779B97F4A7C15L + entryFlags) & mask);
 		int indexShift = ((int) (position >>> 32) & mask) | 1;
 		for (int probes = keys.length; probes > 0; --probes) {
 			byte slotFlags = flags[index];
 			if (slotFlags == -1) {
-				return -1;
+				return -index - 2;
 			}
 			if (slotFlags == entryFlags && keys[index] == position) {
 				return index;
@@ -100,23 +111,5 @@ final class RailSearchCache {
 			index = (index + indexShift) & mask;
 		}
 		return -1;
-	}
-
-	private void insert(long position, byte entryFlags, byte state, int searchCost) {
-		if (size == keys.length) {
-			return;
-		}
-
-		int index = (int) ((position * 0x9E3779B97F4A7C15L + entryFlags) & mask);
-		int indexShift = ((int) (position >>> 32) & mask) | 1;
-		while (flags[index] != -1) {
-			index = (index + indexShift) & mask;
-		}
-
-		keys[index] = position;
-		flags[index] = entryFlags;
-		states[index] = state;
-		searchCosts[index] = searchCost;
-		++size;
 	}
 }
