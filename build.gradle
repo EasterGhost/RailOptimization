@@ -32,6 +32,17 @@ fabricApi {
 }
 
 gradle.projectsEvaluated {
+    def gametestFilter = project.findProperty("gametestFilter")
+    if (gametestFilter) {
+        tasks.named("runGameTest", JavaExec).configure {
+            jvmArgs "-Dfabric-api.gametest.filter=${gametestFilter}"
+        }
+    } else if (project.hasProperty("benchmarkOnly")) {
+        tasks.named("runGameTest", JavaExec).configure {
+            jvmArgs "-Dfabric-api.gametest.filter=railoptimization-gametest:rail_optimization_performance_game_test*"
+        }
+    }
+
     tasks.named("check") {
         dependsOn = dependsOn.findAll { dependency ->
             !(dependency.hasProperty("name") && dependency.name == "runGameTest") &&
