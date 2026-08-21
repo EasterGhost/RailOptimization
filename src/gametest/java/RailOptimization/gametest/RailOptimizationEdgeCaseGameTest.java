@@ -382,7 +382,7 @@ public class RailOptimizationEdgeCaseGameTest extends RailOptimizationGameTestSu
         BlockPos source = start.west();
         BlockPos dropper = start.west().relative(Direction.SOUTH, 2);
         BlockPos powerBlock = dropper.below();
-        BlockPos pusherPiston = powerBlock.north();
+        BlockPos pusherPiston = powerBlock.south();
 
         placeRailLinePair(helper, start, Direction.SOUTH, 4, RailShape.NORTH_SOUTH);
         placeDropperPair(helper, dropper);
