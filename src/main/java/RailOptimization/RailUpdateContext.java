@@ -81,7 +81,7 @@ final class RailUpdateContext {
 	}
 
 	void beginDepowering() {
-		searchCache.removeSearchResults();
+		searchCache.advanceSearchGeneration();
 		cachePoweredSearchResults = false;
 	}
 }

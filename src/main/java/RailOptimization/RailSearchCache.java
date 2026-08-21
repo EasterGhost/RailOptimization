@@ -16,7 +16,9 @@ final class RailSearchCache {
 	private final byte[] flags;
 	private final byte[] states;
 	private final int[] searchCosts;
+	private final byte[] searchGenerations;
 	private final int mask;
+	private byte searchGeneration;
 
 	RailSearchCache(int railPowerLimit) {
 		int capacity = railPowerLimit >= MAX_CAPACITY / 8
@@ -28,6 +30,7 @@ final class RailSearchCache {
 		flags = new byte[capacity];
 		states = new byte[capacity];
 		searchCosts = new int[capacity];
+		searchGenerations = new byte[capacity];
 		mask = capacity - 1;
 		Arrays.fill(flags, (byte) -1);
 	}
@@ -64,13 +67,18 @@ final class RailSearchCache {
 
 	int getPoweredSearchCost(long position, byte entryFlags) {
 		int index = findOrEmpty(position, entryFlags);
-		return index >= 0 ? searchCosts[index] : -1;
+		return index >= 0 && searchGenerations[index] == searchGeneration ? searchCosts[index] : -1;
 	}
 
 	void putPoweredSearchCost(long position, byte entryFlags, int searchCost) {
 		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
-			searchCosts[index] = Math.min(searchCosts[index], searchCost);
+			if (searchGenerations[index] == searchGeneration) {
+				searchCosts[index] = Math.min(searchCosts[index], searchCost);
+			} else {
+				searchCosts[index] = searchCost;
+				searchGenerations[index] = searchGeneration;
+			}
 			return;
 		}
 		if (index == -1) {
@@ -82,14 +90,13 @@ final class RailSearchCache {
 		flags[index] = entryFlags;
 		states[index] = RailLogic.CHECKED_POWERED;
 		searchCosts[index] = searchCost;
+		searchGenerations[index] = searchGeneration;
 	}
 
-	void removeSearchResults() {
-		for (int i = 0; i < keys.length; ++i) {
-			if (flags[i] != -1 && (flags[i] & SEARCH) != 0) {
-				flags[i] = -1;
-				searchCosts[i] = -1;
-			}
+	void advanceSearchGeneration() {
+		if (++searchGeneration == 0) {
+			clear();
+			searchGeneration = 1;
 		}
 	}
 
