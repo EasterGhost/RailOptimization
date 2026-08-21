@@ -19,10 +19,7 @@ public final class RailUpdateMemo {
 	}
 
 	private final long[] keys = new long[CAPACITY];
-	private final byte[] used = new byte[CAPACITY];
-	private final byte[] poweredFlags = new byte[CAPACITY];
-	private final int[] powerLimits = new int[CAPACITY];
-	private final int[] epochs = new int[CAPACITY];
+	private final long[] meta = new long[CAPACITY];
 	private int size;
 	private int writeEpoch;
 
@@ -78,30 +75,29 @@ public final class RailUpdateMemo {
 	}
 
 	void beginWalk() {
-		Arrays.fill(used, (byte) 0);
+		Arrays.fill(meta, 0L);
 		size = 0;
 	}
 
 	void confirm(BlockPos pos, boolean powered, int powerLimit) {
 		long position = pos.asLong();
+		long entryMeta = ((long) blockChangeEpoch & 0xFFFFFFFFL)
+				| ((long) powerLimit << 32)
+				| (powered ? 1L << 39 : 0)
+				| (1L << 40);
 		int index = (int) (position * 0x9E3779B97F4A7C15L) & MASK;
 		for (int probes = CAPACITY; probes > 0; --probes) {
-			if (used[index] == 0) {
+			if (meta[index] == 0) {
 				if (size < CAPACITY) {
-					used[index] = 1;
 					keys[index] = position;
-					poweredFlags[index] = (byte) (powered ? 1 : 0);
-					powerLimits[index] = powerLimit;
-					epochs[index] = blockChangeEpoch;
+					meta[index] = entryMeta;
 					writeEpoch = blockChangeEpoch;
 					++size;
 				}
 				return;
 			}
 			if (keys[index] == position) {
-				poweredFlags[index] = (byte) (powered ? 1 : 0);
-				powerLimits[index] = powerLimit;
-				epochs[index] = blockChangeEpoch;
+				meta[index] = entryMeta;
 				writeEpoch = blockChangeEpoch;
 				return;
 			}
@@ -110,31 +106,26 @@ public final class RailUpdateMemo {
 	}
 
 	private int checkEntry(long position, int powerLimit, boolean currentPowered) {
+		long expectedMeta = ((long) blockChangeEpoch & 0xFFFFFFFFL)
+				| ((long) powerLimit << 32)
+				| (currentPowered ? 1L << 39 : 0)
+				| (1L << 40);
 		int index = (int) (position * 0x9E3779B97F4A7C15L) & MASK;
-		if (used[index] == 0) {
+		if (meta[index] == 0) {
 			return 0;
 		}
 		if (keys[index] == position) {
-			return checkMatch(index, powerLimit, currentPowered);
+			return meta[index] == expectedMeta ? 1 : -1;
 		}
 		for (int probes = CAPACITY - 1; probes > 0; --probes) {
 			index = (index + 1) & MASK;
-			if (used[index] == 0) {
+			if (meta[index] == 0) {
 				return 0;
 			}
 			if (keys[index] == position) {
-				return checkMatch(index, powerLimit, currentPowered);
+				return meta[index] == expectedMeta ? 1 : -1;
 			}
 		}
 		return 0;
-	}
-
-	private int checkMatch(int index, int powerLimit, boolean currentPowered) {
-		if (powerLimits[index] == powerLimit
-				&& epochs[index] == blockChangeEpoch
-				&& (poweredFlags[index] == 1) == currentPowered) {
-			return 1;
-		}
-		return -1;
 	}
 }
