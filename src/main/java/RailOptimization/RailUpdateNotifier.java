@@ -56,23 +56,20 @@ final class RailUpdateNotifier {
 		final int stepX = dir.getStepX();
 		final int stepZ = dir.getStepZ();
 
-		for (int c = countAmt; c >= directionIndex; c--) {
-			int x = baseX + stepX * c;
-			int y = baseY;
-			int z = baseZ + stepZ * c;
+		int x = baseX + stepX * countAmt;
+		int z = baseZ + stepZ * countAmt;
 
-			boolean hasEndPos = c == countAmt;
-			int endX = x + stepX;
-			int endZ = z + stepZ;
+		notifyNeighborChanged(world, x, baseY, z, block, scratchPos);
+		notifyBlockChanged(world, x + stepX, baseY, z + stepZ, block, scratchPos);
+		notifyNeighborChanged(world, x, baseY - 1, z, block, scratchPos);
+		notifyBlockChanged(world, x + stepX, baseY - 1, z + stepZ, block, scratchPos);
 
-			notifyNeighborChanged(world, x, y, z, block, scratchPos);
-			if (hasEndPos) {
-				notifyBlockChanged(world, endX, y, endZ, block, scratchPos);
-			}
-			notifyNeighborChanged(world, x, y - 1, z, block, scratchPos);
-			if (hasEndPos) {
-				notifyBlockChanged(world, endX, y - 1, endZ, block, scratchPos);
-			}
+		for (int c = countAmt - 1; c >= directionIndex; c--) {
+			x = baseX + stepX * c;
+			z = baseZ + stepZ * c;
+
+			notifyNeighborChanged(world, x, baseY, z, block, scratchPos);
+			notifyNeighborChanged(world, x, baseY - 1, z, block, scratchPos);
 		}
 	}
 }

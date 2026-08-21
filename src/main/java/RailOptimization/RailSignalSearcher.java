@@ -113,13 +113,9 @@ final class RailSignalSearcher {
 
 		int localX = x & 15;
 		int localZ = z & 15;
-		if (localX >= 2 && localX <= 13 && localZ >= 2 && localZ <= 13) {
-			scratchPos.set(x - 2, y - 2, z - 2);
-			boolean lowerCornerValid = level.isInValidBounds(scratchPos);
-			scratchPos.set(x + 2, y + 2, z + 2);
-			if (lowerCornerValid && level.isInValidBounds(scratchPos)) {
-				return hasNeighborSignalInChunk(level, chunk, x, y, z, scratchPos);
-			}
+		if (localX >= 2 && localX <= 13 && localZ >= 2 && localZ <= 13
+				&& y >= level.getMinY() + 2 && y <= level.getMaxY() - 2) {
+			return hasNeighborSignalInChunk(level, chunk, x, y, z, scratchPos);
 		}
 
 		for (Direction direction : SIGNAL_DIRECTIONS) {
@@ -137,7 +133,11 @@ final class RailSignalSearcher {
 				continue;
 			}
 
+			Direction opposite = direction.getOpposite();
 			for (Direction directDirection : SIGNAL_DIRECTIONS) {
+				if (directDirection == opposite) {
+					continue;
+				}
 				scratchPos.set(
 						neighborX + directDirection.getStepX(),
 						neighborY + directDirection.getStepY(),
@@ -169,7 +169,11 @@ final class RailSignalSearcher {
 				continue;
 			}
 
+			Direction opposite = direction.getOpposite();
 			for (Direction directDirection : SIGNAL_DIRECTIONS) {
+				if (directDirection == opposite) {
+					continue;
+				}
 				scratchPos.set(
 						neighborX + directDirection.getStepX(),
 						neighborY + directDirection.getStepY(),
