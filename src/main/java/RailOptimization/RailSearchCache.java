@@ -106,16 +106,23 @@ final class RailSearchCache {
 
 	private int findOrEmpty(long position, byte entryFlags) {
 		int index = (int) ((position * 0x9E3779B97F4A7C15L + entryFlags) & mask);
+		byte slotFlags = flags[index];
+		if (slotFlags == -1) {
+			return -index - 2;
+		}
+		if (slotFlags == entryFlags && keys[index] == position) {
+			return index;
+		}
 		int indexShift = ((int) (position >>> 32) & mask) | 1;
-		for (int probes = keys.length; probes > 0; --probes) {
-			byte slotFlags = flags[index];
+		for (int probes = keys.length - 1; probes > 0; --probes) {
+			index = (index + indexShift) & mask;
+			slotFlags = flags[index];
 			if (slotFlags == -1) {
 				return -index - 2;
 			}
 			if (slotFlags == entryFlags && keys[index] == position) {
 				return index;
 			}
-			index = (index + indexShift) & mask;
 		}
 		return -1;
 	}

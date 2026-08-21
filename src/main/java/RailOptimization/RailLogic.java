@@ -198,6 +198,8 @@ public final class RailLogic {
 				} else {
 					dePowerLane(self, level, pos, state, railShape, context);
 				}
+			} else {
+				context.memo.confirm(pos, currentlyPowered, RailLogic.getRailPowerLimit());
 			}
 		} finally {
 			releaseUpdateContext(context);
