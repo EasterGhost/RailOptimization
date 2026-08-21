@@ -8,6 +8,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 
 final class RailUpdateContext {
 	final RailSearchCache searchCache;
+	final RailUpdateMemo memo = new RailUpdateMemo();
 	final MutableBlockPos railCursor = new MutableBlockPos();
 	final MutableBlockPos scratchPos = new MutableBlockPos();
 	final BlockState[] straightRailStates;

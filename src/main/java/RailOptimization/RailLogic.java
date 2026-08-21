@@ -210,11 +210,12 @@ public final class RailLogic {
 			return;
 		}
 
-		RailUpdateMemo.beginWalk();
+		context.memo.beginWalk();
+		RailUpdateMemo.trackContext(context.memo);
 		context.beginPowering();
 		RailSearchCache checkedPos = context.searchCache;
 		RailChangeList changedRails = newChangeList(context);
-		setRailPowerState(world, pos, mainState, true, changedRails);
+		setRailPowerState(world, pos, mainState, true, changedRails, context);
 		checkedPos.put(pos.asLong(), CHECKED_POWERED);
 		int firstDirectionCount = setRailPositionsPower(
 				self, world, pos, mainState, context, true, directlyPowered, changedRails);
@@ -241,10 +242,11 @@ public final class RailLogic {
 			return;
 		}
 
-		RailUpdateMemo.beginWalk();
+		context.memo.beginWalk();
+		RailUpdateMemo.trackContext(context.memo);
 		context.beginDepowering();
 		RailChangeList changedRails = newChangeList(context);
-		setRailPowerState(world, pos, mainState, false, changedRails);
+		setRailPowerState(world, pos, mainState, false, changedRails, context);
 
 		int firstDirectionCount = setRailPositionsDePower(
 				self, world, pos, mainState, true, context, changedRails);
@@ -319,7 +321,7 @@ public final class RailLogic {
 			}
 
 			checkedPos.put(posKey, CHECKED_POWERED);
-			setRailPowerState(world, cursor, state, true, changedRails);
+			setRailPowerState(world, cursor, state, true, changedRails, context);
 			previousState = state;
 			count++;
 		}
@@ -366,7 +368,7 @@ public final class RailLogic {
 				break;
 			}
 
-			setRailPowerState(world, cursor, state, false, changedRails);
+			setRailPowerState(world, cursor, state, false, changedRails, context);
 			checkedPos.put(posKey, CHECKED_BLOCKED);
 			previousState = state;
 			count++;
@@ -389,7 +391,7 @@ public final class RailLogic {
 			x += stepX;
 			z += stepZ;
 			cursor.set(x, y, z);
-			setRailPowerState(world, cursor, context.straightRailStates[index], false, changedRails);
+			setRailPowerState(world, cursor, context.straightRailStates[index], false, changedRails, context);
 			context.searchCache.put(cursor.asLong(), CHECKED_BLOCKED);
 		}
 		return count;
@@ -397,14 +399,14 @@ public final class RailLogic {
 
 	@SuppressWarnings("null")
 	private static void setRailPowerState(Level world, BlockPos pos, BlockState state, boolean powered,
-			RailChangeList changedRails) {
+			RailChangeList changedRails, RailUpdateContext context) {
 		RailUpdateMemo.beginLaneWrite();
 		try {
 			world.setBlock(pos, state.setValue(POWERED, powered), UPDATE_FORCE_PLACE);
 		} finally {
 			RailUpdateMemo.endLaneWrite();
 		}
-		RailUpdateMemo.confirm(pos, powered, getRailPowerLimit());
+		context.memo.confirm(pos, powered, getRailPowerLimit());
 		changedRails.add(pos, state);
 	}
 
