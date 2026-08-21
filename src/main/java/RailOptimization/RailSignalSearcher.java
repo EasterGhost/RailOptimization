@@ -16,6 +16,11 @@ final class RailSignalSearcher {
 	private static final byte AXIS_EAST_WEST = 1;
 	private static final byte AXIS_NORTH_SOUTH = 2;
 	private static final byte[] RAIL_AXIS = new byte[RailShape.values().length];
+	private static final byte[] STEP_X;
+	private static final byte[] STEP_Y;
+	private static final byte[] STEP_Z;
+	private static final byte[] STEP_BELOW;
+	private static final RailShape[] STEP_FLAT;
 	private static final Direction[] SIGNAL_DIRECTIONS = new Direction[] {
 			Direction.DOWN, Direction.UP, Direction.NORTH,
 			Direction.SOUTH, Direction.WEST, Direction.EAST
@@ -28,6 +33,55 @@ final class RailSignalSearcher {
 		RAIL_AXIS[RailShape.NORTH_SOUTH.ordinal()] = AXIS_NORTH_SOUTH;
 		RAIL_AXIS[RailShape.ASCENDING_NORTH.ordinal()] = AXIS_NORTH_SOUTH;
 		RAIL_AXIS[RailShape.ASCENDING_SOUTH.ordinal()] = AXIS_NORTH_SOUTH;
+
+		RailShape[] flatShapes = new RailShape[12];
+		byte[] stepX = new byte[12];
+		byte[] stepY = new byte[12];
+		byte[] stepZ = new byte[12];
+		byte[] stepBelow = new byte[12];
+
+		flatShapes[0] = RailShape.NORTH_SOUTH;
+		stepZ[0] = 1;
+		stepBelow[0] = 1;
+		flatShapes[1] = RailShape.NORTH_SOUTH;
+		stepZ[1] = -1;
+		stepBelow[1] = 1;
+		flatShapes[2] = RailShape.EAST_WEST;
+		stepX[2] = -1;
+		stepBelow[2] = 1;
+		flatShapes[3] = RailShape.EAST_WEST;
+		stepX[3] = 1;
+		stepBelow[3] = 1;
+		flatShapes[4] = RailShape.EAST_WEST;
+		stepX[4] = -1;
+		stepBelow[4] = 1;
+		flatShapes[5] = RailShape.EAST_WEST;
+		stepX[5] = 1;
+		stepY[5] = 1;
+		flatShapes[6] = RailShape.EAST_WEST;
+		stepX[6] = -1;
+		stepY[6] = 1;
+		flatShapes[7] = RailShape.EAST_WEST;
+		stepX[7] = 1;
+		stepBelow[7] = 1;
+		flatShapes[8] = RailShape.NORTH_SOUTH;
+		stepZ[8] = 1;
+		stepBelow[8] = 1;
+		flatShapes[9] = RailShape.NORTH_SOUTH;
+		stepZ[9] = -1;
+		stepY[9] = 1;
+		flatShapes[10] = RailShape.NORTH_SOUTH;
+		stepZ[10] = 1;
+		stepY[10] = 1;
+		flatShapes[11] = RailShape.NORTH_SOUTH;
+		stepZ[11] = -1;
+		stepBelow[11] = 1;
+
+		STEP_X = stepX;
+		STEP_Y = stepY;
+		STEP_Z = stepZ;
+		STEP_BELOW = stepBelow;
+		STEP_FLAT = flatShapes;
 	}
 
 	private RailSignalSearcher() {
@@ -265,63 +319,23 @@ final class RailSignalSearcher {
 			return SEARCH_NOT_FOUND;
 		}
 
-		boolean checkBelow = true;
 		RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
-
-		switch (railShape) {
-			case NORTH_SOUTH -> z += forward ? 1 : -1;
-			case EAST_WEST -> x += forward ? -1 : 1;
-			case ASCENDING_EAST -> {
-				if (forward) {
-					--x;
-				} else {
-					++x;
-					++y;
-					checkBelow = false;
-				}
-				railShape = RailShape.EAST_WEST;
-			}
-			case ASCENDING_WEST -> {
-				if (forward) {
-					--x;
-					++y;
-					checkBelow = false;
-				} else {
-					++x;
-				}
-				railShape = RailShape.EAST_WEST;
-			}
-			case ASCENDING_NORTH -> {
-				if (forward) {
-					++z;
-				} else {
-					--z;
-					++y;
-					checkBelow = false;
-				}
-				railShape = RailShape.NORTH_SOUTH;
-			}
-			case ASCENDING_SOUTH -> {
-				if (forward) {
-					++z;
-					++y;
-					checkBelow = false;
-				} else {
-					--z;
-				}
-				railShape = RailShape.NORTH_SOUTH;
-			}
-			default -> {
-				return SEARCH_NOT_FOUND;
-			}
+		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
+			return SEARCH_NOT_FOUND;
 		}
 
-		int poweredDistance = findPoweredRailSignalAt(self, level, x, y, z, forward, distance, railShape, context);
+		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		int nextX = x + STEP_X[stepIndex];
+		int nextY = y + STEP_Y[stepIndex];
+		int nextZ = z + STEP_Z[stepIndex];
+		RailShape flatShape = STEP_FLAT[stepIndex];
+
+		int poweredDistance = findPoweredRailSignalAt(self, level, nextX, nextY, nextZ, forward, distance, flatShape, context);
 		if (poweredDistance != SEARCH_NOT_FOUND) {
 			return poweredDistance;
 		}
-		return checkBelow
-				? findPoweredRailSignalAt(self, level, x, y - 1, z, forward, distance, railShape, context)
+		return STEP_BELOW[stepIndex] != 0
+				? findPoweredRailSignalAt(self, level, nextX, nextY - 1, nextZ, forward, distance, flatShape, context)
 				: SEARCH_NOT_FOUND;
 	}
 
@@ -331,71 +345,31 @@ final class RailSignalSearcher {
 		int x = railPos.getX();
 		int y = railPos.getY();
 		int z = railPos.getZ();
-		boolean checkBelow = true;
 		RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
-
-		switch (railShape) {
-			case NORTH_SOUTH -> z += forward ? 1 : -1;
-			case EAST_WEST -> x += forward ? -1 : 1;
-			case ASCENDING_EAST -> {
-				if (forward) {
-					--x;
-				} else {
-					++x;
-					++y;
-					checkBelow = false;
-				}
-				railShape = RailShape.EAST_WEST;
-			}
-			case ASCENDING_WEST -> {
-				if (forward) {
-					--x;
-					++y;
-					checkBelow = false;
-				} else {
-					++x;
-				}
-				railShape = RailShape.EAST_WEST;
-			}
-			case ASCENDING_NORTH -> {
-				if (forward) {
-					++z;
-				} else {
-					--z;
-					++y;
-					checkBelow = false;
-				}
-				railShape = RailShape.NORTH_SOUTH;
-			}
-			case ASCENDING_SOUTH -> {
-				if (forward) {
-					++z;
-					++y;
-					checkBelow = false;
-				} else {
-					--z;
-				}
-				railShape = RailShape.NORTH_SOUTH;
-			}
-			default -> {
-				return null;
-			}
+		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
+			return null;
 		}
 
-		scratchPos.set(x, y, z);
+		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		int nextX = x + STEP_X[stepIndex];
+		int nextY = y + STEP_Y[stepIndex];
+		int nextZ = z + STEP_Z[stepIndex];
+		RailShape flatShape = STEP_FLAT[stepIndex];
+
+		scratchPos.set(nextX, nextY, nextZ);
 		BlockState nextState = context.getBlockState(level, scratchPos);
-		if (isSameRailWithAxis(self, nextState, railShape)) {
+		if (isSameRailWithAxis(self, nextState, flatShape)) {
 			railPos.set(scratchPos);
 			return nextState;
 		}
 
-		if (!checkBelow) {
+		if (STEP_BELOW[stepIndex] == 0) {
 			return null;
 		}
 
-		scratchPos.set(x, y - 1, z);
+		scratchPos.set(nextX, nextY - 1, nextZ);
 		nextState = context.getBlockState(level, scratchPos);
-		if (isSameRailWithAxis(self, nextState, railShape)) {
+		if (isSameRailWithAxis(self, nextState, flatShape)) {
 			railPos.set(scratchPos);
 			return nextState;
 		}
@@ -420,68 +394,28 @@ final class RailSignalSearcher {
 		int x = railPos.getX();
 		int y = railPos.getY();
 		int z = railPos.getZ();
-		boolean checkBelow = true;
 		RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
-
-		switch (railShape) {
-			case NORTH_SOUTH -> z += forward ? 1 : -1;
-			case EAST_WEST -> x += forward ? -1 : 1;
-			case ASCENDING_EAST -> {
-				if (forward) {
-					--x;
-				} else {
-					++x;
-					++y;
-					checkBelow = false;
-				}
-				railShape = RailShape.EAST_WEST;
-			}
-			case ASCENDING_WEST -> {
-				if (forward) {
-					--x;
-					++y;
-					checkBelow = false;
-				} else {
-					++x;
-				}
-				railShape = RailShape.EAST_WEST;
-			}
-			case ASCENDING_NORTH -> {
-				if (forward) {
-					++z;
-				} else {
-					--z;
-					++y;
-					checkBelow = false;
-				}
-				railShape = RailShape.NORTH_SOUTH;
-			}
-			case ASCENDING_SOUTH -> {
-				if (forward) {
-					++z;
-					++y;
-					checkBelow = false;
-				} else {
-					--z;
-				}
-				railShape = RailShape.NORTH_SOUTH;
-			}
-			default -> {
-				return false;
-			}
-		}
-
-		if (BlockPos.asLong(x, y, z) == expectedPreviousPos) {
-			return isSameRailWithAxis(self, previousState, railShape);
-		}
-		if (!checkBelow || BlockPos.asLong(x, y - 1, z) != expectedPreviousPos
-				|| !isSameRailWithAxis(self, previousState, railShape)) {
+		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
 			return false;
 		}
 
-		context.scratchPos.set(x, y, z);
+		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		int nextX = x + STEP_X[stepIndex];
+		int nextY = y + STEP_Y[stepIndex];
+		int nextZ = z + STEP_Z[stepIndex];
+		RailShape flatShape = STEP_FLAT[stepIndex];
+
+		if (BlockPos.asLong(nextX, nextY, nextZ) == expectedPreviousPos) {
+			return isSameRailWithAxis(self, previousState, flatShape);
+		}
+		if (STEP_BELOW[stepIndex] == 0 || BlockPos.asLong(nextX, nextY - 1, nextZ) != expectedPreviousPos
+				|| !isSameRailWithAxis(self, previousState, flatShape)) {
+			return false;
+		}
+
+		context.scratchPos.set(nextX, nextY, nextZ);
 		return !isSameRailWithAxis(
-				self, context.getBlockState(level, context.scratchPos), railShape);
+				self, context.getBlockState(level, context.scratchPos), flatShape);
 	}
 
 	private static boolean isSameRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
