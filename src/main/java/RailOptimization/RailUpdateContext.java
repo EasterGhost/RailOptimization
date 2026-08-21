@@ -9,6 +9,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 final class RailUpdateContext {
 	final RailSearchCache searchCache;
 	final RailUpdateMemo memo = new RailUpdateMemo();
+	final RailChangeList changeList;
 	final MutableBlockPos railCursor = new MutableBlockPos();
 	final MutableBlockPos scratchPos = new MutableBlockPos();
 	final BlockState[] straightRailStates;
@@ -21,11 +22,13 @@ final class RailUpdateContext {
 	RailUpdateContext(int railPowerLimit) {
 		this.railPowerLimit = railPowerLimit;
 		searchCache = new RailSearchCache(railPowerLimit);
+		changeList = new RailChangeList(railPowerLimit * 2 + 1);
 		straightRailStates = new BlockState[railPowerLimit];
 	}
 
 	void reset() {
 		searchCache.clear();
+		changeList.reset();
 		cachePoweredSearchResults = true;
 		chunk = null;
 	}

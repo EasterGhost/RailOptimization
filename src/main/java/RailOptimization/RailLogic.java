@@ -32,7 +32,6 @@ public final class RailLogic {
 
 	private static final class ContextPool {
 		RailUpdateContext context;
-		RailChangeList changeList;
 		int walkDepth;
 	}
 
@@ -63,10 +62,8 @@ public final class RailLogic {
 		if (context == null || context.railPowerLimit != railPowerLimit) {
 			context = new RailUpdateContext(railPowerLimit);
 			pool.context = context;
-			pool.changeList = new RailChangeList(railPowerLimit * 2 + 1);
 		} else {
 			context.reset();
-			pool.changeList.reset();
 		}
 		return context;
 	}
@@ -76,14 +73,6 @@ public final class RailLogic {
 		if (context == pool.context) {
 			pool.walkDepth = 0;
 		}
-	}
-
-	private static RailChangeList newChangeList(RailUpdateContext context) {
-		ContextPool pool = CONTEXT_POOL.get();
-		if (context == pool.context) {
-			return pool.changeList;
-		}
-		return new RailChangeList(railPowerLimit * 2 + 1);
 	}
 
 	public static void setRailPowerLimit(int powerLimit) {
@@ -216,7 +205,7 @@ public final class RailLogic {
 		RailUpdateMemo.trackContext(context.memo);
 		context.beginPowering();
 		RailSearchCache checkedPos = context.searchCache;
-		RailChangeList changedRails = newChangeList(context);
+		RailChangeList changedRails = context.changeList;
 		setRailPowerState(world, pos, mainState, true, changedRails, context);
 		checkedPos.put(pos.asLong(), CHECKED_POWERED);
 		int firstDirectionCount = setRailPositionsPower(
@@ -237,7 +226,7 @@ public final class RailLogic {
 		context.memo.beginWalk();
 		RailUpdateMemo.trackContext(context.memo);
 		context.beginDepowering();
-		RailChangeList changedRails = newChangeList(context);
+		RailChangeList changedRails = context.changeList;
 		setRailPowerState(world, pos, mainState, false, changedRails, context);
 
 		int firstDirectionCount = setRailPositionsDePower(
@@ -387,7 +376,6 @@ public final class RailLogic {
 			z += stepZ;
 			cursor.set(x, y, z);
 			setRailPowerState(world, cursor, context.straightRailStates[index], false, changedRails, context);
-			context.searchCache.put(cursor.asLong(), CHECKED_BLOCKED);
 		}
 		return count;
 	}
@@ -432,44 +420,4 @@ public final class RailLogic {
 		}
 	}
 
-	private static final class RailChangeList {
-		private final long[] positions;
-		private final boolean[] ascending;
-		private int size;
-		private boolean hasSlope;
-
-		private RailChangeList(int capacity) {
-			this.positions = new long[capacity];
-			this.ascending = new boolean[capacity];
-		}
-
-		private void add(BlockPos pos, BlockState state) {
-			positions[size] = pos.asLong();
-			boolean isAscending = RailLogic.isAscending(state.getValue(PoweredRailBlock.SHAPE));
-			ascending[size] = isAscending;
-			hasSlope |= isAscending;
-			size++;
-		}
-
-		private void reset() {
-			size = 0;
-			hasSlope = false;
-		}
-
-		private int size() {
-			return size;
-		}
-
-		private boolean hasSlope() {
-			return hasSlope;
-		}
-
-		private long position(int index) {
-			return positions[index];
-		}
-
-		private boolean isAscending(int index) {
-			return ascending[index];
-		}
-	}
 }
