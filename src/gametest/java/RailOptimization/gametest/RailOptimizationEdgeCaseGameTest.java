@@ -33,7 +33,7 @@ public class RailOptimizationEdgeCaseGameTest extends RailOptimizationGameTestSu
         BlockPos railA4 = startA.relative(Direction.EAST, 4);
         BlockPos observer = railA4.south();
         BlockPos startB = new BlockPos(2, RAIL_Y, 6);
-        BlockPos[] dustLine = new BlockPos[]{
+        BlockPos[] dustLine = new BlockPos[] {
                 new BlockPos(6, RAIL_Y, 4),
                 new BlockPos(5, RAIL_Y, 4),
                 new BlockPos(4, RAIL_Y, 4),
@@ -276,7 +276,6 @@ public class RailOptimizationEdgeCaseGameTest extends RailOptimizationGameTestSu
                 .thenSucceed();
     }
 
-    @SuppressWarnings("null")
     @GameTest(environment = "railoptimization-gametest:serial_86", maxTicks = 200, padding = 40)
     public void detectorRailWithMinecartPowersAdjacentLaneLikeVanilla(GameTestHelper helper) {
         BlockPos detector = new BlockPos(2, RAIL_Y, 3);
@@ -561,5 +560,175 @@ public class RailOptimizationEdgeCaseGameTest extends RailOptimizationGameTestSu
         helper.assertTrue(vanillaShape == optimizedShape,
                 Component.literal("rail shape mismatch at " + pos + ": vanilla="
                         + vanillaShape + ", optimized=" + optimizedShape));
+    }
+
+    @SuppressWarnings("null")
+    public void asymmetricDualSourceOverlapMatchesVanilla(GameTestHelper helper) {
+        BlockPos start = new BlockPos(1, RAIL_Y, 1);
+
+        placeRailLinePair(helper, start, Direction.EAST, 13, RailShape.EAST_WEST);
+
+        BlockPos sourceLeft = start.west();
+        BlockPos sourceRight = start.east(13);
+
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.setBlock(mirrorCopy(sourceLeft), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(sourceLeft, Blocks.REDSTONE_BLOCK);
+
+                    helper.setBlock(mirrorCopy(sourceRight), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(sourceRight, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, 13);
+                    assertRailLinePowered(helper, start, Direction.EAST, 13, true);
+                })
+                .thenExecute(() -> {
+                    helper.setBlock(mirrorCopy(sourceLeft), Blocks.AIR);
+                    helper.setBlock(sourceLeft, Blocks.AIR);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, 13);
+                    assertRailLinePowered(helper, start, Direction.EAST, 4, false);
+                    assertRailLinePowered(helper, start.east(4), Direction.EAST, 9, true);
+                })
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_103", maxTicks = 160, padding = 40)
+    public void zeroTickPulseFlipMatchesVanilla(GameTestHelper helper) {
+        BlockPos start = new BlockPos(2, RAIL_Y, 2);
+        placeRailLinePair(helper, start, Direction.EAST, 5, RailShape.EAST_WEST);
+
+        BlockPos source = start.west();
+
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(source, Blocks.REDSTONE_BLOCK);
+
+                    helper.setBlock(mirrorCopy(source), Blocks.AIR);
+                    helper.setBlock(source, Blocks.AIR);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, 5);
+                    assertRailLinePowered(helper, start, Direction.EAST, 5, false);
+                })
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_104", maxTicks = 160, padding = 40)
+    public void pistonShapeShiftingMatchesVanilla(GameTestHelper helper) {
+        BlockPos start = new BlockPos(2, RAIL_Y, 2);
+        placeRailLinePair(helper, start, Direction.EAST, 5, RailShape.EAST_WEST);
+
+        BlockPos source = start.west();
+        BlockPos pistonPos = start.east(2).north();
+
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(source, Blocks.REDSTONE_BLOCK);
+
+                    helper.setBlock(mirrorCopy(pistonPos),
+                            Blocks.PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.SOUTH));
+                    helper.setBlock(pistonPos,
+                            Blocks.PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.SOUTH));
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    helper.setBlock(mirrorCopy(pistonPos.above()), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(pistonPos.above(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, 2);
+                    assertMatchingRailLinePower(helper, mirrorCopy(start).east(3), start.east(3), Direction.EAST, 2);
+                    assertRailLinePowered(helper, start.east(3), Direction.EAST, 2, false);
+                })
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_105", maxTicks = 160, padding = 40)
+    public void indirectPowerCascadeMatchesVanilla(GameTestHelper helper) {
+        BlockPos railPos = new BlockPos(3, RAIL_Y, 3);
+        BlockPos supportBlock = railPos.below();
+        BlockPos torchPos = supportBlock.below();
+        BlockPos baseBlock = torchPos.below();
+
+        helper.setBlock(mirrorCopy(baseBlock), Blocks.STONE);
+        helper.setBlock(baseBlock, Blocks.STONE);
+
+        helper.setBlock(mirrorCopy(torchPos), Blocks.REDSTONE_TORCH);
+        helper.setBlock(torchPos, Blocks.REDSTONE_TORCH);
+
+        helper.setBlock(mirrorCopy(supportBlock), Blocks.STONE);
+        helper.setBlock(supportBlock, Blocks.STONE);
+
+        placeRailLinePair(helper, railPos, Direction.EAST, 3, RailShape.EAST_WEST);
+
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    assertMatchingRailLinePower(helper, mirrorCopy(railPos), railPos, Direction.EAST, 3);
+                    assertRailLinePowered(helper, railPos, Direction.EAST, 3, true);
+                })
+                .thenSucceed();
+    }
+
+    @SuppressWarnings("null")
+    @GameTest(environment = "railoptimization-gametest:serial_106", maxTicks = 160, padding = 40)
+    public void brokenTopologicalLoopMatchesVanilla(GameTestHelper helper) {
+        BlockPos center = new BlockPos(3, RAIL_Y, 3);
+
+        placeShapedRail(helper, center.north().west(), RailShape.SOUTH_EAST, Blocks.RAIL);
+        placeShapedRail(helper, mirrorCopy(center.north().west()), RailShape.SOUTH_EAST, Blocks.RAIL);
+
+        placeShapedRail(helper, center.north().east(), RailShape.SOUTH_WEST, Blocks.RAIL);
+        placeShapedRail(helper, mirrorCopy(center.north().east()), RailShape.SOUTH_WEST, Blocks.RAIL);
+
+        placeShapedRail(helper, center.south().west(), RailShape.NORTH_EAST, Blocks.RAIL);
+        placeShapedRail(helper, mirrorCopy(center.south().west()), RailShape.NORTH_EAST, Blocks.RAIL);
+
+        placeShapedRail(helper, center.south().east(), RailShape.NORTH_WEST, Blocks.RAIL);
+        placeShapedRail(helper, mirrorCopy(center.south().east()), RailShape.NORTH_WEST, Blocks.RAIL);
+
+        placeShapedRail(helper, center.north(), RailShape.EAST_WEST, Blocks.POWERED_RAIL);
+        placeShapedRail(helper, mirrorCopy(center.north()), RailShape.EAST_WEST, Blocks.POWERED_RAIL);
+
+        placeShapedRail(helper, center.south(), RailShape.EAST_WEST, Blocks.POWERED_RAIL);
+        placeShapedRail(helper, mirrorCopy(center.south()), RailShape.EAST_WEST, Blocks.POWERED_RAIL);
+
+        placeShapedRail(helper, center.west(), RailShape.NORTH_SOUTH, Blocks.POWERED_RAIL);
+        placeShapedRail(helper, mirrorCopy(center.west()), RailShape.NORTH_SOUTH, Blocks.POWERED_RAIL);
+
+        placeShapedRail(helper, center.east(), RailShape.NORTH_SOUTH, Blocks.POWERED_RAIL);
+        placeShapedRail(helper, mirrorCopy(center.east()), RailShape.NORTH_SOUTH, Blocks.POWERED_RAIL);
+
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.setBlock(mirrorCopy(center.north().above()), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(center.north().above(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(4)
+                .thenExecute(() -> {
+                    assertMatchingRailPower(helper, mirrorCopy(center.north()), center.north());
+                    helper.assertBlockProperty(center.north(), PoweredRailBlock.POWERED, true);
+
+                    helper.assertBlockProperty(center.south(), PoweredRailBlock.POWERED, false);
+                    helper.assertBlockProperty(center.west(), PoweredRailBlock.POWERED, false);
+                    helper.assertBlockProperty(center.east(), PoweredRailBlock.POWERED, false);
+                })
+                .thenSucceed();
     }
 }
