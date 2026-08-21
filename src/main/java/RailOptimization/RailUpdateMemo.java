@@ -106,16 +106,12 @@ public final class RailUpdateMemo {
 	}
 
 	private int checkEntry(long position, int powerLimit, boolean currentPowered) {
-		long expectedMeta = ((long) blockChangeEpoch & 0xFFFFFFFFL)
-				| ((long) powerLimit << 32)
-				| (currentPowered ? 1L << 39 : 0)
-				| (1L << 40);
 		int index = (int) (position * 0x9E3779B97F4A7C15L) & MASK;
 		if (meta[index] == 0) {
 			return 0;
 		}
 		if (keys[index] == position) {
-			return meta[index] == expectedMeta ? 1 : -1;
+			return meta[index] == expectedMeta(powerLimit, currentPowered) ? 1 : -1;
 		}
 		for (int probes = CAPACITY - 1; probes > 0; --probes) {
 			index = (index + 1) & MASK;
@@ -123,9 +119,16 @@ public final class RailUpdateMemo {
 				return 0;
 			}
 			if (keys[index] == position) {
-				return meta[index] == expectedMeta ? 1 : -1;
+				return meta[index] == expectedMeta(powerLimit, currentPowered) ? 1 : -1;
 			}
 		}
 		return 0;
+	}
+
+	private static long expectedMeta(int powerLimit, boolean currentPowered) {
+		return ((long) blockChangeEpoch & 0xFFFFFFFFL)
+				| ((long) powerLimit << 32)
+				| (currentPowered ? 1L << 39 : 0)
+				| (1L << 40);
 	}
 }
