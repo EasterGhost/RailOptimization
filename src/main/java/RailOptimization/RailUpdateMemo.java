@@ -9,10 +9,14 @@ public final class RailUpdateMemo {
 	private static final int CAPACITY = 256;
 	private static final int MASK = CAPACITY - 1;
 
-	private static final ThreadLocal<Integer> LANE_WRITE_DEPTH = ThreadLocal.withInitial(() -> 0);
+	private static final ThreadLocal<LaneWriteDepth> LANE_WRITE_DEPTH = ThreadLocal.withInitial(LaneWriteDepth::new);
 	private static final ThreadLocal<List<RailUpdateMemo>> MEMOS = ThreadLocal.withInitial(ArrayList::new);
 	private static final ThreadLocal<RailUpdateMemo> TOP = new ThreadLocal<>();
 	private static volatile int blockChangeEpoch;
+
+	private static final class LaneWriteDepth {
+		int value;
+	}
 
 	private final long[] keys = new long[CAPACITY];
 	private final byte[] used = new byte[CAPACITY];
@@ -26,18 +30,18 @@ public final class RailUpdateMemo {
 	}
 
 	public static void onBlockStateChanged() {
-		if (LANE_WRITE_DEPTH.get() != 0) {
+		if (LANE_WRITE_DEPTH.get().value != 0) {
 			return;
 		}
 		++blockChangeEpoch;
 	}
 
 	static void beginLaneWrite() {
-		LANE_WRITE_DEPTH.set(LANE_WRITE_DEPTH.get() + 1);
+		LANE_WRITE_DEPTH.get().value++;
 	}
 
 	static void endLaneWrite() {
-		LANE_WRITE_DEPTH.set(LANE_WRITE_DEPTH.get() - 1);
+		LANE_WRITE_DEPTH.get().value--;
 	}
 
 	static void trackContext(RailUpdateMemo memo) {

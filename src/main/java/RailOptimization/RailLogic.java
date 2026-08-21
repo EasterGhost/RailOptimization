@@ -33,9 +33,9 @@ public final class RailLogic {
 	private static final class ContextPool {
 		RailUpdateContext context;
 		RailChangeList changeList;
+		int walkDepth;
 	}
 
-	private static final ThreadLocal<Integer> WALK_DEPTH = ThreadLocal.withInitial(() -> 0);
 	private static final ThreadLocal<ContextPool> CONTEXT_POOL = ThreadLocal.withInitial(ContextPool::new);
 
 	static {
@@ -53,12 +53,12 @@ public final class RailLogic {
 	}
 
 	private static RailUpdateContext newUpdateContext() {
-		if (WALK_DEPTH.get() > 0) {
+		ContextPool pool = CONTEXT_POOL.get();
+		if (pool.walkDepth > 0) {
 			return new RailUpdateContext(railPowerLimit);
 		}
 
-		WALK_DEPTH.set(1);
-		ContextPool pool = CONTEXT_POOL.get();
+		pool.walkDepth = 1;
 		RailUpdateContext context = pool.context;
 		if (context == null || context.railPowerLimit != railPowerLimit) {
 			context = new RailUpdateContext(railPowerLimit);
@@ -74,7 +74,7 @@ public final class RailLogic {
 	private static void releaseUpdateContext(RailUpdateContext context) {
 		ContextPool pool = CONTEXT_POOL.get();
 		if (context == pool.context) {
-			WALK_DEPTH.set(0);
+			pool.walkDepth = 0;
 		}
 	}
 
