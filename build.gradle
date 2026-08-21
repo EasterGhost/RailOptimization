@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.mod_version
+version = "${project.mod_version}+mc${project.minecraft_version}"
 group = project.maven_group
 
 repositories {
@@ -76,7 +76,7 @@ processGametestResources {
 }
 
 base {
-    archivesName = "${project.archives_base_name.toLowerCase()}-fabric-mc${project.minecraft_version}"
+    archivesName = "${project.archives_base_name.toLowerCase()}-fabric"
 }
 
 def targetJavaVersion = 25
