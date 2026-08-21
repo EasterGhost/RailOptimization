@@ -25,8 +25,8 @@ public final class RailLogic {
 	private static final int TEST_MODE_OPTIMIZED = 0;
 	private static final int TEST_MODE_VANILLA = -1;
 
-	private static int railPowerLimit = 8;
-	private static boolean optimizationEnabled = true;
+	private static volatile int railPowerLimit = 8;
+	private static volatile boolean optimizationEnabled = true;
 	private static boolean useTestPositionModes;
 	private static final Long2IntOpenHashMap testPositionModes = new Long2IntOpenHashMap();
 
@@ -91,7 +91,7 @@ public final class RailLogic {
 	}
 
 	static int clampRailPowerLimit(int powerLimit) {
-		return Math.min(Math.max(1, powerLimit), MAX_RAIL_POWER_LIMIT);
+		return Math.clamp(powerLimit, 1, MAX_RAIL_POWER_LIMIT);
 	}
 
 	static int getRailPowerLimit() {
@@ -131,14 +131,24 @@ public final class RailLogic {
 	@SuppressWarnings("null")
 	public static boolean tryCustomUpdateState(
 			PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
+		if (useTestPositionModes) {
+			return tryCustomUpdateStateWithTestModes(self, state, level, pos);
+		}
 		if (!optimizationEnabled) {
 			return false;
 		}
+		if (RailUpdateMemo.isConfirmed(pos.asLong(), railPowerLimit, state.getValue(POWERED))) {
+			return true;
+		}
+		customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
+		return true;
+	}
 
-		int testMode = useTestPositionModes
-				? testPositionModes.get(pos.asLong())
-				: TEST_MODE_OPTIMIZED;
-		if (testMode == TEST_MODE_VANILLA) {
+	@SuppressWarnings("null")
+	private static boolean tryCustomUpdateStateWithTestModes(
+			PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
+		int testMode = testPositionModes.get(pos.asLong());
+		if (testMode == TEST_MODE_VANILLA || !optimizationEnabled) {
 			return false;
 		}
 
