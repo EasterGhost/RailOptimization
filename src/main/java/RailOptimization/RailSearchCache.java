@@ -12,11 +12,14 @@ final class RailSearchCache {
 	private static final int MIN_CAPACITY = 16;
 	private static final int MAX_CAPACITY = 1024;
 
+	private static final int META_SENTINEL = 1 << 31;
+	private static final int META_FLAGS = 0xFF;
+	private static final int META_GEN_SHIFT = 8;
+	private static final int META_COST_SHIFT = 16;
+	private static final int META_STATE_SHIFT = 24;
+
 	private final long[] keys;
-	private final byte[] flags;
-	private final byte[] states;
-	private final int[] searchCosts;
-	private final byte[] searchGenerations;
+	private final int[] meta;
 	private final int mask;
 	private byte searchGeneration;
 
@@ -27,12 +30,8 @@ final class RailSearchCache {
 		capacity = Integer.highestOneBit(capacity - 1) << 1;
 		capacity = Math.min(capacity, MAX_CAPACITY);
 		keys = new long[capacity];
-		flags = new byte[capacity];
-		states = new byte[capacity];
-		searchCosts = new int[capacity];
-		searchGenerations = new byte[capacity];
+		meta = new int[capacity];
 		mask = capacity - 1;
-		Arrays.fill(flags, (byte) -1);
 	}
 
 	byte get(long position) {
@@ -41,7 +40,7 @@ final class RailSearchCache {
 
 	byte get(long position, byte entryFlags) {
 		int index = findOrEmpty(position, entryFlags);
-		return index >= 0 ? states[index] : RailLogic.CHECKED_UNKNOWN;
+		return index >= 0 ? (byte) (meta[index] >>> META_STATE_SHIFT) : RailLogic.CHECKED_UNKNOWN;
 	}
 
 	void put(long position, byte state) {
@@ -51,7 +50,8 @@ final class RailSearchCache {
 	void put(long position, byte entryFlags, byte state) {
 		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
-			states[index] = state;
+			meta[index] = (meta[index] & ~(META_FLAGS << META_STATE_SHIFT))
+					| ((state & META_FLAGS) << META_STATE_SHIFT);
 			return;
 		}
 		if (index == -1) {
@@ -60,24 +60,35 @@ final class RailSearchCache {
 
 		index = -index - 2;
 		keys[index] = position;
-		flags[index] = entryFlags;
-		states[index] = state;
-		searchCosts[index] = -1;
+		meta[index] = META_SENTINEL
+				| ((state & META_FLAGS) << META_STATE_SHIFT)
+				| (META_FLAGS << META_COST_SHIFT)
+				| ((searchGeneration & META_FLAGS) << META_GEN_SHIFT)
+				| (entryFlags & META_FLAGS);
 	}
 
 	int getPoweredSearchCost(long position, byte entryFlags) {
 		int index = findOrEmpty(position, entryFlags);
-		return index >= 0 && searchGenerations[index] == searchGeneration ? searchCosts[index] : -1;
+		if (index < 0 || ((meta[index] >>> META_GEN_SHIFT) & META_FLAGS) != searchGeneration) {
+			return -1;
+		}
+		byte cost = (byte) (meta[index] >>> META_COST_SHIFT);
+		return cost == -1 ? -1 : cost & META_FLAGS;
 	}
 
 	void putPoweredSearchCost(long position, byte entryFlags, int searchCost) {
 		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
-			if (searchGenerations[index] == searchGeneration) {
-				searchCosts[index] = Math.min(searchCosts[index], searchCost);
+			if (((meta[index] >>> META_GEN_SHIFT) & META_FLAGS) == searchGeneration) {
+				byte oldCost = (byte) (meta[index] >>> META_COST_SHIFT);
+				if (oldCost == -1 || searchCost < (oldCost & META_FLAGS)) {
+					meta[index] = (meta[index] & ~(META_FLAGS << META_COST_SHIFT))
+							| ((searchCost & META_FLAGS) << META_COST_SHIFT);
+				}
 			} else {
-				searchCosts[index] = searchCost;
-				searchGenerations[index] = searchGeneration;
+				meta[index] = (meta[index] & ~((META_FLAGS << META_GEN_SHIFT) | (META_FLAGS << META_COST_SHIFT)))
+						| ((searchGeneration & META_FLAGS) << META_GEN_SHIFT)
+						| ((searchCost & META_FLAGS) << META_COST_SHIFT);
 			}
 			return;
 		}
@@ -87,10 +98,11 @@ final class RailSearchCache {
 
 		index = -index - 2;
 		keys[index] = position;
-		flags[index] = entryFlags;
-		states[index] = RailLogic.CHECKED_POWERED;
-		searchCosts[index] = searchCost;
-		searchGenerations[index] = searchGeneration;
+		meta[index] = META_SENTINEL
+				| ((RailLogic.CHECKED_POWERED & META_FLAGS) << META_STATE_SHIFT)
+				| ((searchCost & META_FLAGS) << META_COST_SHIFT)
+				| ((searchGeneration & META_FLAGS) << META_GEN_SHIFT)
+				| (entryFlags & META_FLAGS);
 	}
 
 	void advanceSearchGeneration() {
@@ -101,26 +113,24 @@ final class RailSearchCache {
 	}
 
 	void clear() {
-		Arrays.fill(flags, (byte) -1);
+		Arrays.fill(meta, 0);
 	}
 
 	private int findOrEmpty(long position, byte entryFlags) {
 		int index = (int) ((position * 0x9E3779B97F4A7C15L + entryFlags) & mask);
-		byte slotFlags = flags[index];
-		if (slotFlags == -1) {
+		if (meta[index] == 0) {
 			return -index - 2;
 		}
-		if (slotFlags == entryFlags && keys[index] == position) {
+		if ((meta[index] & META_FLAGS) == entryFlags && keys[index] == position) {
 			return index;
 		}
 		int indexShift = ((int) (position >>> 32) & mask) | 1;
 		for (int probes = keys.length - 1; probes > 0; --probes) {
 			index = (index + indexShift) & mask;
-			slotFlags = flags[index];
-			if (slotFlags == -1) {
+			if (meta[index] == 0) {
 				return -index - 2;
 			}
-			if (slotFlags == entryFlags && keys[index] == position) {
+			if ((meta[index] & META_FLAGS) == entryFlags && keys[index] == position) {
 				return index;
 			}
 		}
