@@ -35,48 +35,37 @@ final class RailSignalSearcher {
 		RAIL_AXIS[RailShape.ASCENDING_NORTH.ordinal()] = AXIS_NORTH_SOUTH;
 		RAIL_AXIS[RailShape.ASCENDING_SOUTH.ordinal()] = AXIS_NORTH_SOUTH;
 
-		RailShape[] flatShapes = new RailShape[12];
-		byte[] stepX = new byte[12];
-		byte[] stepY = new byte[12];
-		byte[] stepZ = new byte[12];
-		byte[] stepBelow = new byte[12];
+		int stepCount = RailShape.values().length << 1;
+		RailShape[] flatShapes = new RailShape[stepCount];
+		byte[] stepX = new byte[stepCount];
+		byte[] stepY = new byte[stepCount];
+		byte[] stepZ = new byte[stepCount];
+		byte[] stepBelow = new byte[stepCount];
 
-		flatShapes[0] = RailShape.NORTH_SOUTH;
-		stepZ[0] = 1;
-		stepBelow[0] = 1;
-		flatShapes[1] = RailShape.NORTH_SOUTH;
-		stepZ[1] = -1;
-		stepBelow[1] = 1;
-		flatShapes[2] = RailShape.EAST_WEST;
-		stepX[2] = -1;
-		stepBelow[2] = 1;
-		flatShapes[3] = RailShape.EAST_WEST;
-		stepX[3] = 1;
-		stepBelow[3] = 1;
-		flatShapes[4] = RailShape.EAST_WEST;
-		stepX[4] = -1;
-		stepBelow[4] = 1;
-		flatShapes[5] = RailShape.EAST_WEST;
-		stepX[5] = 1;
-		stepY[5] = 1;
-		flatShapes[6] = RailShape.EAST_WEST;
-		stepX[6] = -1;
-		stepY[6] = 1;
-		flatShapes[7] = RailShape.EAST_WEST;
-		stepX[7] = 1;
-		stepBelow[7] = 1;
-		flatShapes[8] = RailShape.NORTH_SOUTH;
-		stepZ[8] = 1;
-		stepBelow[8] = 1;
-		flatShapes[9] = RailShape.NORTH_SOUTH;
-		stepZ[9] = -1;
-		stepY[9] = 1;
-		flatShapes[10] = RailShape.NORTH_SOUTH;
-		stepZ[10] = 1;
-		stepY[10] = 1;
-		flatShapes[11] = RailShape.NORTH_SOUTH;
-		stepZ[11] = -1;
-		stepBelow[11] = 1;
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.NORTH_SOUTH, true, RailShape.NORTH_SOUTH, 0, 0, 1, true);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.NORTH_SOUTH, false, RailShape.NORTH_SOUTH, 0, 0, -1, true);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.EAST_WEST, true, RailShape.EAST_WEST, -1, 0, 0, true);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.EAST_WEST, false, RailShape.EAST_WEST, 1, 0, 0, true);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_EAST, true, RailShape.EAST_WEST, -1, 0, 0, true);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_EAST, false, RailShape.EAST_WEST, 1, 1, 0, false);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_WEST, true, RailShape.EAST_WEST, -1, 1, 0, false);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_WEST, false, RailShape.EAST_WEST, 1, 0, 0, true);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_NORTH, true, RailShape.NORTH_SOUTH, 0, 0, 1, true);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_NORTH, false, RailShape.NORTH_SOUTH, 0, 1, -1, false);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_SOUTH, true, RailShape.NORTH_SOUTH, 0, 1, 1, false);
+		setStep(flatShapes, stepX, stepY, stepZ, stepBelow,
+				RailShape.ASCENDING_SOUTH, false, RailShape.NORTH_SOUTH, 0, 0, -1, true);
 
 		STEP_X = stepX;
 		STEP_Y = stepY;
@@ -86,6 +75,17 @@ final class RailSignalSearcher {
 	}
 
 	private RailSignalSearcher() {
+	}
+
+	private static void setStep(RailShape[] flatShapes, byte[] stepX, byte[] stepY,
+			byte[] stepZ, byte[] stepBelow, RailShape railShape, boolean forward,
+			RailShape flatShape, int x, int y, int z, boolean below) {
+		int index = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		flatShapes[index] = flatShape;
+		stepX[index] = (byte) x;
+		stepY[index] = (byte) y;
+		stepZ[index] = (byte) z;
+		stepBelow[index] = (byte) (below ? 1 : 0);
 	}
 
 	static boolean supportsFastSearch(RailShape railShape) {
