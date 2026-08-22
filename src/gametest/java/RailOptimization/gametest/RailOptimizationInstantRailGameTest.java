@@ -78,7 +78,7 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 	@SuppressWarnings("null")
 	@GameTest(environment = "railoptimization-gametest:serial_89", maxTicks = 160, padding = 40)
 	public void ascendingPoweredRailInstantLinePropagatesSameTick(GameTestHelper helper) {
-		BlockPos[] rails = new BlockPos[]{
+		BlockPos[] rails = new BlockPos[] {
 				new BlockPos(0, RAIL_Y + 3, 2),
 				new BlockPos(1, RAIL_Y + 2, 2),
 				new BlockPos(2, RAIL_Y + 1, 2),
@@ -88,7 +88,7 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 				new BlockPos(6, RAIL_Y + 2, 2),
 				new BlockPos(7, RAIL_Y + 3, 2)
 		};
-		RailShape[] shapes = new RailShape[]{
+		RailShape[] shapes = new RailShape[] {
 				RailShape.EAST_WEST,
 				RailShape.ASCENDING_WEST,
 				RailShape.ASCENDING_WEST,
@@ -419,7 +419,6 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 		mirrorDropperEntity.setItem(0, new ItemStack(Blocks.STONE));
 	}
 
-	@SuppressWarnings("null")
 	private static void assertDropperFiredMatches(GameTestHelper helper, BlockPos dropperPos) {
 		int vanillaItems = countItemsNear(helper, mirrorCopy(dropperPos), Blocks.STONE.asItem());
 		int optimizedItems = countItemsNear(helper, dropperPos, Blocks.STONE.asItem());
@@ -437,7 +436,6 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 				entity -> entity.getItem().is(item)).size();
 	}
 
-	@SuppressWarnings("null")
 	private static BlockState floorLeverState() {
 		return Blocks.LEVER.defaultBlockState()
 				.setValue(FaceAttachedHorizontalDirectionalBlock.FACE, AttachFace.FLOOR)
@@ -445,7 +443,6 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 				.setValue(LeverBlock.POWERED, false);
 	}
 
-	@SuppressWarnings("null")
 	private static BlockState wallLeverState(Direction facing) {
 		return Blocks.LEVER.defaultBlockState()
 				.setValue(FaceAttachedHorizontalDirectionalBlock.FACE, AttachFace.WALL)

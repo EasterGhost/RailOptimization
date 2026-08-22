@@ -563,6 +563,7 @@ public class RailOptimizationEdgeCaseGameTest extends RailOptimizationGameTestSu
 	}
 
 	@SuppressWarnings("null")
+	@GameTest(environment = "railoptimization-gametest:serial_102", maxTicks = 160, padding = 40)
 	public void asymmetricDualSourceOverlapMatchesVanilla(GameTestHelper helper) {
 		BlockPos start = new BlockPos(1, RAIL_Y, 1);
 

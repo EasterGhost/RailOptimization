@@ -61,7 +61,8 @@ public class RailOptimizationDuplicatorGameTest extends RailOptimizationGameTest
 		sequence = withLeverCycles(sequence, helper, mirrorCopy(lever), DUPLICATOR_LEVER_CYCLES);
 		sequence = withLeverCycles(sequence, helper, lever, DUPLICATOR_LEVER_CYCLES);
 		sequence.thenIdle(4).thenExecute(() -> assertDuplicatorBehaviorMatchesVanilla(
-				helper, origin, RailShape.EAST_WEST, Blocks.ACTIVATOR_RAIL, Blocks.ACTIVATOR_RAIL.asItem()))
+				helper, origin, RailShape.EAST_WEST, Blocks.ACTIVATOR_RAIL,
+				Blocks.ACTIVATOR_RAIL.asItem()))
 				.thenSucceed();
 	}
 
@@ -75,7 +76,8 @@ public class RailOptimizationDuplicatorGameTest extends RailOptimizationGameTest
 		sequence = withLeverCycles(sequence, helper, mirrorCopy(lever), DUPLICATOR_LEVER_CYCLES);
 		sequence = withLeverCycles(sequence, helper, lever, DUPLICATOR_LEVER_CYCLES);
 		sequence.thenIdle(4).thenExecute(() -> assertDuplicatorBehaviorMatchesVanilla(
-				helper, origin, RailShape.EAST_WEST, Blocks.DETECTOR_RAIL, Blocks.DETECTOR_RAIL.asItem()))
+				helper, origin, RailShape.EAST_WEST, Blocks.DETECTOR_RAIL,
+				Blocks.DETECTOR_RAIL.asItem()))
 				.thenSucceed();
 	}
 
@@ -155,7 +157,8 @@ public class RailOptimizationDuplicatorGameTest extends RailOptimizationGameTest
 				.getValue(PistonBaseBlock.EXTENDED);
 		helper.assertTrue(vanillaPistonExtended == optimizedPistonExtended,
 				Component.literal("piston end state mismatch: vanilla extended="
-						+ vanillaPistonExtended + ", optimized extended=" + optimizedPistonExtended));
+						+ vanillaPistonExtended + ", optimized extended="
+						+ optimizedPistonExtended));
 
 		if (vanillaRailPresent && optimizedRailPresent) {
 			helper.assertBlockProperty(railPos, ((BaseRailBlock) railBlock).getShapeProperty(), railShape);
@@ -247,14 +250,16 @@ public class RailOptimizationDuplicatorGameTest extends RailOptimizationGameTest
 	}
 
 	@SuppressWarnings("null")
-	private static void placeDuplicatorRail(GameTestHelper helper, BlockPos railPos, RailShape railShape, Block railBlock) {
+	private static void placeDuplicatorRail(GameTestHelper helper, BlockPos railPos, RailShape railShape,
+			Block railBlock) {
 		markVanillaForMirrorRail(helper, railPos);
 		helper.setBlock(railPos, railBlock.defaultBlockState().setValue(
 				((BaseRailBlock) railBlock).getShapeProperty(), railShape));
 	}
 
-	private static GameTestSequence withLeverCycles(
-			GameTestSequence sequence, GameTestHelper helper, BlockPos lever, int cycles) {
+	@SuppressWarnings("null")
+	private static GameTestSequence withLeverCycles(GameTestSequence sequence, GameTestHelper helper, BlockPos lever,
+			int cycles) {
 		for (int cycle = 0; cycle < cycles; cycle++) {
 			sequence = sequence.thenExecute(() -> helper.pullLever(lever)).thenIdle(8)
 					.thenExecute(() -> helper.pullLever(lever)).thenIdle(8);

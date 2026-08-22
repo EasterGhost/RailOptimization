@@ -206,4 +206,75 @@ public class RailOptimizationMonotonicSlopeGameTest extends RailOptimizationGame
 				})
 				.thenSucceed();
 	}
+
+	@SuppressWarnings("null")
+	@GameTest(environment = "railoptimization-gametest:serial_109", maxTicks = 160, padding = 40)
+	public void directSideSignalOnMixedChainStopsDepowerWalk(GameTestHelper helper) {
+		BlockPos[] rails = new BlockPos[]{
+				new BlockPos(3, RAIL_Y, 2),
+				new BlockPos(4, RAIL_Y, 2),
+				new BlockPos(5, RAIL_Y + 1, 2),
+				new BlockPos(6, RAIL_Y + 1, 2),
+				new BlockPos(7, RAIL_Y + 1, 2)
+		};
+		RailShape[] shapes = new RailShape[]{
+				RailShape.EAST_WEST,
+				RailShape.ASCENDING_EAST,
+				RailShape.EAST_WEST,
+				RailShape.EAST_WEST,
+				RailShape.EAST_WEST
+		};
+		BlockPos source = new BlockPos(2, RAIL_Y, 2);
+		BlockPos sideSignal = new BlockPos(6, RAIL_Y + 1, 3);
+		placeRailPathPair(helper, rails, shapes);
+
+		helper.startSequence()
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(false);
+					helper.setBlock(mirrorCopy(sideSignal), Blocks.REDSTONE_BLOCK);
+					helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(true);
+					helper.setBlock(sideSignal, Blocks.REDSTONE_BLOCK);
+					helper.setBlock(source, Blocks.REDSTONE_BLOCK);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(true);
+					assertMatchingRailPower(helper, mirrorCopy(rails), rails);
+					assertRailsPowered(helper, rails, true);
+				})
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(false);
+					helper.setBlock(mirrorCopy(source), Blocks.AIR);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(true);
+					helper.setBlock(source, Blocks.AIR);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(true);
+					assertMatchingRailPower(helper, mirrorCopy(rails), rails);
+				})
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(false);
+					helper.setBlock(mirrorCopy(sideSignal), Blocks.AIR);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(true);
+					helper.setBlock(sideSignal, Blocks.AIR);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					RailLogic.setOptimizationEnabled(true);
+					assertMatchingRailPower(helper, mirrorCopy(rails), rails);
+					assertRailsPowered(helper, rails, false);
+				})
+				.thenSucceed();
+	}
 }
