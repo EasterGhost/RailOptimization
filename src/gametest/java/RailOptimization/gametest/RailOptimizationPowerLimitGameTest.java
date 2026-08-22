@@ -10,120 +10,120 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationPowerLimitGameTest extends RailOptimizationGameTestSupport {
-    @GameTest(environment = "railoptimization-gametest:serial_62", maxTicks = 1)
-    public void powerLimitCommandClampsToSupportedRange(GameTestHelper helper) {
-        var server = helper.getLevel().getServer();
-        var source = server.createCommandSourceStack();
+	@GameTest(environment = "railoptimization-gametest:serial_62", maxTicks = 1)
+	public void powerLimitCommandClampsToSupportedRange(GameTestHelper helper) {
+		var server = helper.getLevel().getServer();
+		var source = server.createCommandSourceStack();
 
-        try {
-            server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 999");
-            helper.assertTrue(RailLogicTestAccess.currentPowerLimit() == 64,
-                    Component.literal("powerLimit command did not clamp to 64"));
+		try {
+			server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 999");
+			helper.assertTrue(RailLogicTestAccess.currentPowerLimit() == 64,
+					Component.literal("powerLimit command did not clamp to 64"));
 
-            server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 0");
-            helper.assertTrue(RailLogicTestAccess.currentPowerLimit() == 1,
-                    Component.literal("powerLimit command did not clamp to 1"));
-        } finally {
-            server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 8");
-        }
+			server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 0");
+			helper.assertTrue(RailLogicTestAccess.currentPowerLimit() == 1,
+					Component.literal("powerLimit command did not clamp to 1"));
+		} finally {
+			server.getCommands().performPrefixedCommand(source, "railoptimization powerLimit 8");
+		}
 
-        helper.succeed();
-    }
+		helper.succeed();
+	}
 
-    @GameTest(environment = "railoptimization-gametest:serial_57", maxTicks = 1)
-    public void powerLimitIsClampedToSafeRange(GameTestHelper helper) {
-        helper.assertTrue(RailLogicTestAccess.maximumPowerLimit() == 64,
-                Component.literal("maximum power limit must remain 64"));
-        helper.assertTrue(RailLogicTestAccess.clampPowerLimit(Integer.MIN_VALUE) == 1,
-                Component.literal("power limit below one was not clamped"));
-        helper.assertTrue(
-                RailLogicTestAccess.clampPowerLimit(Integer.MAX_VALUE) == RailLogicTestAccess.maximumPowerLimit(),
-                Component.literal("power limit above the supported maximum was not clamped"));
-        helper.succeed();
-    }
+	@GameTest(environment = "railoptimization-gametest:serial_57", maxTicks = 1)
+	public void powerLimitIsClampedToSafeRange(GameTestHelper helper) {
+		helper.assertTrue(RailLogicTestAccess.maximumPowerLimit() == 64,
+				Component.literal("maximum power limit must remain 64"));
+		helper.assertTrue(RailLogicTestAccess.clampPowerLimit(Integer.MIN_VALUE) == 1,
+				Component.literal("power limit below one was not clamped"));
+		helper.assertTrue(
+				RailLogicTestAccess.clampPowerLimit(Integer.MAX_VALUE) == RailLogicTestAccess.maximumPowerLimit(),
+				Component.literal("power limit above the supported maximum was not clamped"));
+		helper.succeed();
+	}
 
-    @GameTest(environment = "railoptimization-gametest:serial_50", maxTicks = 140, padding = 40)
-    public void powerLimitOnePowersOneConnectedRail(GameTestHelper helper) {
-        BlockPos start = new BlockPos(1, RAIL_Y, 3);
-        BlockPos source = start.north();
-        int length = 4;
+	@GameTest(environment = "railoptimization-gametest:serial_50", maxTicks = 140, padding = 40)
+	public void powerLimitOnePowersOneConnectedRail(GameTestHelper helper) {
+		BlockPos start = new BlockPos(1, RAIL_Y, 3);
+		BlockPos source = start.north();
+		int length = 4;
 
-        placeRailLineWithPowerLimit(helper, start, length, 1);
+		placeRailLineWithPowerLimit(helper, start, length, 1);
 
-        helper.startSequence()
-                .thenExecute(() -> helper.setBlock(source, Blocks.REDSTONE_BLOCK))
-                .thenIdle(4)
-                .thenExecute(() -> {
-                    assertRailLinePowered(helper, start, Direction.EAST, 2, true);
-                    assertRailLinePowered(helper, start.east(2), Direction.EAST, length - 2, false);
-                })
-                .thenExecute(() -> helper.setBlock(source, Blocks.AIR))
-                .thenIdle(4)
-                .thenExecute(() -> assertRailLinePowered(helper, start, Direction.EAST, length, false))
-                .thenSucceed();
-    }
+		helper.startSequence()
+				.thenExecute(() -> helper.setBlock(source, Blocks.REDSTONE_BLOCK))
+				.thenIdle(4)
+				.thenExecute(() -> {
+					assertRailLinePowered(helper, start, Direction.EAST, 2, true);
+					assertRailLinePowered(helper, start.east(2), Direction.EAST, length - 2, false);
+				})
+				.thenExecute(() -> helper.setBlock(source, Blocks.AIR))
+				.thenIdle(4)
+				.thenExecute(() -> assertRailLinePowered(helper, start, Direction.EAST, length, false))
+				.thenSucceed();
+	}
 
-    @SuppressWarnings("null")
-    @GameTest(environment = "railoptimization-gametest:serial_51", maxTicks = 160, padding = 40)
-    public void explicitDefaultPowerLimitMatchesVanilla(GameTestHelper helper) {
-        BlockPos start = new BlockPos(1, RAIL_Y, 3);
-        BlockPos source = start.north();
-        int length = 12;
+	@SuppressWarnings("null")
+	@GameTest(environment = "railoptimization-gametest:serial_51", maxTicks = 160, padding = 40)
+	public void explicitDefaultPowerLimitMatchesVanilla(GameTestHelper helper) {
+		BlockPos start = new BlockPos(1, RAIL_Y, 3);
+		BlockPos source = start.north();
+		int length = 12;
 
-        placeRailLinePair(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
+		placeRailLinePair(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
 
-        helper.startSequence()
-                .thenExecute(() -> {
-                    helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
-                    helper.setBlock(source, Blocks.REDSTONE_BLOCK);
-                })
-                .thenIdle(4)
-                .thenExecute(() -> {
-                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, length);
-                    assertRailLinePowered(helper, start, Direction.EAST, 9, true);
-                    assertRailLinePowered(helper, start.relative(Direction.EAST, 9), Direction.EAST, 3, false);
-                })
-                .thenExecute(() -> {
-                    helper.setBlock(mirrorCopy(source), Blocks.AIR);
-                    helper.setBlock(source, Blocks.AIR);
-                })
-                .thenIdle(4)
-                .thenExecute(() -> {
-                    assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, length);
-                    assertRailLinePowered(helper, start, Direction.EAST, length, false);
-                })
-                .thenSucceed();
-    }
+		helper.startSequence()
+				.thenExecute(() -> {
+					helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+					helper.setBlock(source, Blocks.REDSTONE_BLOCK);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, length);
+					assertRailLinePowered(helper, start, Direction.EAST, 9, true);
+					assertRailLinePowered(helper, start.relative(Direction.EAST, 9), Direction.EAST, 3, false);
+				})
+				.thenExecute(() -> {
+					helper.setBlock(mirrorCopy(source), Blocks.AIR);
+					helper.setBlock(source, Blocks.AIR);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> {
+					assertMatchingRailLinePower(helper, mirrorCopy(start), start, Direction.EAST, length);
+					assertRailLinePowered(helper, start, Direction.EAST, length, false);
+				})
+				.thenSucceed();
+	}
 
-    @GameTest(environment = "railoptimization-gametest:serial_52", maxTicks = 140, padding = 40)
-    public void largerPowerLimitExtendsPropagationBoundary(GameTestHelper helper) {
-        BlockPos start = new BlockPos(1, RAIL_Y, 3);
-        BlockPos source = start.north();
-        int powerLimit = 12;
-        int length = 15;
+	@GameTest(environment = "railoptimization-gametest:serial_52", maxTicks = 140, padding = 40)
+	public void largerPowerLimitExtendsPropagationBoundary(GameTestHelper helper) {
+		BlockPos start = new BlockPos(1, RAIL_Y, 3);
+		BlockPos source = start.north();
+		int powerLimit = 12;
+		int length = 15;
 
-        placeRailLineWithPowerLimit(helper, start, length, powerLimit);
+		placeRailLineWithPowerLimit(helper, start, length, powerLimit);
 
-        helper.startSequence()
-                .thenExecute(() -> helper.setBlock(source, Blocks.REDSTONE_BLOCK))
-                .thenIdle(4)
-                .thenExecute(() -> {
-                    assertRailLinePowered(helper, start, Direction.EAST, powerLimit + 1, true);
-                    assertRailLinePowered(helper, start.relative(Direction.EAST, powerLimit + 1),
-                            Direction.EAST, length - powerLimit - 1, false);
-                })
-                .thenExecute(() -> helper.setBlock(source, Blocks.AIR))
-                .thenIdle(4)
-                .thenExecute(() -> assertRailLinePowered(helper, start, Direction.EAST, length, false))
-                .thenSucceed();
-    }
+		helper.startSequence()
+				.thenExecute(() -> helper.setBlock(source, Blocks.REDSTONE_BLOCK))
+				.thenIdle(4)
+				.thenExecute(() -> {
+					assertRailLinePowered(helper, start, Direction.EAST, powerLimit + 1, true);
+					assertRailLinePowered(helper, start.relative(Direction.EAST, powerLimit + 1),
+							Direction.EAST, length - powerLimit - 1, false);
+				})
+				.thenExecute(() -> helper.setBlock(source, Blocks.AIR))
+				.thenIdle(4)
+				.thenExecute(() -> assertRailLinePowered(helper, start, Direction.EAST, length, false))
+				.thenSucceed();
+	}
 
-    private static void placeRailLineWithPowerLimit(
-            GameTestHelper helper, BlockPos start, int length, int powerLimit) {
-        placeRailLine(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
-        for (int railIndex = 0; railIndex < length; railIndex++) {
-            RailLogicTestAccess.forcePowerLimitAt(
-                    helper.absolutePos(start.relative(Direction.EAST, railIndex)), powerLimit);
-        }
-    }
+	private static void placeRailLineWithPowerLimit(
+			GameTestHelper helper, BlockPos start, int length, int powerLimit) {
+		placeRailLine(helper, start, Direction.EAST, length, RailShape.EAST_WEST);
+		for (int railIndex = 0; railIndex < length; railIndex++) {
+			RailLogicTestAccess.forcePowerLimitAt(
+					helper.absolutePos(start.relative(Direction.EAST, railIndex)), powerLimit);
+		}
+	}
 }

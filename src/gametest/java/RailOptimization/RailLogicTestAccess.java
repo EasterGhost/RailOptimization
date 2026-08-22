@@ -5,35 +5,35 @@ import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
 
 public final class RailLogicTestAccess {
-    private RailLogicTestAccess() {
-    }
+	private RailLogicTestAccess() {
+	}
 
-    public static void enablePositionBasedTestMode() {
-        RailLogic.enablePositionBasedTestMode();
-    }
+	public static void enablePositionBasedTestMode() {
+		RailLogic.enablePositionBasedTestMode();
+	}
 
-    public static void forceVanillaAt(BlockPos pos) {
-        RailLogic.forceVanillaAtForTesting(pos);
-    }
+	public static void forceVanillaAt(BlockPos pos) {
+		RailLogic.forceVanillaAtForTesting(pos);
+	}
 
-    public static void forcePowerLimitAt(BlockPos pos, int powerLimit) {
-        RailLogic.forcePowerLimitAtForTesting(pos, powerLimit);
-    }
+	public static void forcePowerLimitAt(BlockPos pos, int powerLimit) {
+		RailLogic.forcePowerLimitAtForTesting(pos, powerLimit);
+	}
 
-    public static int clampPowerLimit(int powerLimit) {
-        return RailLogic.clampRailPowerLimit(powerLimit);
-    }
+	public static int clampPowerLimit(int powerLimit) {
+		return RailLogic.clampRailPowerLimit(powerLimit);
+	}
 
-    public static int maximumPowerLimit() {
-        return RailLogic.MAX_RAIL_POWER_LIMIT;
-    }
+	public static int maximumPowerLimit() {
+		return RailLogic.MAX_RAIL_POWER_LIMIT;
+	}
 
-    public static int currentPowerLimit() {
-        return RailLogic.getRailPowerLimit();
-    }
+	public static int currentPowerLimit() {
+		return RailLogic.getRailPowerLimit();
+	}
 
-    public static boolean hasNeighborSignalFast(Level level, BlockPos pos) {
-        return RailSignalSearcher.hasNeighborSignalFast(
-                level, pos, new MutableBlockPos());
-    }
+	public static boolean hasNeighborSignalFast(Level level, BlockPos pos) {
+		return RailSignalSearcher.hasNeighborSignalFast(
+				level, pos, new MutableBlockPos());
+	}
 }
