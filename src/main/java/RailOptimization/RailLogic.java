@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -119,14 +120,15 @@ public final class RailLogic {
 
 	@SuppressWarnings("null")
 	public static boolean tryCustomUpdateState(
-			PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
+			PoweredRailBlock self, BlockState state, Level level, BlockPos pos, Block sourceBlock) {
 		if (useTestPositionModes) {
-			return tryCustomUpdateStateWithTestModes(self, state, level, pos);
+			return tryCustomUpdateStateWithTestModes(self, state, level, pos, sourceBlock);
 		}
 		if (!optimizationEnabled) {
 			return false;
 		}
-		if (RailUpdateMemo.isConfirmed(pos.asLong(), railPowerLimit, state.getValue(POWERED))) {
+		if (canReuseConfirmedState(
+				sourceBlock, pos.asLong(), railPowerLimit, state.getValue(POWERED))) {
 			return true;
 		}
 		customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
@@ -135,14 +137,15 @@ public final class RailLogic {
 
 	@SuppressWarnings("null")
 	private static boolean tryCustomUpdateStateWithTestModes(
-			PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
+			PoweredRailBlock self, BlockState state, Level level, BlockPos pos, Block sourceBlock) {
 		int testMode = testPositionModes.get(pos.asLong());
 		if (testMode == TEST_MODE_VANILLA || !optimizationEnabled) {
 			return false;
 		}
 
 		int effectiveLimit = testMode == TEST_MODE_OPTIMIZED ? railPowerLimit : testMode;
-		if (RailUpdateMemo.isConfirmed(pos.asLong(), effectiveLimit, state.getValue(POWERED))) {
+		if (canReuseConfirmedState(
+				sourceBlock, pos.asLong(), effectiveLimit, state.getValue(POWERED))) {
 			return true;
 		}
 
@@ -159,6 +162,12 @@ public final class RailLogic {
 			railPowerLimit = configuredPowerLimit;
 		}
 		return true;
+	}
+
+	private static boolean canReuseConfirmedState(
+			Block sourceBlock, long position, int powerLimit, boolean currentPowered) {
+		return sourceBlock != Blocks.TRAPPED_CHEST
+				&& RailUpdateMemo.isConfirmed(position, powerLimit, currentPowered);
 	}
 
 	@SuppressWarnings("null")

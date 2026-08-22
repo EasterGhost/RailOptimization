@@ -17,7 +17,7 @@ public abstract class PoweredRailBlockMixin {
 
 	@WrapMethod(method = "updateState")
 	private void railoptimization$updateState(BlockState state, Level level, BlockPos pos, Block block, Operation<Void> original) {
-		if (!RailLogic.tryCustomUpdateState((PoweredRailBlock) (Object) this, state, level, pos)) {
+		if (!RailLogic.tryCustomUpdateState((PoweredRailBlock) (Object) this, state, level, pos, block)) {
 			original.call(state, level, pos, block);
 		}
 	}

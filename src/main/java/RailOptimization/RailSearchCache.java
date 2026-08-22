@@ -12,8 +12,9 @@ final class RailSearchCache {
 	private static final int MIN_CAPACITY = 16;
 	private static final int MAX_CAPACITY = 1024;
 
-	private static final int META_SENTINEL = 1 << 31;
-	private static final int META_FLAGS = 0xFF;
+	private static final int META_OCCUPIED = 1 << 7;
+	private static final int META_ENTRY_FLAGS_MASK = META_OCCUPIED - 1;
+	private static final int META_BYTE_MASK = 0xFF;
 	private static final int META_GEN_SHIFT = 8;
 	private static final int META_COST_SHIFT = 16;
 	private static final int META_STATE_SHIFT = 24;
@@ -50,7 +51,8 @@ final class RailSearchCache {
 	void put(long position, byte entryFlags, byte state) {
 		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
-			meta[index] = (meta[index] & ~(META_FLAGS << META_STATE_SHIFT)) | ((state & META_FLAGS) << META_STATE_SHIFT);
+			meta[index] = (meta[index] & ~(META_BYTE_MASK << META_STATE_SHIFT))
+					| ((state & META_BYTE_MASK) << META_STATE_SHIFT);
 			return;
 		}
 		if (index == -1) {
@@ -59,34 +61,36 @@ final class RailSearchCache {
 
 		index = -index - 2;
 		keys[index] = position;
-		meta[index] = META_SENTINEL
-				| ((state & META_FLAGS) << META_STATE_SHIFT)
-				| (META_FLAGS << META_COST_SHIFT)
-				| ((searchGeneration & META_FLAGS) << META_GEN_SHIFT)
-				| (entryFlags & META_FLAGS);
+		meta[index] = META_OCCUPIED
+				| ((state & META_BYTE_MASK) << META_STATE_SHIFT)
+				| (META_BYTE_MASK << META_COST_SHIFT)
+				| ((searchGeneration & META_BYTE_MASK) << META_GEN_SHIFT)
+				| (entryFlags & META_ENTRY_FLAGS_MASK);
 	}
 
 	int getPoweredSearchCost(long position, byte entryFlags) {
 		int index = findOrEmpty(position, entryFlags);
-		if (index < 0 || ((meta[index] >>> META_GEN_SHIFT) & META_FLAGS) != searchGeneration) {
+		if (index < 0 || ((meta[index] >>> META_GEN_SHIFT) & META_BYTE_MASK) != searchGeneration) {
 			return -1;
 		}
 		byte cost = (byte) (meta[index] >>> META_COST_SHIFT);
-		return cost == -1 ? -1 : cost & META_FLAGS;
+		return cost == -1 ? -1 : cost & META_BYTE_MASK;
 	}
 
 	void putPoweredSearchCost(long position, byte entryFlags, int searchCost) {
 		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
-			if (((meta[index] >>> META_GEN_SHIFT) & META_FLAGS) == searchGeneration) {
+			if (((meta[index] >>> META_GEN_SHIFT) & META_BYTE_MASK) == searchGeneration) {
 				byte oldCost = (byte) (meta[index] >>> META_COST_SHIFT);
-				if (oldCost == -1 || searchCost < (oldCost & META_FLAGS)) {
-					meta[index] = (meta[index] & ~(META_FLAGS << META_COST_SHIFT)) | ((searchCost & META_FLAGS) << META_COST_SHIFT);
+				if (oldCost == -1 || searchCost < (oldCost & META_BYTE_MASK)) {
+					meta[index] = (meta[index] & ~(META_BYTE_MASK << META_COST_SHIFT))
+							| ((searchCost & META_BYTE_MASK) << META_COST_SHIFT);
 				}
 			} else {
-				meta[index] = (meta[index] & ~((META_FLAGS << META_GEN_SHIFT) | (META_FLAGS << META_COST_SHIFT)))
-						| ((searchGeneration & META_FLAGS) << META_GEN_SHIFT)
-						| ((searchCost & META_FLAGS) << META_COST_SHIFT);
+				meta[index] = (meta[index]
+						& ~((META_BYTE_MASK << META_GEN_SHIFT) | (META_BYTE_MASK << META_COST_SHIFT)))
+						| ((searchGeneration & META_BYTE_MASK) << META_GEN_SHIFT)
+						| ((searchCost & META_BYTE_MASK) << META_COST_SHIFT);
 			}
 			return;
 		}
@@ -96,11 +100,11 @@ final class RailSearchCache {
 
 		index = -index - 2;
 		keys[index] = position;
-		meta[index] = META_SENTINEL
-				| ((RailLogic.CHECKED_POWERED & META_FLAGS) << META_STATE_SHIFT)
-				| ((searchCost & META_FLAGS) << META_COST_SHIFT)
-				| ((searchGeneration & META_FLAGS) << META_GEN_SHIFT)
-				| (entryFlags & META_FLAGS);
+		meta[index] = META_OCCUPIED
+				| ((RailLogic.CHECKED_POWERED & META_BYTE_MASK) << META_STATE_SHIFT)
+				| ((searchCost & META_BYTE_MASK) << META_COST_SHIFT)
+				| ((searchGeneration & META_BYTE_MASK) << META_GEN_SHIFT)
+				| (entryFlags & META_ENTRY_FLAGS_MASK);
 	}
 
 	void advanceSearchGeneration() {
@@ -119,7 +123,7 @@ final class RailSearchCache {
 		if (meta[index] == 0) {
 			return -index - 2;
 		}
-		if ((meta[index] & META_FLAGS) == entryFlags && keys[index] == position) {
+		if ((meta[index] & META_ENTRY_FLAGS_MASK) == entryFlags && keys[index] == position) {
 			return index;
 		}
 		int indexShift = ((int) (position >>> 32) & mask) | 1;
@@ -128,7 +132,7 @@ final class RailSearchCache {
 			if (meta[index] == 0) {
 				return -index - 2;
 			}
-			if ((meta[index] & META_FLAGS) == entryFlags && keys[index] == position) {
+			if ((meta[index] & META_ENTRY_FLAGS_MASK) == entryFlags && keys[index] == position) {
 				return index;
 			}
 		}
