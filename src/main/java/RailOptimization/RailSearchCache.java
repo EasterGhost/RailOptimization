@@ -22,7 +22,7 @@ final class RailSearchCache {
 	private final long[] keys;
 	private final int[] meta;
 	private final int mask;
-	private byte searchGeneration;
+	private int searchGeneration;
 
 	RailSearchCache(int railPowerLimit) {
 		int capacity = railPowerLimit >= MAX_CAPACITY / 8
@@ -108,7 +108,7 @@ final class RailSearchCache {
 	}
 
 	void advanceSearchGeneration() {
-		if (++searchGeneration == 0) {
+		if (++searchGeneration > META_BYTE_MASK) {
 			clear();
 			searchGeneration = 1;
 		}
