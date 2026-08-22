@@ -19,14 +19,12 @@ final class RailUpdateNotifier {
 	}
 
 	@SuppressWarnings("null")
-	private static void notifyBlockChanged(Level level, int x, int y, int z, Block sourceBlock,
-			MutableBlockPos scratchPos) {
+	private static void notifyBlockChanged(Level level, int x, int y, int z, Block sourceBlock, MutableBlockPos scratchPos) {
 		scratchPos.set(x, y, z);
 		level.neighborChanged(scratchPos.immutable(), sourceBlock, null);
 	}
 
-	static void updateRails(boolean eastWest, Level world, BlockPos pos,
-			BlockState mainState, int firstDirectionCount, int secondDirectionCount, MutableBlockPos scratchPos) {
+	static void updateRails(boolean eastWest, Level world, BlockPos pos, BlockState mainState, int firstDirectionCount, int secondDirectionCount, MutableBlockPos scratchPos) {
 		Block block = mainState.getBlock();
 		Direction[] directions = eastWest ? RailLogic.EAST_WEST_DIR : RailLogic.NORTH_SOUTH_DIR;
 
@@ -47,8 +45,7 @@ final class RailUpdateNotifier {
 		}
 	}
 
-	private static void updateRailSection(Level world, BlockPos pos, Block block, Direction dir,
-			int directionIndex, int countAmt, MutableBlockPos scratchPos) {
+	private static void updateRailSection(Level world, BlockPos pos, Block block, Direction dir, int directionIndex, int countAmt, MutableBlockPos scratchPos) {
 		final int baseX = pos.getX();
 		final int baseY = pos.getY();
 		final int baseZ = pos.getZ();

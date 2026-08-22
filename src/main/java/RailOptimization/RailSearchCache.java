@@ -50,8 +50,7 @@ final class RailSearchCache {
 	void put(long position, byte entryFlags, byte state) {
 		int index = findOrEmpty(position, entryFlags);
 		if (index >= 0) {
-			meta[index] = (meta[index] & ~(META_FLAGS << META_STATE_SHIFT))
-					| ((state & META_FLAGS) << META_STATE_SHIFT);
+			meta[index] = (meta[index] & ~(META_FLAGS << META_STATE_SHIFT)) | ((state & META_FLAGS) << META_STATE_SHIFT);
 			return;
 		}
 		if (index == -1) {
@@ -82,8 +81,7 @@ final class RailSearchCache {
 			if (((meta[index] >>> META_GEN_SHIFT) & META_FLAGS) == searchGeneration) {
 				byte oldCost = (byte) (meta[index] >>> META_COST_SHIFT);
 				if (oldCost == -1 || searchCost < (oldCost & META_FLAGS)) {
-					meta[index] = (meta[index] & ~(META_FLAGS << META_COST_SHIFT))
-							| ((searchCost & META_FLAGS) << META_COST_SHIFT);
+					meta[index] = (meta[index] & ~(META_FLAGS << META_COST_SHIFT)) | ((searchCost & META_FLAGS) << META_COST_SHIFT);
 				}
 			} else {
 				meta[index] = (meta[index] & ~((META_FLAGS << META_GEN_SHIFT) | (META_FLAGS << META_COST_SHIFT)))

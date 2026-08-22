@@ -104,17 +104,14 @@ final class RailSignalSearcher {
 	}
 
 	@SuppressWarnings("null")
-	static boolean hasNeighborSignalFast(
-			Level level, BlockPos pos, MutableBlockPos scratchPos,
-			LevelChunk chunk, int chunkX, int chunkZ) {
+	static boolean hasNeighborSignalFast(Level level, BlockPos pos, MutableBlockPos scratchPos, LevelChunk chunk, int chunkX, int chunkZ) {
 		int x = pos.getX();
 		int y = pos.getY();
 		int z = pos.getZ();
 
 		int localX = x & 15;
 		int localZ = z & 15;
-		if (localX >= 2 && localX <= 13 && localZ >= 2 && localZ <= 13
-				&& y >= level.getMinY() + 2 && y <= level.getMaxY() - 2) {
+		if (localX >= 2 && localX <= 13 && localZ >= 2 && localZ <= 13 && y >= level.getMinY() + 2 && y <= level.getMaxY() - 2) {
 			return hasNeighborSignalInChunk(level, chunk, x, y, z, scratchPos);
 		}
 
@@ -123,8 +120,7 @@ final class RailSignalSearcher {
 			int neighborY = y + direction.getStepY();
 			int neighborZ = z + direction.getStepZ();
 			scratchPos.set(neighborX, neighborY, neighborZ);
-			BlockState neighborState = getBlockState(
-					level, chunk, chunkX, chunkZ, scratchPos);
+			BlockState neighborState = getBlockState(level, chunk, chunkX, chunkZ, scratchPos);
 
 			if (neighborState.getSignal(level, scratchPos, direction) > 0) {
 				return true;
@@ -153,8 +149,7 @@ final class RailSignalSearcher {
 	}
 
 	@SuppressWarnings("null")
-	private static boolean hasNeighborSignalInChunk(
-			Level level, LevelChunk chunk, int x, int y, int z, MutableBlockPos scratchPos) {
+	private static boolean hasNeighborSignalInChunk(Level level, LevelChunk chunk, int x, int y, int z, MutableBlockPos scratchPos) {
 		for (Direction direction : SIGNAL_DIRECTIONS) {
 			int neighborX = x + direction.getStepX();
 			int neighborY = y + direction.getStepY();
@@ -197,8 +192,7 @@ final class RailSignalSearcher {
 		return level.getBlockState(pos);
 	}
 
-	private static int findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z,
-			boolean forward, int distance, RailShape expectedShape, RailUpdateContext context) {
+	private static int findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z, boolean forward, int distance, RailShape expectedShape, RailUpdateContext context) {
 		long posKey = BlockPos.asLong(x, y, z);
 		byte cacheFlags = checkedPosFlags(forward, expectedShape);
 		int cachedCost = context.getPoweredSearchCost(posKey, cacheFlags);
@@ -256,17 +250,11 @@ final class RailSignalSearcher {
 		return flags;
 	}
 
-	static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level,
-			BlockPos pos, BlockState state, boolean forward, int distance,
-			RailUpdateContext context) {
-		return findPoweredRailSignalFromState(
-				self, level, pos.getX(), pos.getY(), pos.getZ(), state, forward,
-				distance, context) != SEARCH_NOT_FOUND;
+	static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, boolean forward, int distance, RailUpdateContext context) {
+		return findPoweredRailSignalFromState(self, level, pos.getX(), pos.getY(), pos.getZ(), state, forward, distance, context) != SEARCH_NOT_FOUND;
 	}
 
-	static int countStraightRailsToDepower(
-			PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape,
-			boolean forward, RailUpdateContext context, BlockState[] railStates) {
+	static int countStraightRailsToDepower(PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape, boolean forward, RailUpdateContext context, BlockState[] railStates) {
 		byte axis = RAIL_AXIS[railShape.ordinal()];
 		if (axis == AXIS_NONE) {
 			return COMPLEX_PATH;
@@ -354,8 +342,7 @@ final class RailSignalSearcher {
 				: SEARCH_NOT_FOUND;
 	}
 
-	static BlockState findNextRailState(PoweredRailBlock self, Level level, MutableBlockPos railPos, BlockState state,
-			boolean forward, RailUpdateContext context) {
+	static BlockState findNextRailState(PoweredRailBlock self, Level level, MutableBlockPos railPos, BlockState state, boolean forward, RailUpdateContext context) {
 		MutableBlockPos scratchPos = context.scratchPos;
 		int x = railPos.getX();
 		int y = railPos.getY();
@@ -392,20 +379,14 @@ final class RailSignalSearcher {
 		return null;
 	}
 
-	static boolean connectsBackTo(PoweredRailBlock self, Level level,
-			BlockPos railPos, BlockState state, long expectedPreviousPos, BlockState previousState,
-			RailUpdateContext context) {
-		if (directionConnectsBackTo(
-				self, level, railPos, state, true, expectedPreviousPos, previousState, context)) {
+	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, long expectedPreviousPos, BlockState previousState, RailUpdateContext context) {
+		if (directionConnectsBackTo(self, level, railPos, state, true, expectedPreviousPos, previousState, context)) {
 			return true;
 		}
-		return directionConnectsBackTo(
-				self, level, railPos, state, false, expectedPreviousPos, previousState, context);
+		return directionConnectsBackTo(self, level, railPos, state, false, expectedPreviousPos, previousState, context);
 	}
 
-	private static boolean directionConnectsBackTo(
-			PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward,
-			long expectedPreviousPos, BlockState previousState, RailUpdateContext context) {
+	private static boolean directionConnectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward, long expectedPreviousPos, BlockState previousState, RailUpdateContext context) {
 		int x = railPos.getX();
 		int y = railPos.getY();
 		int z = railPos.getZ();
@@ -429,19 +410,15 @@ final class RailSignalSearcher {
 		}
 
 		context.scratchPos.set(nextX, nextY, nextZ);
-		return !isSameRailWithAxis(
-				self, context.getBlockState(level, context.scratchPos), flatShape);
+		return !isSameRailWithAxis(self, context.getBlockState(level, context.scratchPos), flatShape);
 	}
 
 	private static boolean isSameRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
-		return state.is(self) &&
-				!isMismatchedRailAxis(expectedShape, state.getValue(PoweredRailBlock.SHAPE));
+		return state.is(self) && !isMismatchedRailAxis(expectedShape, state.getValue(PoweredRailBlock.SHAPE));
 	}
 
 	private static boolean isPoweredRailWithAxis(
 			PoweredRailBlock self, BlockState state, RailShape expectedShape) {
-		return isSameRailWithAxis(self, state, expectedShape)
-				&& state.getValue(PoweredRailBlock.POWERED);
+		return isSameRailWithAxis(self, state, expectedShape) && state.getValue(PoweredRailBlock.POWERED);
 	}
-
 }
