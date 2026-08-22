@@ -15,6 +15,7 @@ final class RailSignalSearcher {
 	private static final byte AXIS_NONE = 0;
 	private static final byte AXIS_EAST_WEST = 1;
 	private static final byte AXIS_NORTH_SOUTH = 2;
+	private static final RailShape[] RAIL_SHAPES = RailShape.values();
 	private static final byte[] RAIL_AXIS = new byte[RailShape.values().length];
 	static final byte[] STEP_X;
 	static final byte[] STEP_Y;
@@ -209,9 +210,11 @@ final class RailSignalSearcher {
 			return SEARCH_NOT_FOUND;
 		}
 
-		RailShape actualShape = blockState.getValue(PoweredRailBlock.SHAPE);
+		int railData = railData(blockState);
+		RailShape actualShape = RAIL_SHAPES[railData & RailStateAccess.SHAPE_MASK];
 
-		if (isMismatchedRailAxis(expectedShape, actualShape) || !blockState.getValue(PoweredRailBlock.POWERED)) {
+		if (isMismatchedRailAxis(expectedShape, actualShape)
+				|| (railData & RailStateAccess.POWERED_MASK) == 0) {
 			return SEARCH_NOT_FOUND;
 		}
 
@@ -285,7 +288,7 @@ final class RailSignalSearcher {
 			context.scratchPos.set(x, y, z);
 			BlockState state = context.getBlockState(level, context.scratchPos);
 			if (isPoweredRailWithAxis(self, state, flatShape)) {
-				if (state.getValue(PoweredRailBlock.SHAPE) != railShape) {
+				if (railShape(state) != railShape) {
 					return COMPLEX_PATH;
 				}
 				if (stepBelow) {
@@ -322,7 +325,7 @@ final class RailSignalSearcher {
 			return SEARCH_NOT_FOUND;
 		}
 
-		RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
+		RailShape railShape = railShape(state);
 		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
 			return SEARCH_NOT_FOUND;
 		}
@@ -347,7 +350,7 @@ final class RailSignalSearcher {
 		int x = railPos.getX();
 		int y = railPos.getY();
 		int z = railPos.getZ();
-		RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
+		RailShape railShape = railShape(state);
 		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
 			return null;
 		}
@@ -390,7 +393,7 @@ final class RailSignalSearcher {
 		int x = railPos.getX();
 		int y = railPos.getY();
 		int z = railPos.getZ();
-		RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
+		RailShape railShape = railShape(state);
 		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
 			return false;
 		}
@@ -414,11 +417,29 @@ final class RailSignalSearcher {
 	}
 
 	private static boolean isSameRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
-		return state.is(self) && !isMismatchedRailAxis(expectedShape, state.getValue(PoweredRailBlock.SHAPE));
+		return state.is(self) && !isMismatchedRailAxis(expectedShape, railShape(state));
 	}
 
 	private static boolean isPoweredRailWithAxis(
 			PoweredRailBlock self, BlockState state, RailShape expectedShape) {
-		return isSameRailWithAxis(self, state, expectedShape) && state.getValue(PoweredRailBlock.POWERED);
+		if (!state.is(self)) {
+			return false;
+		}
+		int railData = railData(state);
+		return !isMismatchedRailAxis(
+				expectedShape, RAIL_SHAPES[railData & RailStateAccess.SHAPE_MASK])
+				&& (railData & RailStateAccess.POWERED_MASK) != 0;
+	}
+
+	static RailShape railShape(BlockState state) {
+		return RAIL_SHAPES[railData(state) & RailStateAccess.SHAPE_MASK];
+	}
+
+	static boolean isPowered(BlockState state) {
+		return (railData(state) & RailStateAccess.POWERED_MASK) != 0;
+	}
+
+	private static int railData(BlockState state) {
+		return ((RailStateAccess) (Object) state).railoptimization$getRailData();
 	}
 }

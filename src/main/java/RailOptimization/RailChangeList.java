@@ -1,7 +1,6 @@
 package RailOptimization;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 final class RailChangeList {
@@ -17,7 +16,7 @@ final class RailChangeList {
 
 	void add(BlockPos pos, BlockState state) {
 		positions[size] = pos.asLong();
-		boolean isAscending = RailLogic.isAscending(state.getValue(PoweredRailBlock.SHAPE));
+		boolean isAscending = RailLogic.isAscending(RailSignalSearcher.railShape(state));
 		ascending[size] = isAscending;
 		hasSlope |= isAscending;
 		size++;

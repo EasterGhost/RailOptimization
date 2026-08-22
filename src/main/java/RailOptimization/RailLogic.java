@@ -127,11 +127,11 @@ public final class RailLogic {
 		if (!optimizationEnabled) {
 			return false;
 		}
-		if (canReuseConfirmedState(
-				sourceBlock, pos.asLong(), railPowerLimit, state.getValue(POWERED))) {
+		boolean currentlyPowered = RailSignalSearcher.isPowered(state);
+		if (canReuseConfirmedState(sourceBlock, pos.asLong(), railPowerLimit, currentlyPowered)) {
 			return true;
 		}
-		customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
+		customUpdateStateWithCurrentPowerLimit(self, state, level, pos, currentlyPowered);
 		return true;
 	}
 
@@ -144,20 +144,20 @@ public final class RailLogic {
 		}
 
 		int effectiveLimit = testMode == TEST_MODE_OPTIMIZED ? railPowerLimit : testMode;
-		if (canReuseConfirmedState(
-				sourceBlock, pos.asLong(), effectiveLimit, state.getValue(POWERED))) {
+		boolean currentlyPowered = RailSignalSearcher.isPowered(state);
+		if (canReuseConfirmedState(sourceBlock, pos.asLong(), effectiveLimit, currentlyPowered)) {
 			return true;
 		}
 
 		if (testMode == TEST_MODE_OPTIMIZED) {
-			customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
+			customUpdateStateWithCurrentPowerLimit(self, state, level, pos, currentlyPowered);
 			return true;
 		}
 
 		int configuredPowerLimit = railPowerLimit;
 		railPowerLimit = testMode;
 		try {
-			customUpdateStateWithCurrentPowerLimit(self, state, level, pos);
+			customUpdateStateWithCurrentPowerLimit(self, state, level, pos, currentlyPowered);
 		} finally {
 			railPowerLimit = configuredPowerLimit;
 		}
@@ -171,8 +171,8 @@ public final class RailLogic {
 	}
 
 	@SuppressWarnings("null")
-	private static void customUpdateStateWithCurrentPowerLimit(PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
-		boolean currentlyPowered = state.getValue(POWERED);
+	private static void customUpdateStateWithCurrentPowerLimit(
+			PoweredRailBlock self, BlockState state, Level level, BlockPos pos, boolean currentlyPowered) {
 		RailUpdateContext context = newUpdateContext();
 		try {
 			boolean directlyPowered = context.hasNeighborSignal(level, pos);
@@ -180,7 +180,7 @@ public final class RailLogic {
 				return;
 			}
 
-			RailShape railShape = state.getValue(PoweredRailBlock.SHAPE);
+			RailShape railShape = RailSignalSearcher.railShape(state);
 			boolean shouldBePowered = directlyPowered;
 			if (!shouldBePowered) {
 				shouldBePowered = RailSignalSearcher.findPoweredRailSignalFaster(
@@ -256,7 +256,7 @@ public final class RailLogic {
 		MutableBlockPos cursor = context.railCursor;
 		cursor.set(pos.getX(), pos.getY(), pos.getZ());
 		BlockState previousState = sourceState;
-		RailShape sourceShape = sourceState.getValue(PoweredRailBlock.SHAPE);
+		RailShape sourceShape = RailSignalSearcher.railShape(sourceState);
 		RailShape directFlatShape = directlyPowered && getRailDirections(sourceShape) != null ? sourceShape : null;
 		boolean directPath = directlyPowered;
 
@@ -269,7 +269,8 @@ public final class RailLogic {
 				break;
 			}
 
-			boolean continuesDirectFlatPath = directFlatShape != null && cursor.getY() == previousY && state.getValue(PoweredRailBlock.SHAPE) == directFlatShape;
+			boolean continuesDirectFlatPath = directFlatShape != null && cursor.getY() == previousY
+					&& RailSignalSearcher.railShape(state) == directFlatShape;
 			if (!continuesDirectFlatPath) {
 				directFlatShape = null;
 			}
@@ -290,7 +291,7 @@ public final class RailLogic {
 				continue;
 			}
 
-			if (state.getValue(POWERED) || (!continuesDirectPath && !(context.hasNeighborSignal(world, cursor) ||
+			if (RailSignalSearcher.isPowered(state) || (!continuesDirectPath && !(context.hasNeighborSignal(world, cursor) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)))) {
 				checkedPos.put(posKey, CHECKED_BLOCKED);
@@ -308,7 +309,7 @@ public final class RailLogic {
 
 	@SuppressWarnings("null")
 	private static int setRailPositionsDePower(PoweredRailBlock self, Level world, BlockPos pos, BlockState sourceState, boolean forward, RailUpdateContext context, RailChangeList changedRails) {
-		RailShape sourceShape = sourceState.getValue(PoweredRailBlock.SHAPE);
+		RailShape sourceShape = RailSignalSearcher.railShape(sourceState);
 		int straightCount = RailSignalSearcher.countStraightRailsToDepower(self, world, pos, sourceShape, forward, context, context.straightRailStates);
 		if (straightCount != RailSignalSearcher.COMPLEX_PATH) {
 			return setStraightRailPositionsDePower(world, pos, sourceShape, forward, straightCount, context, changedRails);
@@ -333,7 +334,7 @@ public final class RailLogic {
 				break;
 			}
 
-			if (!state.getValue(POWERED) || context.hasNeighborSignal(world, cursor) ||
+			if (!RailSignalSearcher.isPowered(state) || context.hasNeighborSignal(world, cursor) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)) {
 				checkedPos.put(posKey, CHECKED_BLOCKED);
