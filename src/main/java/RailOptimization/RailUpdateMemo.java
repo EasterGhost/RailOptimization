@@ -8,6 +8,8 @@ import net.minecraft.core.BlockPos;
 public final class RailUpdateMemo {
 	private static final int CAPACITY = 256;
 	private static final int MASK = CAPACITY - 1;
+	private static final long HASH_MULTIPLIER = 0x9E3779B97F4A7C15L;
+	private static final int HASH_SHIFT = Long.SIZE - Integer.numberOfTrailingZeros(CAPACITY);
 
 	private static final ThreadLocal<LaneWriteDepth> LANE_WRITE_DEPTH = ThreadLocal.withInitial(LaneWriteDepth::new);
 	private static final ThreadLocal<List<RailUpdateMemo>> MEMOS = ThreadLocal.withInitial(ArrayList::new);
@@ -85,7 +87,7 @@ public final class RailUpdateMemo {
 				| ((long) powerLimit << 32)
 				| (powered ? 1L << 39 : 0)
 				| (1L << 40);
-		int index = (int) (position * 0x9E3779B97F4A7C15L) & MASK;
+		int index = hashIndex(position);
 		for (int probes = CAPACITY; probes > 0; --probes) {
 			if (meta[index] == 0) {
 				if (size < CAPACITY) {
@@ -106,7 +108,7 @@ public final class RailUpdateMemo {
 	}
 
 	private int checkEntry(long position, int powerLimit, boolean currentPowered) {
-		int index = (int) (position * 0x9E3779B97F4A7C15L) & MASK;
+		int index = hashIndex(position);
 		if (meta[index] == 0) {
 			return 0;
 		}
@@ -130,5 +132,9 @@ public final class RailUpdateMemo {
 				| ((long) powerLimit << 32)
 				| (currentPowered ? 1L << 39 : 0)
 				| (1L << 40);
+	}
+
+	private static int hashIndex(long position) {
+		return (int) ((position * HASH_MULTIPLIER) >>> HASH_SHIFT);
 	}
 }
