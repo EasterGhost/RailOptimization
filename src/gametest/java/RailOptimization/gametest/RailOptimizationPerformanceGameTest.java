@@ -28,6 +28,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 	private static final int UNCHANGED_UPDATE_WARMUP_OPERATIONS = 100_000;
 	private static final int INDIRECT_UPDATE_WARMUP_OPERATIONS = 50_000;
 	private static final int STATE_CHANGE_STABILIZATION_OPERATIONS = 200;
+	private static final int EXTENDED_STABILIZATION_OPERATIONS = 5_000;
 	private static final int UNCHANGED_UPDATE_STABILIZATION_OPERATIONS = 30_000;
 	private static final int INDIRECT_UPDATE_STABILIZATION_OPERATIONS = 10_000;
 	private static final int MEASUREMENT_ROUNDS = 11;
@@ -35,7 +36,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 	private static final int UNCHANGED_UPDATES_PER_ROUND = 300_000;
 	private static final int INDIRECT_UPDATES_PER_ROUND = 200_000;
 	private static final int EXTENDED_POWER_LIMIT = 64;
-	private static final int EXTENDED_TOGGLES_PER_ROUND = 80;
+	private static final int EXTENDED_TOGGLES_PER_ROUND = 160;
 	private static final long MIN_MEDIAN_SAMPLE_NANOS = 20_000_000L;
 	private static final double MAX_STATE_CHANGE_TIME_RATIO = 0.95;
 	private static final double MAX_COMPLEX_STATE_CHANGE_TIME_RATIO = 1.05;
@@ -216,7 +217,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 				.thenExecute(() -> runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
 				.thenIdle(4)
 				.thenExecute(() -> runLeverToggles(
-						helper, lever, STATE_CHANGE_STABILIZATION_OPERATIONS))
+						helper, lever, EXTENDED_STABILIZATION_OPERATIONS))
 				.thenIdle(2)
 				.thenExecute(() -> {
 					long[] samples = new long[MEASUREMENT_ROUNDS];
@@ -264,7 +265,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 				.thenExecute(() -> runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
 				.thenIdle(4)
 				.thenExecute(() -> runLeverToggles(
-						helper, lever, STATE_CHANGE_STABILIZATION_OPERATIONS))
+						helper, lever, EXTENDED_STABILIZATION_OPERATIONS))
 				.thenIdle(2)
 				.thenExecute(() -> {
 					long[] samples = new long[MEASUREMENT_ROUNDS];
