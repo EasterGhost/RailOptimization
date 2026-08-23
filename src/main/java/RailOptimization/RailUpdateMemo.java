@@ -46,7 +46,8 @@ public final class RailUpdateMemo {
 	static void trackContext(RailUpdateMemo memo) {
 		List<RailUpdateMemo> memos = MEMOS.get();
 		for (int i = memos.size() - 1; i >= 0; --i) {
-			if (memos.get(i).writeEpoch != blockChangeEpoch) {
+			RailUpdateMemo candidate = memos.get(i);
+			if (candidate == memo || candidate.writeEpoch != blockChangeEpoch) {
 				memos.remove(i);
 			}
 		}
