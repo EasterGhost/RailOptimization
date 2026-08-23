@@ -314,6 +314,12 @@ public final class RailLogic {
 		if (straightCount != RailSignalSearcher.COMPLEX_PATH) {
 			return setStraightRailPositionsDePower(world, pos, sourceShape, forward, straightCount, context, changedRails);
 		}
+		int connectedCount = RailSignalSearcher.countConnectedRailsToDepower(
+				self, world, pos, sourceState, forward, context,
+				context.straightRailStates, context.connectedRailPositions);
+		if (connectedCount != RailSignalSearcher.COMPLEX_PATH) {
+			return setConnectedRailPositionsDePower(world, connectedCount, context, changedRails);
+		}
 
 		int count = 0;
 		RailSearchCache checkedPos = context.searchCache;
@@ -347,6 +353,18 @@ public final class RailLogic {
 			count++;
 		}
 
+		return count;
+	}
+
+	private static int setConnectedRailPositionsDePower(
+			Level world, int count, RailUpdateContext context, RailChangeList changedRails) {
+		MutableBlockPos cursor = context.railCursor;
+		for (int index = 0; index < count; ++index) {
+			long position = context.connectedRailPositions[index];
+			cursor.set(BlockPos.getX(position), BlockPos.getY(position), BlockPos.getZ(position));
+			setRailPowerState(
+					world, cursor, context.straightRailStates[index], false, changedRails, context);
+		}
 		return count;
 	}
 

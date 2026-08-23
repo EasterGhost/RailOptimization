@@ -13,6 +13,7 @@ final class RailUpdateContext {
 	final MutableBlockPos railCursor = new MutableBlockPos();
 	final MutableBlockPos scratchPos = new MutableBlockPos();
 	final BlockState[] straightRailStates;
+	final long[] connectedRailPositions;
 	final int railPowerLimit;
 	private boolean cachePoweredSearchResults = true;
 	private LevelChunk chunk;
@@ -24,6 +25,7 @@ final class RailUpdateContext {
 		searchCache = new RailSearchCache(railPowerLimit);
 		changeList = new RailChangeList(railPowerLimit * 2 + 1);
 		straightRailStates = new BlockState[railPowerLimit];
+		connectedRailPositions = new long[railPowerLimit];
 	}
 
 	void reset() {

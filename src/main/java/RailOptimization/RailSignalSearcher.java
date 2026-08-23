@@ -319,6 +319,49 @@ final class RailSignalSearcher {
 		return Math.min(powerLimit, poweredLength);
 	}
 
+	static int countConnectedRailsToDepower(PoweredRailBlock self, Level level, BlockPos pos,
+			BlockState sourceState, boolean forward, RailUpdateContext context,
+			BlockState[] railStates, long[] railPositions) {
+		if (!supportsFastSearch(railShape(sourceState))) {
+			return COMPLEX_PATH;
+		}
+
+		MutableBlockPos cursor = context.railCursor;
+		cursor.set(pos.getX(), pos.getY(), pos.getZ());
+		BlockState previousState = sourceState;
+		RailShape previousShape = railShape(sourceState);
+		long previousPosition = pos.asLong();
+		int powerLimit = RailLogic.getRailPowerLimit();
+		int poweredLength = 0;
+
+		for (int index = 1; index <= powerLimit * 2; ++index) {
+			BlockState state = findNextRailState(self, level, cursor, previousState, forward, context);
+			if (state == null || !isPowered(state)) {
+				break;
+			}
+
+			long position = cursor.asLong();
+			RailShape currentShape = railShape(state);
+			if (currentShape != previousShape
+					&& !connectsBackTo(self, level, cursor, state, previousPosition, previousState, context)) {
+				return COMPLEX_PATH;
+			}
+			if (context.hasNeighborSignal(level, cursor)) {
+				return Math.max(0, Math.min(powerLimit, index - powerLimit - 1));
+			}
+			if (index <= powerLimit) {
+				railStates[index - 1] = state;
+				railPositions[index - 1] = position;
+			}
+			poweredLength = index;
+			previousState = state;
+			previousShape = currentShape;
+			previousPosition = position;
+		}
+
+		return Math.min(powerLimit, poweredLength);
+	}
+
 	private static int findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z,
 			BlockState state, boolean forward, int distance, RailUpdateContext context) {
 		if (distance >= RailLogic.getRailPowerLimit()) {
