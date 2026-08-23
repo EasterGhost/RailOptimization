@@ -213,12 +213,19 @@ public final class RailLogic {
 		context.beginPowering();
 		RailSearchCache checkedPos = context.searchCache;
 		RailChangeList changedRails = context.changeList;
-		setRailPowerState(world, pos, mainState, true, changedRails, context);
-		checkedPos.put(pos.asLong(), CHECKED_POWERED);
-		int firstDirectionCount = setRailPositionsPower(
-				self, world, pos, mainState, context, true, directlyPowered, changedRails);
-		int secondDirectionCount = setRailPositionsPower(
-				self, world, pos, mainState, context, false, directlyPowered, changedRails);
+		int firstDirectionCount;
+		int secondDirectionCount;
+		RailUpdateMemo.beginLaneWrite();
+		try {
+			setRailPowerState(world, pos, mainState, true, changedRails, context);
+			checkedPos.put(pos.asLong(), CHECKED_POWERED);
+			firstDirectionCount = setRailPositionsPower(
+					self, world, pos, mainState, context, true, directlyPowered, changedRails);
+			secondDirectionCount = setRailPositionsPower(
+					self, world, pos, mainState, context, false, directlyPowered, changedRails);
+		} finally {
+			RailUpdateMemo.endLaneWrite();
+		}
 
 		updateChangedRails(world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount,
 				changedRails, context);
@@ -233,10 +240,18 @@ public final class RailLogic {
 		RailUpdateMemo.trackContext(context.memo);
 		context.beginDepowering();
 		RailChangeList changedRails = context.changeList;
-		setRailPowerState(world, pos, mainState, false, changedRails, context);
-
-		int firstDirectionCount = setRailPositionsDePower(self, world, pos, mainState, true, context, changedRails);
-		int secondDirectionCount = setRailPositionsDePower(self, world, pos, mainState, false, context, changedRails);
+		int firstDirectionCount;
+		int secondDirectionCount;
+		RailUpdateMemo.beginLaneWrite();
+		try {
+			setRailPowerState(world, pos, mainState, false, changedRails, context);
+			firstDirectionCount = setRailPositionsDePower(
+					self, world, pos, mainState, true, context, changedRails);
+			secondDirectionCount = setRailPositionsDePower(
+					self, world, pos, mainState, false, context, changedRails);
+		} finally {
+			RailUpdateMemo.endLaneWrite();
+		}
 
 		updateChangedRails(world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount, changedRails, context);
 	}
@@ -389,13 +404,9 @@ public final class RailLogic {
 	}
 
 	@SuppressWarnings("null")
-	private static void setRailPowerState(Level world, BlockPos pos, BlockState state, boolean powered, RailChangeList changedRails, RailUpdateContext context) {
-		RailUpdateMemo.beginLaneWrite();
-		try {
-			world.setBlock(pos, state.setValue(POWERED, powered), UPDATE_FORCE_PLACE);
-		} finally {
-			RailUpdateMemo.endLaneWrite();
-		}
+	private static void setRailPowerState(Level world, BlockPos pos, BlockState state, boolean powered,
+			RailChangeList changedRails, RailUpdateContext context) {
+		world.setBlock(pos, state.setValue(POWERED, powered), UPDATE_FORCE_PLACE);
 		context.memo.confirm(pos, powered, getRailPowerLimit());
 		changedRails.add(pos, state);
 	}
