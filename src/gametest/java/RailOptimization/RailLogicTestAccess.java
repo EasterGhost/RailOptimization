@@ -33,7 +33,6 @@ public final class RailLogicTestAccess {
 	}
 
 	public static boolean hasNeighborSignalFast(Level level, BlockPos pos) {
-		return RailSignalSearcher.hasNeighborSignalFast(
-				level, pos, new MutableBlockPos());
+		return RailNeighborSignalChecker.hasNeighborSignalFast(level, pos, new MutableBlockPos());
 	}
 }

@@ -44,7 +44,7 @@ final class RailUpdateContext {
 
 		int posChunkX = pos.getX() >> 4;
 		int posChunkZ = pos.getZ() >> 4;
-		boolean powered = RailSignalSearcher.hasNeighborSignalFast(level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
+		boolean powered = RailNeighborSignalChecker.hasNeighborSignalFast(level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
 		searchCache.put(position, RailSearchCache.DIRECT_SIGNAL, powered ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
 		return powered;
 	}

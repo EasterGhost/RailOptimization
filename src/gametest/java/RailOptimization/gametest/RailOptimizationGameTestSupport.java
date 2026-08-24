@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.BaseRailBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ObserverBlock;
@@ -94,6 +95,14 @@ abstract class RailOptimizationGameTestSupport {
 		helper.setBlock(railPos.below(), Blocks.STONE);
 		placeAscendingRailSupport(helper, railPos, shape);
 		helper.setBlock(railPos, railBlock.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape));
+	}
+
+	@SuppressWarnings("null")
+	static void placeShapedRail(GameTestHelper helper, BlockPos railPos, RailShape shape, Block railBlock) {
+		markVanillaForMirrorRail(helper, railPos);
+		helper.setBlock(railPos.below(), Blocks.STONE);
+		helper.setBlock(railPos, railBlock.defaultBlockState().setValue(
+				((BaseRailBlock) railBlock).getShapeProperty(), shape));
 	}
 
 	static void markVanillaForMirrorRail(GameTestHelper helper, BlockPos railPos) {

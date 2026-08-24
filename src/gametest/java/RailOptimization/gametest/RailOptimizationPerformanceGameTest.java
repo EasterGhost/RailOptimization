@@ -2,15 +2,10 @@ package RailOptimization.gametest;
 
 import RailOptimization.RailLogicTestAccess;
 import com.mojang.logging.LogUtils;
-import java.lang.management.ManagementFactory;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.function.LongSupplier;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -31,13 +26,11 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 	private static final int EXTENDED_STABILIZATION_OPERATIONS = 5_000;
 	private static final int UNCHANGED_UPDATE_STABILIZATION_OPERATIONS = 30_000;
 	private static final int INDIRECT_UPDATE_STABILIZATION_OPERATIONS = 10_000;
-	private static final int MEASUREMENT_ROUNDS = 11;
 	private static final int TOGGLES_PER_ROUND = 2_000;
 	private static final int UNCHANGED_UPDATES_PER_ROUND = 300_000;
 	private static final int INDIRECT_UPDATES_PER_ROUND = 200_000;
 	private static final int EXTENDED_POWER_LIMIT = 64;
 	private static final int EXTENDED_TOGGLES_PER_ROUND = 160;
-	private static final long MIN_MEDIAN_SAMPLE_NANOS = 20_000_000L;
 	private static final double MAX_STATE_CHANGE_TIME_RATIO = 0.95;
 	private static final double MAX_COMPLEX_STATE_CHANGE_TIME_RATIO = 1.05;
 	private static final double MAX_SHALLOW_UNCHANGED_UPDATE_TIME_RATIO = 1.10;
@@ -63,39 +56,39 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 				.thenIdle(2)
 				.thenExecute(() -> {
 					verifyLeverPropagation(helper, vanillaLever, optimizedLever, optimizedRails);
-					warmUpLeverToggles(
+					RailBenchmarkRunner.warmUpLeverToggles(
 							helper, vanillaLever, optimizedLever, STATE_CHANGE_WARMUP_OPERATIONS);
-					warmUpUnchangedUpdates(
+					RailBenchmarkRunner.warmUpUnchangedUpdates(
 							helper, vanillaCenter, optimizedCenter, UNCHANGED_UPDATE_WARMUP_OPERATIONS);
 					setLeverPairPowered(helper, vanillaLever, optimizedLever, true);
-					warmUpUnchangedUpdates(
+					RailBenchmarkRunner.warmUpUnchangedUpdates(
 							helper, vanillaCenter, optimizedCenter, UNCHANGED_UPDATE_WARMUP_OPERATIONS);
-					warmUpUnchangedUpdates(
+					RailBenchmarkRunner.warmUpUnchangedUpdates(
 							helper, vanillaIndirectRail, optimizedIndirectRail,
 							INDIRECT_UPDATE_WARMUP_OPERATIONS);
 					setLeverPairPowered(helper, vanillaLever, optimizedLever, false);
 				})
 				.thenIdle(4)
 				.thenExecute(() -> {
-					warmUpLeverToggles(
+					RailBenchmarkRunner.warmUpLeverToggles(
 							helper, vanillaLever, optimizedLever, STATE_CHANGE_STABILIZATION_OPERATIONS);
-					warmUpUnchangedUpdates(
+					RailBenchmarkRunner.warmUpUnchangedUpdates(
 							helper, vanillaCenter, optimizedCenter, UNCHANGED_UPDATE_STABILIZATION_OPERATIONS);
 					setLeverPairPowered(helper, vanillaLever, optimizedLever, true);
-					warmUpUnchangedUpdates(
+					RailBenchmarkRunner.warmUpUnchangedUpdates(
 							helper, vanillaCenter, optimizedCenter, UNCHANGED_UPDATE_STABILIZATION_OPERATIONS);
-					warmUpUnchangedUpdates(
+					RailBenchmarkRunner.warmUpUnchangedUpdates(
 							helper, vanillaIndirectRail, optimizedIndirectRail,
 							INDIRECT_UPDATE_STABILIZATION_OPERATIONS);
 					setLeverPairPowered(helper, vanillaLever, optimizedLever, false);
 				})
 				.thenIdle(2)
 				.thenExecute(() -> {
-					BenchmarkResult stateChanges = benchmarkAlternating(
-							() -> measureLeverToggles(helper, vanillaLever, TOGGLES_PER_ROUND),
-							() -> measureLeverToggles(helper, optimizedLever, TOGGLES_PER_ROUND)
+					RailBenchmarkRunner.BenchmarkResult stateChanges = RailBenchmarkRunner.benchmarkAlternating(
+							() -> RailBenchmarkRunner.measureLeverToggles(helper, vanillaLever, TOGGLES_PER_ROUND),
+							() -> RailBenchmarkRunner.measureLeverToggles(helper, optimizedLever, TOGGLES_PER_ROUND)
 					);
-					reportAndAssert(
+					RailBenchmarkRunner.reportAndAssert(
 							helper,
 							"straight state-changing lever toggles",
 							TOGGLES_PER_ROUND,
@@ -107,11 +100,11 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 					assertLeverOff(helper, optimizedLever);
 					assertRailsMatchAndAreOff(helper, optimizedRails);
 
-					BenchmarkResult unchangedUpdates = benchmarkAlternating(
-							() -> measureUnchangedUpdates(helper, vanillaCenter, UNCHANGED_UPDATES_PER_ROUND),
-							() -> measureUnchangedUpdates(helper, optimizedCenter, UNCHANGED_UPDATES_PER_ROUND)
+					RailBenchmarkRunner.BenchmarkResult unchangedUpdates = RailBenchmarkRunner.benchmarkAlternating(
+							() -> RailBenchmarkRunner.measureUnchangedUpdates(helper, vanillaCenter, UNCHANGED_UPDATES_PER_ROUND),
+							() -> RailBenchmarkRunner.measureUnchangedUpdates(helper, optimizedCenter, UNCHANGED_UPDATES_PER_ROUND)
 					);
-					reportAndAssert(
+					RailBenchmarkRunner.reportAndAssert(
 							helper,
 							"unpowered unchanged neighbor updates",
 							UNCHANGED_UPDATES_PER_ROUND,
@@ -123,11 +116,11 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 					assertMatchingRailPower(helper, controlCopy(optimizedRails), optimizedRails);
 					assertRailsPowered(helper, optimizedRails, true);
 
-					BenchmarkResult directlyPoweredUpdates = benchmarkAlternating(
-							() -> measureUnchangedUpdates(helper, vanillaCenter, UNCHANGED_UPDATES_PER_ROUND),
-							() -> measureUnchangedUpdates(helper, optimizedCenter, UNCHANGED_UPDATES_PER_ROUND)
+					RailBenchmarkRunner.BenchmarkResult directlyPoweredUpdates = RailBenchmarkRunner.benchmarkAlternating(
+							() -> RailBenchmarkRunner.measureUnchangedUpdates(helper, vanillaCenter, UNCHANGED_UPDATES_PER_ROUND),
+							() -> RailBenchmarkRunner.measureUnchangedUpdates(helper, optimizedCenter, UNCHANGED_UPDATES_PER_ROUND)
 					);
-					reportAndAssert(
+					RailBenchmarkRunner.reportAndAssert(
 							helper,
 							"directly-powered unchanged neighbor updates",
 							UNCHANGED_UPDATES_PER_ROUND,
@@ -135,13 +128,13 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 							directlyPoweredUpdates
 					);
 
-					BenchmarkResult indirectlyPoweredUpdates = benchmarkAlternating(
-							() -> measureUnchangedUpdates(
+					RailBenchmarkRunner.BenchmarkResult indirectlyPoweredUpdates = RailBenchmarkRunner.benchmarkAlternating(
+							() -> RailBenchmarkRunner.measureUnchangedUpdates(
 									helper, vanillaIndirectRail, INDIRECT_UPDATES_PER_ROUND),
-							() -> measureUnchangedUpdates(
+							() -> RailBenchmarkRunner.measureUnchangedUpdates(
 									helper, optimizedIndirectRail, INDIRECT_UPDATES_PER_ROUND)
 					);
-					reportAndAssert(
+					RailBenchmarkRunner.reportAndAssert(
 							helper,
 							"distance-8 indirectly-powered unchanged neighbor updates",
 							INDIRECT_UPDATES_PER_ROUND,
@@ -170,19 +163,19 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 				.thenIdle(2)
 				.thenExecute(() -> {
 					verifyLeverPropagation(helper, vanillaLever, optimizedLever, optimizedRails);
-					warmUpLeverToggles(
+					RailBenchmarkRunner.warmUpLeverToggles(
 							helper, vanillaLever, optimizedLever, STATE_CHANGE_WARMUP_OPERATIONS);
 				})
 				.thenIdle(4)
-				.thenExecute(() -> warmUpLeverToggles(
+				.thenExecute(() -> RailBenchmarkRunner.warmUpLeverToggles(
 						helper, vanillaLever, optimizedLever, STATE_CHANGE_STABILIZATION_OPERATIONS))
 				.thenIdle(2)
 				.thenExecute(() -> {
-					BenchmarkResult stateChanges = benchmarkAlternating(
-							() -> measureLeverToggles(helper, vanillaLever, TOGGLES_PER_ROUND),
-							() -> measureLeverToggles(helper, optimizedLever, TOGGLES_PER_ROUND)
+					RailBenchmarkRunner.BenchmarkResult stateChanges = RailBenchmarkRunner.benchmarkAlternating(
+							() -> RailBenchmarkRunner.measureLeverToggles(helper, vanillaLever, TOGGLES_PER_ROUND),
+							() -> RailBenchmarkRunner.measureLeverToggles(helper, optimizedLever, TOGGLES_PER_ROUND)
 					);
-					reportAndAssert(
+					RailBenchmarkRunner.reportAndAssert(
 							helper,
 							"mixed-slope state-changing lever toggles",
 							TOGGLES_PER_ROUND,
@@ -214,19 +207,14 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 
 		helper.startSequence()
 				.thenIdle(2)
-				.thenExecute(() -> runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
+				.thenExecute(() -> RailBenchmarkRunner.runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
 				.thenIdle(4)
-				.thenExecute(() -> runLeverToggles(
+				.thenExecute(() -> RailBenchmarkRunner.runLeverToggles(
 						helper, lever, EXTENDED_STABILIZATION_OPERATIONS))
 				.thenIdle(2)
 				.thenExecute(() -> {
-					long[] samples = new long[MEASUREMENT_ROUNDS];
-					for (int round = 0; round < MEASUREMENT_ROUNDS; round++) {
-						samples[round] = measureLeverToggles(
-								helper, lever, EXTENDED_TOGGLES_PER_ROUND);
-					}
-
-					SampleStats stats = sampleStats(samples);
+					RailBenchmarkRunner.SampleStats stats = RailBenchmarkRunner.sample(
+							() -> RailBenchmarkRunner.measureLeverToggles(helper, lever, EXTENDED_TOGGLES_PER_ROUND));
 					long nanosPerOperation = stats.medianNanos() / EXTENDED_TOGGLES_PER_ROUND;
 					LOGGER.info(
 							"RailOptimization benchmark [powerLimit={} straight state changes]: "
@@ -235,7 +223,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 							nanosPerOperation,
 							stats.relativeMedianAbsoluteDeviation(),
 							nanosPerOperation / lineLength,
-							allocatedBytesPerOperation(
+							RailBenchmarkRunner.allocatedBytesPerOperation(
 									helper, lever, EXTENDED_TOGGLES_PER_ROUND)
 					);
 
@@ -262,19 +250,14 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 
 		helper.startSequence()
 				.thenIdle(2)
-				.thenExecute(() -> runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
+				.thenExecute(() -> RailBenchmarkRunner.runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
 				.thenIdle(4)
-				.thenExecute(() -> runLeverToggles(
+				.thenExecute(() -> RailBenchmarkRunner.runLeverToggles(
 						helper, lever, EXTENDED_STABILIZATION_OPERATIONS))
 				.thenIdle(2)
 				.thenExecute(() -> {
-					long[] samples = new long[MEASUREMENT_ROUNDS];
-					for (int round = 0; round < MEASUREMENT_ROUNDS; round++) {
-						samples[round] = measureLeverToggles(
-								helper, lever, EXTENDED_TOGGLES_PER_ROUND);
-					}
-
-					SampleStats stats = sampleStats(samples);
+					RailBenchmarkRunner.SampleStats stats = RailBenchmarkRunner.sample(
+							() -> RailBenchmarkRunner.measureLeverToggles(helper, lever, EXTENDED_TOGGLES_PER_ROUND));
 					long nanosPerOperation = stats.medianNanos() / EXTENDED_TOGGLES_PER_ROUND;
 					LOGGER.info(
 							"RailOptimization benchmark [powerLimit={} mixed-slope state changes]: "
@@ -283,7 +266,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 							nanosPerOperation,
 							stats.relativeMedianAbsoluteDeviation(),
 							nanosPerOperation / lineLength,
-							allocatedBytesPerOperation(
+							RailBenchmarkRunner.allocatedBytesPerOperation(
 									helper, lever, EXTENDED_TOGGLES_PER_ROUND)
 					);
 
@@ -327,117 +310,6 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 				.setValue(FaceAttachedHorizontalDirectionalBlock.FACE, AttachFace.FLOOR)
 				.setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH)
 				.setValue(LeverBlock.POWERED, false));
-	}
-
-	private static void warmUpLeverToggles(
-			GameTestHelper helper, BlockPos vanillaLever, BlockPos optimizedLever, int operations) {
-		runLeverToggles(helper, vanillaLever, operations);
-		runLeverToggles(helper, optimizedLever, operations);
-		runLeverToggles(helper, optimizedLever, operations);
-		runLeverToggles(helper, vanillaLever, operations);
-	}
-
-	private static long measureLeverToggles(GameTestHelper helper, BlockPos lever, int operations) {
-		long startNanos = System.nanoTime();
-		runLeverToggles(helper, lever, operations);
-		return System.nanoTime() - startNanos;
-	}
-
-	@SuppressWarnings("null")
-	private static void runLeverToggles(GameTestHelper helper, BlockPos lever, int operations) {
-		for (int operation = 0; operation < operations; operation++) {
-			helper.pullLever(lever);
-		}
-	}
-
-	private static void warmUpUnchangedUpdates(
-			GameTestHelper helper, BlockPos vanillaRail, BlockPos optimizedRail, int operations) {
-		runUnchangedUpdates(helper, vanillaRail, operations);
-		runUnchangedUpdates(helper, optimizedRail, operations);
-		runUnchangedUpdates(helper, optimizedRail, operations);
-		runUnchangedUpdates(helper, vanillaRail, operations);
-	}
-
-	private static long measureUnchangedUpdates(GameTestHelper helper, BlockPos rail, int operations) {
-		long startNanos = System.nanoTime();
-		runUnchangedUpdates(helper, rail, operations);
-		return System.nanoTime() - startNanos;
-	}
-
-	@SuppressWarnings("null")
-	private static void runUnchangedUpdates(GameTestHelper helper, BlockPos rail, int operations) {
-		BlockPos absoluteRail = helper.absolutePos(rail);
-		for (int operation = 0; operation < operations; operation++) {
-			helper.getLevel().neighborChanged(absoluteRail, Blocks.STONE, null);
-		}
-	}
-
-	private static BenchmarkResult benchmarkAlternating(
-			LongSupplier vanillaSample, LongSupplier optimizedSample) {
-		long[] vanillaSamples = new long[MEASUREMENT_ROUNDS];
-		long[] optimizedSamples = new long[MEASUREMENT_ROUNDS];
-
-		for (int round = 0; round < MEASUREMENT_ROUNDS; round++) {
-			if ((round & 1) == 0) {
-				vanillaSamples[round] = vanillaSample.getAsLong();
-				optimizedSamples[round] = optimizedSample.getAsLong();
-			} else {
-				optimizedSamples[round] = optimizedSample.getAsLong();
-				vanillaSamples[round] = vanillaSample.getAsLong();
-			}
-		}
-
-		return new BenchmarkResult(sampleStats(vanillaSamples), sampleStats(optimizedSamples));
-	}
-
-	private static SampleStats sampleStats(long[] samples) {
-		Arrays.sort(samples);
-		long median = samples[samples.length / 2];
-		long[] deviations = new long[samples.length];
-		for (int i = 0; i < samples.length; i++) {
-			deviations[i] = Math.abs(samples[i] - median);
-		}
-		Arrays.sort(deviations);
-		return new SampleStats(median, deviations[deviations.length / 2]);
-	}
-
-	private static void reportAndAssert(
-			GameTestHelper helper, String label, int operationsPerRound,
-			double maxOptimizedToVanillaRatio, BenchmarkResult result) {
-		long vanillaNanosPerOperation = result.vanilla().medianNanos() / operationsPerRound;
-		long optimizedNanosPerOperation = result.optimized().medianNanos() / operationsPerRound;
-		String speedup = String.format(Locale.ROOT, "%.2f", result.speedup());
-		String vanillaNoise = result.vanilla().relativeMedianAbsoluteDeviation();
-		String optimizedNoise = result.optimized().relativeMedianAbsoluteDeviation();
-
-		LOGGER.info(
-				"RailOptimization benchmark [{}]: vanilla={} ns/op (MAD={}%), "
-						+ "optimized={} ns/op (MAD={}%), speedup={}x",
-				label,
-				vanillaNanosPerOperation,
-				vanillaNoise,
-				optimizedNanosPerOperation,
-				optimizedNoise,
-				speedup
-		);
-		helper.assertTrue(
-				Math.min(result.vanilla().medianNanos(), result.optimized().medianNanos())
-						>= MIN_MEDIAN_SAMPLE_NANOS,
-				Component.literal(
-						label + " sample is too short for reliable timing: vanilla="
-								+ result.vanilla().medianNanos() / 1_000_000 + " ms, optimized="
-								+ result.optimized().medianNanos() / 1_000_000 + " ms"
-				)
-		);
-		helper.assertTrue(
-				result.optimized().medianNanos()
-						<= result.vanilla().medianNanos() * maxOptimizedToVanillaRatio,
-				Component.literal(
-						label + " regressed: vanilla=" + vanillaNanosPerOperation
-								+ " ns/op, optimized=" + optimizedNanosPerOperation
-								+ " ns/op, speedup=" + speedup + "x"
-				)
-		);
 	}
 
 	@SuppressWarnings("null")
@@ -535,21 +407,6 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 		};
 	}
 
-	private static String allocatedBytesPerOperation(
-			GameTestHelper helper, BlockPos lever, int operations) {
-		if (!(ManagementFactory.getThreadMXBean() instanceof com.sun.management.ThreadMXBean threadBean)
-				|| !threadBean.isThreadAllocatedMemorySupported()) {
-			return "unavailable";
-		}
-		if (!threadBean.isThreadAllocatedMemoryEnabled()) {
-			threadBean.setThreadAllocatedMemoryEnabled(true);
-		}
-		long before = threadBean.getCurrentThreadAllocatedBytes();
-		runLeverToggles(helper, lever, operations);
-		long allocatedBytes = threadBean.getCurrentThreadAllocatedBytes() - before;
-		return Long.toString(allocatedBytes / operations);
-	}
-
 	private static BlockPos[] extendedMixedSlopeRails(int length) {
 		int[] heightOffsets = new int[] { 3, 2, 1, 0, 0, 1, 2, 3 };
 		BlockPos[] rails = new BlockPos[length];
@@ -576,18 +433,5 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 			shapes[index] = shapeCycle[index & 7];
 		}
 		return shapes;
-	}
-
-	private record BenchmarkResult(SampleStats vanilla, SampleStats optimized) {
-		double speedup() {
-			return (double) vanilla.medianNanos() / optimized.medianNanos();
-		}
-	}
-
-	private record SampleStats(long medianNanos, long medianAbsoluteDeviationNanos) {
-		String relativeMedianAbsoluteDeviation() {
-			return String.format(
-					Locale.ROOT, "%.2f", medianAbsoluteDeviationNanos * 100.0 / medianNanos);
-		}
 	}
 }

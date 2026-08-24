@@ -16,7 +16,7 @@ final class RailChangeList {
 
 	void add(BlockPos pos, BlockState state) {
 		positions[size] = pos.asLong();
-		boolean isAscending = RailLogic.isAscending(RailSignalSearcher.railShape(state));
+		boolean isAscending = RailPath.isAscending(RailPath.railShape(state));
 		ascending[size] = isAscending;
 		hasSlope |= isAscending;
 		size++;

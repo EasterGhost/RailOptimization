@@ -27,7 +27,7 @@ final class RailUpdateNotifier {
 	static void updateRails(boolean eastWest, Level world, BlockPos pos, BlockState mainState, int firstDirectionCount, int secondDirectionCount,
 			MutableBlockPos scratchPos) {
 		Block block = mainState.getBlock();
-		Direction[] directions = eastWest ? RailLogic.EAST_WEST_DIR : RailLogic.NORTH_SOUTH_DIR;
+		Direction[] directions = eastWest ? RailPath.EAST_WEST_DIRECTIONS : RailPath.NORTH_SOUTH_DIRECTIONS;
 
 		if (firstDirectionCount == 0 && secondDirectionCount > 0) {
 			updateRailSection(world, pos, block, directions[1], 1, secondDirectionCount, scratchPos);
