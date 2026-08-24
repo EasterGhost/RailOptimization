@@ -118,7 +118,6 @@ public final class RailLogic {
 		}
 	}
 
-	@SuppressWarnings("null")
 	public static boolean tryCustomUpdateState(
 			PoweredRailBlock self, BlockState state, Level level, BlockPos pos, Block sourceBlock) {
 		if (useTestPositionModes) {
@@ -135,7 +134,6 @@ public final class RailLogic {
 		return true;
 	}
 
-	@SuppressWarnings("null")
 	private static boolean tryCustomUpdateStateWithTestModes(
 			PoweredRailBlock self, BlockState state, Level level, BlockPos pos, Block sourceBlock) {
 		int testMode = testPositionModes.get(pos.asLong());
@@ -167,10 +165,10 @@ public final class RailLogic {
 	private static boolean canReuseConfirmedState(
 			Block sourceBlock, long position, int powerLimit, boolean currentPowered) {
 		return sourceBlock != Blocks.TRAPPED_CHEST
+				&& sourceBlock != Blocks.JUKEBOX
 				&& RailUpdateMemo.isConfirmed(position, powerLimit, currentPowered);
 	}
 
-	@SuppressWarnings("null")
 	private static void customUpdateStateWithCurrentPowerLimit(
 			PoweredRailBlock self, BlockState state, Level level, BlockPos pos, boolean currentlyPowered) {
 		RailUpdateContext context = newUpdateContext();
@@ -264,7 +262,6 @@ public final class RailLogic {
 		};
 	}
 
-	@SuppressWarnings("null")
 	private static int setRailPositionsPower(PoweredRailBlock self, Level world, BlockPos pos, BlockState sourceState, RailUpdateContext context, boolean forward, boolean directlyPowered, RailChangeList changedRails) {
 		int count = 0;
 		RailSearchCache checkedPos = context.searchCache;
@@ -322,7 +319,6 @@ public final class RailLogic {
 		return count;
 	}
 
-	@SuppressWarnings("null")
 	private static int setRailPositionsDePower(PoweredRailBlock self, Level world, BlockPos pos, BlockState sourceState, boolean forward, RailUpdateContext context, RailChangeList changedRails) {
 		RailShape sourceShape = RailSignalSearcher.railShape(sourceState);
 		int straightCount = RailSignalSearcher.countStraightRailsToDepower(self, world, pos, sourceShape, forward, context, context.straightRailStates);
