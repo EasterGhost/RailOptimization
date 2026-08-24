@@ -31,8 +31,7 @@ final class RailSignalSearcher {
 
 		int railData = RailPath.railData(blockState);
 		RailShape actualShape = RailPath.RAIL_SHAPES[railData & RailStateAccess.SHAPE_MASK];
-		if (RailPath.isMismatchedRailAxis(expectedShape, actualShape)
-				|| (railData & RailStateAccess.POWERED_MASK) == 0) {
+		if (RailPath.isMismatchedRailAxis(expectedShape, actualShape) || (railData & RailStateAccess.POWERED_MASK) == 0) {
 			return SEARCH_NOT_FOUND;
 		}
 
@@ -41,8 +40,7 @@ final class RailSignalSearcher {
 			return distance;
 		}
 
-		int poweredDistance = findPoweredRailSignalFromState(
-				self, world, x, y, z, blockState, forward, distance + 1, context);
+		int poweredDistance = findPoweredRailSignalFromState(self, world, x, y, z, blockState, forward, distance + 1, context);
 		if (poweredDistance != SEARCH_NOT_FOUND) {
 			context.cachePoweredSearchCost(posKey, cacheFlags, poweredDistance - distance);
 		}
@@ -172,8 +170,8 @@ final class RailSignalSearcher {
 		return Math.min(powerLimit, poweredLength);
 	}
 
-	private static int findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z,
-			BlockState state, boolean forward, int distance, RailUpdateContext context) {
+	private static int findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z, BlockState state, boolean forward, int distance,
+			RailUpdateContext context) {
 		if (distance >= RailLogic.getRailPowerLimit()) {
 			return SEARCH_NOT_FOUND;
 		}

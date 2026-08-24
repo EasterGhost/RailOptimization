@@ -22,8 +22,7 @@ final class RailNeighborSignalChecker {
 		int chunkZ = z >> 4;
 		LevelChunk chunk = level.getChunk(chunkX, chunkZ);
 
-		return hasNeighborSignalFast(
-				level, pos, scratchPos, chunk, chunkX, chunkZ);
+		return hasNeighborSignalFast(level, pos, scratchPos, chunk, chunkX, chunkZ);
 	}
 
 	@SuppressWarnings("null")

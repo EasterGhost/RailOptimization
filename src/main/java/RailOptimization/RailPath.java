@@ -86,13 +86,9 @@ final class RailPath {
 
 	static boolean isMismatchedRailAxis(RailShape expected, RailShape actual) {
 		if (expected == RailShape.EAST_WEST) {
-			return actual == RailShape.NORTH_SOUTH
-					|| actual == RailShape.ASCENDING_NORTH
-					|| actual == RailShape.ASCENDING_SOUTH;
+			return actual == RailShape.NORTH_SOUTH || actual == RailShape.ASCENDING_NORTH || actual == RailShape.ASCENDING_SOUTH;
 		}
-		return actual == RailShape.EAST_WEST
-				|| actual == RailShape.ASCENDING_EAST
-				|| actual == RailShape.ASCENDING_WEST;
+		return actual == RailShape.EAST_WEST || actual == RailShape.ASCENDING_EAST || actual == RailShape.ASCENDING_WEST;
 	}
 
 	static BlockState findNextRailState(PoweredRailBlock self, Level level, MutableBlockPos railPos, BlockState state, boolean forward,
@@ -173,8 +169,7 @@ final class RailPath {
 		return state.is(self) && !isMismatchedRailAxis(expectedShape, railShape(state));
 	}
 
-	static boolean isPoweredRailWithAxis(
-			PoweredRailBlock self, BlockState state, RailShape expectedShape) {
+	static boolean isPoweredRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
 		if (!state.is(self)) {
 			return false;
 		}

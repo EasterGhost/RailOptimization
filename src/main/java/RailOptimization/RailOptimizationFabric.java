@@ -14,7 +14,8 @@ public class RailOptimizationFabric implements ModInitializer {
 	public void onInitialize() {
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess,
 				environment) -> dispatcher.register(Commands.literal("railoptimization")
-						.executes(context -> sendStatus(context.getSource())).then(Commands.literal("on")
+						.executes(context -> sendStatus(context.getSource()))
+						.then(Commands.literal("on")
 								.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
 								.executes(context -> setEnabled(context.getSource(), true)))
 						.then(Commands.literal("off")
@@ -38,8 +39,9 @@ public class RailOptimizationFabric implements ModInitializer {
 	}
 
 	private static int sendStatus(CommandSourceStack source) {
-		source.sendSuccess(() -> Component.literal("RailOptimization is "
-				+ (RailLogic.isOptimizationEnabled() ? "on" : "off") + "; powerLimit=" + RailLogic.getRailPowerLimit()),
+		source.sendSuccess(
+				() -> Component
+						.literal("RailOptimization is " + (RailLogic.isOptimizationEnabled() ? "on" : "off") + "; powerLimit=" + RailLogic.getRailPowerLimit()),
 				false);
 		return 1;
 	}

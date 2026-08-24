@@ -87,9 +87,7 @@ public final class RailLogic {
 			boolean currentPowered) {
 		if (sourceBlock != self && sourceBlock != lastReusableMemoSource) {
 			BlockState sourceState = sourceBlock.defaultBlockState();
-			if (sourceState.hasBlockEntity()
-					|| sourceState.isSignalSource()
-					|| sourceState.hasAnalogOutputSignal()) {
+			if (sourceState.hasBlockEntity() || sourceState.isSignalSource() || sourceState.hasAnalogOutputSignal()) {
 				return false;
 			}
 			lastReusableMemoSource = sourceBlock;
@@ -108,10 +106,8 @@ public final class RailLogic {
 			RailShape railShape = RailPath.railShape(state);
 			boolean shouldBePowered = directlyPowered;
 			if (!shouldBePowered) {
-				shouldBePowered = RailSignalSearcher.findPoweredRailSignalFaster(
-						self, level, pos, state, true, 0, context)
-						|| RailSignalSearcher.findPoweredRailSignalFaster(
-								self, level, pos, state, false, 0, context);
+				shouldBePowered = RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, context)
+						|| RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, false, 0, context);
 			}
 
 			if (shouldBePowered != currentlyPowered) {
@@ -128,5 +124,4 @@ public final class RailLogic {
 			releaseUpdateContext(context);
 		}
 	}
-
 }

@@ -17,8 +17,8 @@ final class RailLaneUpdater {
 	private RailLaneUpdater() {
 	}
 
-	static void powerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState,
-			RailShape railShape, RailUpdateContext context, boolean directlyPowered) {
+	static void powerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState, RailShape railShape, RailUpdateContext context,
+			boolean directlyPowered) {
 		if (!RailPath.supportsFastSearch(railShape)) {
 			return;
 		}
@@ -34,10 +34,8 @@ final class RailLaneUpdater {
 		try {
 			setRailPowerState(world, pos, mainState, true, changedRails, context);
 			checkedPos.put(pos.asLong(), RailLogic.CHECKED_POWERED);
-			firstDirectionCount = setRailPositionsPower(
-					self, world, pos, mainState, context, true, directlyPowered, changedRails);
-			secondDirectionCount = setRailPositionsPower(
-					self, world, pos, mainState, context, false, directlyPowered, changedRails);
+			firstDirectionCount = setRailPositionsPower(self, world, pos, mainState, context, true, directlyPowered, changedRails);
+			secondDirectionCount = setRailPositionsPower(self, world, pos, mainState, context, false, directlyPowered, changedRails);
 		} finally {
 			RailUpdateMemo.endLaneWrite();
 		}
@@ -46,8 +44,7 @@ final class RailLaneUpdater {
 				changedRails, context);
 	}
 
-	static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState,
-			RailShape railShape, RailUpdateContext context) {
+	static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState, RailShape railShape, RailUpdateContext context) {
 		if (!RailPath.supportsFastSearch(railShape)) {
 			return;
 		}
@@ -61,10 +58,8 @@ final class RailLaneUpdater {
 		RailUpdateMemo.beginLaneWrite();
 		try {
 			setRailPowerState(world, pos, mainState, false, changedRails, context);
-			firstDirectionCount = setRailPositionsDePower(
-					self, world, pos, mainState, true, context, changedRails);
-			secondDirectionCount = setRailPositionsDePower(
-					self, world, pos, mainState, false, context, changedRails);
+			firstDirectionCount = setRailPositionsDePower(self, world, pos, mainState, true, context, changedRails);
+			secondDirectionCount = setRailPositionsDePower(self, world, pos, mainState, false, context, changedRails);
 		} finally {
 			RailUpdateMemo.endLaneWrite();
 		}
@@ -94,8 +89,7 @@ final class RailLaneUpdater {
 		for (int i = 1; i <= RailLogic.getRailPowerLimit(); ++i) {
 			long previousPos = cursor.asLong();
 			int previousY = cursor.getY();
-			BlockState state = RailPath.findNextRailState(
-					self, world, cursor, previousState, forward, context);
+			BlockState state = RailPath.findNextRailState(self, world, cursor, previousState, forward, context);
 			if (state == null) {
 				break;
 			}
@@ -141,14 +135,11 @@ final class RailLaneUpdater {
 	private static int setRailPositionsDePower(PoweredRailBlock self, Level world, BlockPos pos, BlockState sourceState, boolean forward,
 			RailUpdateContext context, RailChangeList changedRails) {
 		RailShape sourceShape = RailPath.railShape(sourceState);
-		int straightCount = RailSignalSearcher.countStraightRailsToDepower(self, world, pos, sourceShape, forward,
-				context);
+		int straightCount = RailSignalSearcher.countStraightRailsToDepower(self, world, pos, sourceShape, forward, context);
 		if (straightCount != RailSignalSearcher.COMPLEX_PATH) {
-			return setStraightRailPositionsDePower(world, pos, sourceShape, forward, straightCount, context,
-					changedRails);
+			return setStraightRailPositionsDePower(world, pos, sourceShape, forward, straightCount, context, changedRails);
 		}
-		int connectedCount = RailSignalSearcher.countConnectedRailsToDepower(self, world, pos, sourceState, forward,
-				context);
+		int connectedCount = RailSignalSearcher.countConnectedRailsToDepower(self, world, pos, sourceState, forward, context);
 		if (connectedCount != RailSignalSearcher.COMPLEX_PATH) {
 			return setConnectedRailPositionsDePower(world, connectedCount, context, changedRails);
 		}

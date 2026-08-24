@@ -25,9 +25,7 @@ final class RailSearchCache {
 	private int searchGeneration;
 
 	RailSearchCache(int railPowerLimit) {
-		int capacity = railPowerLimit >= MAX_CAPACITY / 8
-				? MAX_CAPACITY
-				: Math.max(railPowerLimit * 8, MIN_CAPACITY);
+		int capacity = railPowerLimit >= MAX_CAPACITY / 8 ? MAX_CAPACITY : Math.max(railPowerLimit * 8, MIN_CAPACITY);
 		capacity = Integer.highestOneBit(capacity - 1) << 1;
 		capacity = Math.min(capacity, MAX_CAPACITY);
 		keys = new long[capacity];

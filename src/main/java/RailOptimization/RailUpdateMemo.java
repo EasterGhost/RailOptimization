@@ -1,5 +1,7 @@
 package RailOptimization;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +21,16 @@ public final class RailUpdateMemo {
 	private static final ThreadLocal<LaneWriteDepth> LANE_WRITE_DEPTH = ThreadLocal.withInitial(LaneWriteDepth::new);
 	private static final ThreadLocal<List<RailUpdateMemo>> MEMOS = ThreadLocal.withInitial(ArrayList::new);
 	private static final ThreadLocal<RailUpdateMemo> TOP = new ThreadLocal<>();
+	private static final VarHandle BLOCK_CHANGE_EPOCH_HANDLE;
 	private static volatile long blockChangeEpoch;
+
+	static {
+		try {
+			BLOCK_CHANGE_EPOCH_HANDLE = MethodHandles.lookup().findStaticVarHandle(RailUpdateMemo.class, "blockChangeEpoch", long.class);
+		} catch (ReflectiveOperationException exception) {
+			throw new ExceptionInInitializerError(exception);
+		}
+	}
 
 	private static final class LaneWriteDepth {
 		int value;
@@ -38,7 +49,7 @@ public final class RailUpdateMemo {
 		if (LANE_WRITE_DEPTH.get().value != 0) {
 			return;
 		}
-		++blockChangeEpoch;
+		BLOCK_CHANGE_EPOCH_HANDLE.getAndAdd(1L);
 	}
 
 	static void beginLaneWrite() {
