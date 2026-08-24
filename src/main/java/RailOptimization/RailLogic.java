@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -28,6 +27,7 @@ public final class RailLogic {
 
 	private static volatile int railPowerLimit = 8;
 	private static volatile boolean optimizationEnabled = true;
+	private static volatile Block lastReusableMemoSource;
 	private static boolean useTestPositionModes;
 	private static final Long2IntOpenHashMap testPositionModes = new Long2IntOpenHashMap();
 
@@ -127,7 +127,7 @@ public final class RailLogic {
 			return false;
 		}
 		boolean currentlyPowered = RailSignalSearcher.isPowered(state);
-		if (canReuseConfirmedState(sourceBlock, pos.asLong(), railPowerLimit, currentlyPowered)) {
+		if (canReuseConfirmedState(self, sourceBlock, pos.asLong(), railPowerLimit, currentlyPowered)) {
 			return true;
 		}
 		customUpdateStateWithCurrentPowerLimit(self, state, level, pos, currentlyPowered);
@@ -143,7 +143,7 @@ public final class RailLogic {
 
 		int effectiveLimit = testMode == TEST_MODE_OPTIMIZED ? railPowerLimit : testMode;
 		boolean currentlyPowered = RailSignalSearcher.isPowered(state);
-		if (canReuseConfirmedState(sourceBlock, pos.asLong(), effectiveLimit, currentlyPowered)) {
+		if (canReuseConfirmedState(self, sourceBlock, pos.asLong(), effectiveLimit, currentlyPowered)) {
 			return true;
 		}
 
@@ -163,10 +163,17 @@ public final class RailLogic {
 	}
 
 	private static boolean canReuseConfirmedState(
-			Block sourceBlock, long position, int powerLimit, boolean currentPowered) {
-		return sourceBlock != Blocks.TRAPPED_CHEST
-				&& sourceBlock != Blocks.JUKEBOX
-				&& RailUpdateMemo.isConfirmed(position, powerLimit, currentPowered);
+			PoweredRailBlock self, Block sourceBlock, long position, int powerLimit, boolean currentPowered) {
+		if (sourceBlock != self && sourceBlock != lastReusableMemoSource) {
+			BlockState sourceState = sourceBlock.defaultBlockState();
+			if (sourceState.hasBlockEntity()
+					|| sourceState.isSignalSource()
+					|| sourceState.hasAnalogOutputSignal()) {
+				return false;
+			}
+			lastReusableMemoSource = sourceBlock;
+		}
+		return RailUpdateMemo.isConfirmed(position, powerLimit, currentPowered);
 	}
 
 	private static void customUpdateStateWithCurrentPowerLimit(
