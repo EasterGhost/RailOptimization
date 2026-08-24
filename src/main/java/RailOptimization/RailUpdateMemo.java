@@ -10,11 +10,15 @@ public final class RailUpdateMemo {
 	private static final int MASK = CAPACITY - 1;
 	private static final long HASH_MULTIPLIER = 0x9E3779B97F4A7C15L;
 	private static final int HASH_SHIFT = Long.SIZE - Integer.numberOfTrailingZeros(CAPACITY);
+	private static final long EPOCH_MASK = 0x00FFFFFFFFFFFFFFL;
+	private static final int POWER_LIMIT_SHIFT = 56;
+	private static final long POWERED_MASK = 1L << 62;
+	private static final long OCCUPIED_MASK = 1L << 63;
 
 	private static final ThreadLocal<LaneWriteDepth> LANE_WRITE_DEPTH = ThreadLocal.withInitial(LaneWriteDepth::new);
 	private static final ThreadLocal<List<RailUpdateMemo>> MEMOS = ThreadLocal.withInitial(ArrayList::new);
 	private static final ThreadLocal<RailUpdateMemo> TOP = new ThreadLocal<>();
-	private static volatile int blockChangeEpoch;
+	private static volatile long blockChangeEpoch;
 
 	private static final class LaneWriteDepth {
 		int value;
@@ -23,7 +27,7 @@ public final class RailUpdateMemo {
 	private final long[] keys = new long[CAPACITY];
 	private final long[] meta = new long[CAPACITY];
 	private int size;
-	private int writeEpoch;
+	private long writeEpoch;
 
 	RailUpdateMemo() {
 	}
@@ -84,10 +88,10 @@ public final class RailUpdateMemo {
 
 	void confirm(BlockPos pos, boolean powered, int powerLimit) {
 		long position = pos.asLong();
-		long entryMeta = ((long) blockChangeEpoch & 0xFFFFFFFFL)
-				| ((long) powerLimit << 32)
-				| (powered ? 1L << 39 : 0)
-				| (1L << 40);
+		long entryMeta = (blockChangeEpoch & EPOCH_MASK)
+				| ((long) (powerLimit - 1) << POWER_LIMIT_SHIFT)
+				| (powered ? POWERED_MASK : 0)
+				| OCCUPIED_MASK;
 		int index = hashIndex(position);
 		for (int probes = CAPACITY; probes > 0; --probes) {
 			if (meta[index] == 0) {
@@ -129,10 +133,10 @@ public final class RailUpdateMemo {
 	}
 
 	private static long expectedMeta(int powerLimit, boolean currentPowered) {
-		return ((long) blockChangeEpoch & 0xFFFFFFFFL)
-				| ((long) powerLimit << 32)
-				| (currentPowered ? 1L << 39 : 0)
-				| (1L << 40);
+		return (blockChangeEpoch & EPOCH_MASK)
+				| ((long) (powerLimit - 1) << POWER_LIMIT_SHIFT)
+				| (currentPowered ? POWERED_MASK : 0)
+				| OCCUPIED_MASK;
 	}
 
 	private static int hashIndex(long position) {

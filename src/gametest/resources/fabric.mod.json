@@ -29,7 +29,8 @@
       "RailOptimization.gametest.RailOptimizationInstantRailGameTest",
       "RailOptimization.gametest.RailOptimizationMonotonicSlopeGameTest",
       "RailOptimization.gametest.RailOptimizationDynamicSignalGameTest",
-      "RailOptimization.RailSearchCacheGameTest"
+      "RailOptimization.RailSearchCacheGameTest",
+      "RailOptimization.RailUpdateMemoGameTest"
     ]
   },
   "depends": {
