@@ -6,7 +6,6 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "RailOptimization.RailOptimizationFabric",
       "RailOptimization.gametest.RailOptimizationGameTestMod"
     ],
     "fabric-gametest": [
@@ -31,10 +30,14 @@
       "RailOptimization.gametest.RailOptimizationInstantRailGameTest",
       "RailOptimization.gametest.RailOptimizationMonotonicSlopeGameTest",
       "RailOptimization.gametest.RailOptimizationDynamicSignalGameTest",
+      "RailOptimization.gametest.RailOptimizationMemoIsolationGameTest",
       "RailOptimization.RailSearchCacheGameTest",
       "RailOptimization.RailUpdateMemoGameTest"
     ]
   },
+  "mixins": [
+    "railoptimization-gametest.mixins.json"
+  ],
   "depends": {
     "fabricloader": "*",
     "fabric-api": "*",

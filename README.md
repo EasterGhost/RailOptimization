@@ -33,11 +33,11 @@ Use the jar that matches your Minecraft version range:
 
 | Jar | Minecraft versions |
 | --- | --- |
-| `railoptimization-fabric-mc1.20.1-*.jar` | 1.20-1.21.1 |
-| `railoptimization-fabric-mc1.21.2-*.jar` | 1.21.2-1.21.4 |
-| `railoptimization-fabric-mc1.21.5-*.jar` | 1.21.5-1.21.10 |
-| `railoptimization-fabric-mc1.21.11-*.jar` | 1.21.11 |
-| `railoptimization-fabric-mc26.1.2-*.jar` | 26.1-26.2 |
+| `railoptimization-*+mc1.20.1-fabric.jar` | 1.20-1.21.1 |
+| `railoptimization-*+mc1.21.2-fabric.jar` | 1.21.2-1.21.4 |
+| `railoptimization-*+mc1.21.5-fabric.jar` | 1.21.5-1.21.10 |
+| `railoptimization-*+mc1.21.11-fabric.jar` | 1.21.11 |
+| `railoptimization-*+mc26.1.2-fabric.jar` | 26.1-26.2 |
 
 Fabric Loader and Fabric API are required.
 

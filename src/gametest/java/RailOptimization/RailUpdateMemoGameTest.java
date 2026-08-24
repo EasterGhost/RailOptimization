@@ -24,7 +24,7 @@ public class RailUpdateMemoGameTest {
 				long position = new BlockPos(12_345_678, 64, -12_345_678).asLong();
 				RailUpdateMemo memo = new RailUpdateMemo();
 				epochField.setLong(null, recordedEpoch);
-				memo.beginWalk();
+				memo.beginWalk(helper.getLevel());
 				memo.confirm(BlockPos.of(position), true, 8);
 
 				helper.assertValueEqual(
@@ -45,8 +45,7 @@ public class RailUpdateMemoGameTest {
 		helper.succeed();
 	}
 
-	private static int invokeCheck(Method checkEntry, RailUpdateMemo memo, long position)
-			throws ReflectiveOperationException {
+	private static int invokeCheck(Method checkEntry, RailUpdateMemo memo, long position) throws ReflectiveOperationException {
 		return (int) checkEntry.invoke(memo, position, 8, true);
 	}
 }

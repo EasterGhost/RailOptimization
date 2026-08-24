@@ -23,7 +23,7 @@ final class RailLaneUpdater {
 			return;
 		}
 
-		context.memo.beginWalk();
+		context.memo.beginWalk(world);
 		RailUpdateMemo.trackContext(context.memo);
 		context.beginPowering();
 		RailSearchCache checkedPos = context.searchCache;
@@ -52,7 +52,7 @@ final class RailLaneUpdater {
 			return;
 		}
 
-		context.memo.beginWalk();
+		context.memo.beginWalk(world);
 		RailUpdateMemo.trackContext(context.memo);
 		context.beginDepowering();
 		RailChangeList changedRails = context.changeList;

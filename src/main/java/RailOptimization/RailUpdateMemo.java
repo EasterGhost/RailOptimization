@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 public final class RailUpdateMemo {
 	private static final int CAPACITY = 256;
@@ -26,6 +27,7 @@ public final class RailUpdateMemo {
 
 	private final long[] keys = new long[CAPACITY];
 	private final long[] meta = new long[CAPACITY];
+	private Level ownerLevel;
 	private int size;
 	private long writeEpoch;
 
@@ -59,9 +61,9 @@ public final class RailUpdateMemo {
 		TOP.set(memo);
 	}
 
-	static boolean isConfirmed(long position, int powerLimit, boolean currentPowered) {
+	static boolean isConfirmed(Level level, long position, int powerLimit, boolean currentPowered) {
 		RailUpdateMemo top = TOP.get();
-		if (top != null) {
+		if (top != null && top.ownerLevel == level) {
 			int result = top.checkEntry(position, powerLimit, currentPowered);
 			if (result != 0) {
 				return result > 0;
@@ -70,7 +72,7 @@ public final class RailUpdateMemo {
 		List<RailUpdateMemo> memos = MEMOS.get();
 		for (int i = memos.size() - 1; i >= 0; --i) {
 			RailUpdateMemo memo = memos.get(i);
-			if (memo == top) {
+			if (memo == top || memo.ownerLevel != level) {
 				continue;
 			}
 			int result = memo.checkEntry(position, powerLimit, currentPowered);
@@ -81,9 +83,16 @@ public final class RailUpdateMemo {
 		return false;
 	}
 
-	void beginWalk() {
+	void beginWalk(Level level) {
+		ownerLevel = level;
 		Arrays.fill(meta, 0L);
 		size = 0;
+	}
+
+	void bindLevel(Level level) {
+		if (ownerLevel != level) {
+			beginWalk(level);
+		}
 	}
 
 	void confirm(BlockPos pos, boolean powered, int powerLimit) {
