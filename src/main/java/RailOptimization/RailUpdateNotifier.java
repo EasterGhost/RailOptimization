@@ -24,7 +24,8 @@ final class RailUpdateNotifier {
 		level.neighborChanged(scratchPos.immutable(), sourceBlock, null);
 	}
 
-	static void updateRails(boolean eastWest, Level world, BlockPos pos, BlockState mainState, int firstDirectionCount, int secondDirectionCount, MutableBlockPos scratchPos) {
+	static void updateRails(boolean eastWest, Level world, BlockPos pos, BlockState mainState, int firstDirectionCount, int secondDirectionCount,
+			MutableBlockPos scratchPos) {
 		Block block = mainState.getBlock();
 		Direction[] directions = eastWest ? RailLogic.EAST_WEST_DIR : RailLogic.NORTH_SOUTH_DIR;
 
