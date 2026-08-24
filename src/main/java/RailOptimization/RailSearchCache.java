@@ -11,6 +11,7 @@ final class RailSearchCache {
 
 	private static final int MIN_CAPACITY = 16;
 	private static final int MAX_CAPACITY = 1024;
+	private static final long HASH_MULTIPLIER = 0x9E3779B97F4A7C15L;
 
 	private static final int META_OCCUPIED = 1 << 7;
 	private static final int META_ENTRY_FLAGS_MASK = META_OCCUPIED - 1;
@@ -22,6 +23,7 @@ final class RailSearchCache {
 	private final long[] keys;
 	private final int[] meta;
 	private final int mask;
+	private final int hashShift;
 	private int searchGeneration;
 
 	RailSearchCache(int railPowerLimit) {
@@ -31,6 +33,7 @@ final class RailSearchCache {
 		keys = new long[capacity];
 		meta = new int[capacity];
 		mask = capacity - 1;
+		hashShift = Long.SIZE - Integer.numberOfTrailingZeros(capacity);
 	}
 
 	byte get(long position) {
@@ -115,7 +118,8 @@ final class RailSearchCache {
 	}
 
 	private int findOrEmpty(long position, byte entryFlags) {
-		int index = (int) ((position * 0x9E3779B97F4A7C15L + entryFlags) & mask);
+		long hash = (position ^ (entryFlags & META_ENTRY_FLAGS_MASK)) * HASH_MULTIPLIER;
+		int index = (int) (hash >>> hashShift);
 		if (meta[index] == 0) {
 			return -index - 2;
 		}

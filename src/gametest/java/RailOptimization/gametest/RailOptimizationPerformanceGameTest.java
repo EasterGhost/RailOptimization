@@ -233,6 +233,16 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 				.thenSucceed();
 	}
 
+	@GameTest(environment = "railoptimization-gametest:serial_114", maxTicks = 200, padding = 50)
+	public void northSouthStraightRailUpdateCostIsMeasured(GameTestHelper helper) {
+		measureNorthSouthStraightRailUpdateCost(helper, 8, TOGGLES_PER_ROUND);
+	}
+
+	@GameTest(environment = "railoptimization-gametest:serial_115", maxTicks = 200, padding = 150)
+	public void extendedRangeNorthSouthStraightRailUpdateCostIsMeasured(GameTestHelper helper) {
+		measureNorthSouthStraightRailUpdateCost(helper, EXTENDED_POWER_LIMIT, EXTENDED_TOGGLES_PER_ROUND);
+	}
+
 	@SuppressWarnings("null")
 	@GameTest(environment = "railoptimization-gametest:serial_65", maxTicks = 200, padding = 150)
 	public void extendedRangeMixedSlopeUpdateCostIsMeasured(GameTestHelper helper) {
@@ -322,6 +332,49 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 		assertRailsPowered(helper, optimizedRails, false);
 	}
 
+	@SuppressWarnings("null")
+	private static void measureNorthSouthStraightRailUpdateCost(GameTestHelper helper, int powerLimit, int togglesPerRound) {
+		int lineLength = powerLimit * 2 + 1;
+		BlockPos start = new BlockPos(2, RAIL_Y, 3);
+		BlockPos[] rails = straightRails(start, Direction.SOUTH, lineLength);
+		BlockPos center = rails[powerLimit];
+		BlockPos lever = center.east();
+
+		placeRailLine(helper, start, Direction.SOUTH, lineLength, RailShape.NORTH_SOUTH);
+		for (BlockPos rail : rails) {
+			RailLogicTestAccess.forcePowerLimitAt(helper.absolutePos(rail), powerLimit);
+		}
+		placeLever(helper, lever);
+
+		helper.startSequence()
+				.thenIdle(2)
+				.thenExecute(() -> RailBenchmarkRunner.runLeverToggles(helper, lever, STATE_CHANGE_WARMUP_OPERATIONS))
+				.thenIdle(4)
+				.thenExecute(() -> RailBenchmarkRunner.runLeverToggles(
+						helper, lever, powerLimit == EXTENDED_POWER_LIMIT
+								? EXTENDED_STABILIZATION_OPERATIONS
+								: STATE_CHANGE_STABILIZATION_OPERATIONS))
+				.thenIdle(2)
+				.thenExecute(() -> {
+					RailBenchmarkRunner.SampleStats stats = RailBenchmarkRunner.sample(
+							() -> RailBenchmarkRunner.measureLeverToggles(helper, lever, togglesPerRound));
+					long nanosPerOperation = stats.medianNanos() / togglesPerRound;
+					LOGGER.info(
+							"RailOptimization benchmark [powerLimit={} north-south straight state changes]: "
+									+ "optimized={} ns/op (MAD={}%), {} ns/changed-rail, {} allocated bytes/op",
+							powerLimit,
+							nanosPerOperation,
+							stats.relativeMedianAbsoluteDeviation(),
+							nanosPerOperation / lineLength,
+							RailBenchmarkRunner.allocatedBytesPerOperation(helper, lever, togglesPerRound)
+					);
+
+					assertLeverOff(helper, lever);
+					assertRailsPowered(helper, rails, false);
+				})
+				.thenSucceed();
+	}
+
 	private static BlockPos controlCopy(BlockPos pos) {
 		return pos.relative(Direction.SOUTH, CONTROL_Z_OFFSET);
 	}
@@ -335,9 +388,14 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 	}
 
 	private static BlockPos[] straightRails(BlockPos start, int length) {
+		return straightRails(start, Direction.EAST, length);
+	}
+
+	@SuppressWarnings("null")
+	private static BlockPos[] straightRails(BlockPos start, Direction direction, int length) {
 		BlockPos[] rails = new BlockPos[length];
 		for (int index = 0; index < length; index++) {
-			rails[index] = start.relative(Direction.EAST, index);
+			rails[index] = start.relative(direction, index);
 		}
 		return rails;
 	}
