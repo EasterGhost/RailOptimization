@@ -181,7 +181,7 @@ public class RailOptimizationDuplicatorGameTest extends RailOptimizationGameTest
 		BlockPos railPos = slime.above();
 		BlockPos lever = origin.west();
 
-		helper.setBlock(concrete, Blocks.BLACK_CONCRETE);
+		helper.setBlock(concrete, Blocks.SMOOTH_STONE);
 		helper.setBlock(piston, Blocks.STICKY_PISTON.defaultBlockState()
 				.setValue(PistonBaseBlock.FACING, Direction.SOUTH));
 		helper.setBlock(slime, Blocks.SLIME_BLOCK);
@@ -205,7 +205,7 @@ public class RailOptimizationDuplicatorGameTest extends RailOptimizationGameTest
 		BlockPos powerTorch = railPos.east();
 		BlockPos lever = origin.west();
 
-		helper.setBlock(concrete, Blocks.BLACK_CONCRETE);
+		helper.setBlock(concrete, Blocks.SMOOTH_STONE);
 		helper.setBlock(piston, Blocks.STICKY_PISTON.defaultBlockState()
 				.setValue(PistonBaseBlock.FACING, Direction.SOUTH));
 		helper.setBlock(slime, Blocks.SLIME_BLOCK);
