@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="src/main/resources/assets/icon.png" style="max-width:128px;max-height:128px" alt="RailOptimization Icon"/>
+<img src="common/src/main/resources/assets/icon.png" style="max-width:128px;max-height:128px" alt="RailOptimization Icon"/>
 
 # RailOptimization
 
@@ -52,17 +52,17 @@ Use the jar for your mod loader. Fabric builds require Fabric Loader and Fabric 
 ## Build
 
 ```bash
-./gradlew build
-./gradlew -p neoforge build
+./gradlew :fabric:build
+./gradlew :neoforge:build
 ```
 
-Fabric artifacts are written to `build/libs`; NeoForge artifacts are written to `neoforge/build/libs`.
+Run `./gradlew build` to build both loaders. Fabric artifacts are written to `fabric/build/libs`; NeoForge artifacts are written to `neoforge/build/libs`.
 
 Run the loader-specific GameTests with:
 
 ```bash
-./gradlew runGameTest
-./gradlew -p neoforge runGameTestServer
+./gradlew :fabric:runGameTest
+./gradlew :neoforge:runGameTestServer
 ```
 
 ## Notes

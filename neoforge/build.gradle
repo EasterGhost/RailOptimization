@@ -4,13 +4,10 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.144'
 }
 
-def sharedProperties = new Properties()
-file('../gradle.properties').withInputStream { sharedProperties.load(it) }
-
-def minecraftVersion = sharedProperties.getProperty('minecraft_version').trim()
-def modVersion = sharedProperties.getProperty('mod_version').trim()
-def mavenGroup = sharedProperties.getProperty('maven_group').trim()
-def archivesBaseName = sharedProperties.getProperty('archives_base_name').trim()
+def minecraftVersion = project.minecraft_version.toString()
+def modVersion = project.mod_version.toString()
+def mavenGroup = project.maven_group.toString()
+def archivesBaseName = project.archives_base_name.toString()
 
 version = "${modVersion}+mc${minecraftVersion}-neoforge"
 group = mavenGroup
@@ -27,12 +24,10 @@ java {
 sourceSets {
     main {
         java {
-            srcDirs = [file('../src/main/java'), file('src/main/java')]
-            exclude 'RailOptimization/RailOptimizationFabric.java'
+            srcDirs = [file('../common/src/main/java'), file('src/main/java')]
         }
         resources {
-            srcDirs = [file('../src/main/resources')]
-            exclude 'fabric.mod.json'
+            srcDirs = [file('../common/src/main/resources')]
         }
     }
     gametest {

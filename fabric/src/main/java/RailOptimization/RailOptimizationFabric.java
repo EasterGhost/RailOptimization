@@ -11,7 +11,6 @@ public class RailOptimizationFabric implements ModInitializer {
 	public void onInitialize() {
 		RailOptimizationConfigManager.initialize(FabricLoader.getInstance().getConfigDir());
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> RailOptimizationConfigManager.flushWrites());
-		CommandRegistrationCallback.EVENT
-				.register((dispatcher, registryAccess, environment) -> RailOptimizationCommands.register(dispatcher));
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> RailOptimizationCommands.register(dispatcher));
 	}
 }
