@@ -15,7 +15,7 @@ def fabricMetadata = jsonSlurper.parse(fabricMetadataFile)
 def fabricMinecraftRequirement = fabricMetadata.depends.minecraft.toString()
 
 if (!fabricMinecraftRequirement.startsWith('>=')) {
-    throw new GradleException("Unsupported Fabric Minecraft version requirement: ${fabricMinecraftRequirement}")
+    throw new IllegalArgumentException("Unsupported Fabric Minecraft version requirement: ${fabricMinecraftRequirement}")
 }
 
 def minecraftVersionRange = "[${fabricMinecraftRequirement.substring(2)},)"
@@ -135,7 +135,7 @@ def verifyMetadataConsistency = tasks.register('verifyMetadataConsistency') {
         new java.util.zip.ZipFile(jarFile).withCloseable { zipFile ->
             def metadataEntry = zipFile.getEntry('META-INF/neoforge.mods.toml')
             if (metadataEntry == null) {
-                throw new GradleException("Missing META-INF/neoforge.mods.toml in ${jarFile.name}")
+                throw new IllegalStateException("Missing META-INF/neoforge.mods.toml in ${jarFile.name}")
             }
 
             def packagedMetadata = zipFile.getInputStream(metadataEntry).getText('UTF-8')
@@ -157,7 +157,7 @@ def verifyMetadataConsistency = tasks.register('verifyMetadataConsistency') {
 
             expectedMetadata.each { field, expected ->
                 if (!packagedMetadata.contains(expected)) {
-                    throw new GradleException("NeoForge metadata field '${field}' does not match fabric.mod.json")
+                    throw new IllegalStateException("NeoForge metadata field '${field}' does not match fabric.mod.json")
                 }
             }
         }
