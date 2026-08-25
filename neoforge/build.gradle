@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 plugins {
     id 'java-library'
     id 'maven-publish'
@@ -8,6 +10,26 @@ def minecraftVersion = project.minecraft_version.toString()
 def modVersion = project.mod_version.toString()
 def mavenGroup = project.maven_group.toString()
 def archivesBaseName = project.archives_base_name.toString()
+def fabricMetadataFile = file('../fabric/src/main/resources/fabric.mod.json')
+def fabricMetadata = new JsonSlurper().parse(fabricMetadataFile)
+def fabricMinecraftRequirement = fabricMetadata.depends.minecraft.toString()
+
+if (!fabricMinecraftRequirement.startsWith('>=')) {
+    throw new GradleException("Unsupported Fabric Minecraft version requirement: ${fabricMinecraftRequirement}")
+}
+
+def minecraftVersionRange = "[${fabricMinecraftRequirement.substring(2)},)"
+def authorNames = fabricMetadata.authors.collect { author ->
+    author instanceof Map ? author.name : author.toString()
+}.join(', ')
+def authorEmails = fabricMetadata.authors.collect { author ->
+    author instanceof Map ? author.contact?.email : null
+}.findAll().join(', ')
+def contributorCredits = fabricMetadata.contributors.collect { contributor ->
+    def name = contributor instanceof Map ? contributor.name : contributor.toString()
+    def sources = contributor instanceof Map ? contributor.contact?.sources : null
+    sources ? "${name} (${sources})" : name
+}.join(', ')
 
 version = "${modVersion}+mc${minecraftVersion}-neoforge"
 group = mavenGroup
@@ -77,16 +99,24 @@ neoForge {
 }
 
 def metadataProperties = [
-        minecraft_version      : minecraftVersion,
-        minecraft_version_range: "[${minecraftVersion}]",
+        minecraft_version_range: minecraftVersionRange,
         neo_version            : project.neo_version,
-        mod_id                 : 'railoptimization',
-        mod_name               : 'RailOptimization',
-        mod_license            : 'GPL-3.0-only',
-        mod_version            : modVersion
+        mod_id                 : fabricMetadata.id,
+        mod_name               : fabricMetadata.name,
+        mod_description        : fabricMetadata.description,
+        mod_license            : fabricMetadata.license,
+        mod_version            : modVersion,
+        mod_homepage           : fabricMetadata.contact.homepage,
+        mod_sources            : fabricMetadata.contact.sources,
+        mod_issues             : fabricMetadata.contact.issues,
+        mod_icon               : fabricMetadata.icon,
+        mod_authors            : authorNames,
+        mod_author_emails      : authorEmails,
+        mod_contributor_credits: contributorCredits
 ]
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    inputs.file fabricMetadataFile
     inputs.properties metadataProperties
     filteringCharset = 'UTF-8'
     expand metadataProperties
@@ -96,6 +126,47 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
 
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
+
+def verifyMetadataConsistency = tasks.register('verifyMetadataConsistency') {
+    dependsOn tasks.named('jar')
+
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        new java.util.zip.ZipFile(jarFile).withCloseable { zipFile ->
+            def metadataEntry = zipFile.getEntry('META-INF/neoforge.mods.toml')
+            if (metadataEntry == null) {
+                throw new GradleException("Missing META-INF/neoforge.mods.toml in ${jarFile.name}")
+            }
+
+            def packagedMetadata = zipFile.getInputStream(metadataEntry).getText('UTF-8')
+            def expectedMetadata = [
+                    id: "modId=\"${fabricMetadata.id}\"",
+                    version: "version=\"${modVersion}\"",
+                    name: "displayName=\"${fabricMetadata.name}\"",
+                    description: "description='''${fabricMetadata.description}'''",
+                    license: "license=\"${fabricMetadata.license}\"",
+                    homepage: "displayURL=\"${fabricMetadata.contact.homepage}\"",
+                    sources: "sources=\"${fabricMetadata.contact.sources}\"",
+                    issues: "issueTrackerURL=\"${fabricMetadata.contact.issues}\"",
+                    icon: "logoFile=\"${fabricMetadata.icon}\"",
+                    authors: "authors=\"${authorNames}\"",
+                    authorEmails: "authorEmails=\"${authorEmails}\"",
+                    contributorCredits: "credits=\"${contributorCredits}\"",
+                    minecraftRequirement: "versionRange=\"${minecraftVersionRange}\""
+            ]
+
+            expectedMetadata.each { field, expected ->
+                if (!packagedMetadata.contains(expected)) {
+                    throw new GradleException("NeoForge metadata field '${field}' does not match fabric.mod.json")
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn verifyMetadataConsistency
+}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
