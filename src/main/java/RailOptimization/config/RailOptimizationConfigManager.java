@@ -9,6 +9,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -28,7 +29,6 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
 import RailOptimization.RailLogic;
-import net.fabricmc.loader.api.FabricLoader;
 
 public final class RailOptimizationConfigManager {
 	private static final String CONFIG_FILE_NAME = "railoptimization.json";
@@ -43,11 +43,16 @@ public final class RailOptimizationConfigManager {
 	});
 
 	private static volatile RailOptimizationConfig currentConfig = RailOptimizationConfig.defaults();
+	private static volatile Path configPath;
 
 	private RailOptimizationConfigManager() {
 	}
 
-	public static void initialize() {
+	public static void initialize(Path configDirectory) {
+		configPath = Objects.requireNonNull(configDirectory, "configDirectory")
+				.resolve(CONFIG_FILE_NAME)
+				.toAbsolutePath()
+				.normalize();
 		Path configPath = getConfigPath();
 		RailOptimizationConfig config = RailOptimizationConfig.defaults();
 		boolean configExists = Files.exists(configPath);
@@ -223,7 +228,11 @@ public final class RailOptimizationConfigManager {
 	}
 
 	private static Path getConfigPath() {
-		return FabricLoader.getInstance().getConfigDir().resolve(CONFIG_FILE_NAME);
+		Path path = configPath;
+		if (path == null) {
+			throw new IllegalStateException("RailOptimization config manager is not initialized");
+		}
+		return path;
 	}
 
 	public record ReloadResult(RailOptimizationConfig config, long expectedRevision) {
