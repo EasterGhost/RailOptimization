@@ -1,0 +1,125 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.144'
+}
+
+def sharedProperties = new Properties()
+file('../gradle.properties').withInputStream { sharedProperties.load(it) }
+
+def minecraftVersion = sharedProperties.getProperty('minecraft_version').trim()
+def modVersion = sharedProperties.getProperty('mod_version').trim()
+def mavenGroup = sharedProperties.getProperty('maven_group').trim()
+def archivesBaseName = sharedProperties.getProperty('archives_base_name').trim()
+
+version = "${modVersion}+mc${minecraftVersion}-neoforge"
+group = mavenGroup
+
+base {
+    archivesName = archivesBaseName.toLowerCase()
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = [file('../src/main/java'), file('src/main/java')]
+            exclude 'RailOptimization/RailOptimizationFabric.java'
+        }
+        resources {
+            srcDirs = [file('../src/main/resources')]
+            exclude 'fabric.mod.json'
+        }
+    }
+    gametest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+neoForge {
+    version = project.neo_version
+    addModdingDependenciesTo(sourceSets.gametest)
+
+    mods {
+        railoptimization {
+            sourceSet(sourceSets.main)
+        }
+        railoptimization_gametest {
+            sourceSet(sourceSets.gametest)
+        }
+    }
+
+    runs {
+        client {
+            client()
+            gameDirectory = project.file('run/client')
+            loadedMods = [mods.railoptimization]
+        }
+        server {
+            server()
+            gameDirectory = project.file('run/server')
+            programArgument '--nogui'
+            loadedMods = [mods.railoptimization]
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = project.file('run/gametest')
+            sourceSet = sourceSets.gametest
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'railoptimization_gametest'
+            loadedMods = [mods.railoptimization, mods.railoptimization_gametest]
+        }
+    }
+}
+
+def metadataProperties = [
+        minecraft_version      : minecraftVersion,
+        minecraft_version_range: "[${minecraftVersion}]",
+        neo_version            : project.neo_version,
+        mod_id                 : 'railoptimization',
+        mod_name               : 'RailOptimization',
+        mod_license            : 'GPL-3.0-only',
+        mod_version            : modVersion
+]
+
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    inputs.properties metadataProperties
+    filteringCharset = 'UTF-8'
+    expand metadataProperties
+    from 'src/main/templates'
+    into 'build/generated/sources/modMetadata'
+}
+
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(25)
+}
+
+def licenseArchiveName = archivesBaseName
+['jar', 'sourcesJar'].each { archiveTaskName ->
+    tasks.named(archiveTaskName, Jar) {
+        from('../LICENSE') {
+            rename { "${it}_${licenseArchiveName}" }
+        }
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+}

@@ -37,3 +37,9 @@ jobs:
 
     - name: Run GameTests
       run: ./gradlew runGameTest
+
+    - name: Build NeoForge artifact
+      run: ./gradlew -p neoforge build
+
+    - name: Run NeoForge GameTests
+      run: ./gradlew -p neoforge runGameTestServer

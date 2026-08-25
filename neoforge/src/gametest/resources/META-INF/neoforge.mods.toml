@@ -1,0 +1,14 @@
+license="GPL-3.0-only"
+
+[[mods]]
+modId="railoptimization_gametest"
+version="1"
+displayName="RailOptimization NeoForge Game Tests"
+description="NeoForge platform smoke tests for RailOptimization."
+
+[[dependencies.railoptimization_gametest]]
+modId="railoptimization"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"

@@ -4,11 +4,11 @@
 
 # RailOptimization
 
-[![Mod Environment](https://img.shields.io/badge/Environment-Fabric-blue?style=round)](https://github.com/EasterGhost/RailOptimization)
+[![Mod Environment](https://img.shields.io/badge/Environment-Fabric%20%7C%20NeoForge-blue?style=round)](https://github.com/EasterGhost/RailOptimization)
 [![Hits Of Code](https://hitsofcode.com/github/EasterGhost/RailOptimization?branch=main)](https://github.com/EasterGhost/RailOptimization)
 [![Modrinth Downloads](https://img.shields.io/modrinth/dt/railoptimization?style=round&logo=modrinth)](https://modrinth.com/mod/railoptimization)
 
-A Fabric mod that makes powered rails and activator rails update faster.
+A Fabric and NeoForge mod that makes powered rails and activator rails update faster.
 
 </div>
 
@@ -35,8 +35,9 @@ Use the jar that matches your Minecraft version range:
 | `railoptimization-*+mc1.21.5-fabric.jar` | 1.21.5-1.21.10 |
 | `railoptimization-*+mc1.21.11-fabric.jar` | 1.21.11 |
 | `railoptimization-*+mc26.1.2-fabric.jar` | 26.1-26.2 |
+| `railoptimization-*+mc26.1.2-neoforge.jar` | 26.1.2 |
 
-Fabric Loader and Fabric API are required.
+Use the jar for your mod loader. Fabric builds require Fabric Loader and Fabric API; NeoForge builds require NeoForge.
 
 ## Commands
 
@@ -46,14 +47,23 @@ Fabric Loader and Fabric API are required.
 | `/railoptimization on` | admin | Enables the optimized update path |
 | `/railoptimization off` | admin | Disables the optimization and uses vanilla behavior |
 | `/railoptimization powerLimit <value>` | admin | Sets the runtime rail power limit; values are clamped to 1-64 (default: 8) |
+| `/railoptimization reload` | admin | Reloads the configuration file |
 
 ## Build
 
 ```bash
 ./gradlew build
+./gradlew -p neoforge build
 ```
 
-The release jar and sources jar are written to `build/libs`.
+Fabric artifacts are written to `build/libs`; NeoForge artifacts are written to `neoforge/build/libs`.
+
+Run the loader-specific GameTests with:
+
+```bash
+./gradlew runGameTest
+./gradlew -p neoforge runGameTestServer
+```
 
 ## Notes
 
