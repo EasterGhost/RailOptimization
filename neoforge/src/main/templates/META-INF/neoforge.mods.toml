@@ -12,21 +12,21 @@ authors="${mod_authors}"
 credits="${mod_contributor_credits}"
 description='''${mod_description}'''
 
-[modproperties.${mod_id}]
+[modproperties."${mod_id}"]
 sources="${mod_sources}"
 authorEmails="${mod_author_emails}"
 
 [[mixins]]
 config="railoptimization.mixins.json"
 
-[[dependencies.${mod_id}]]
+[[dependencies."${mod_id}"]]
 modId="neoforge"
 type="required"
 versionRange="[${neo_version},)"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.${mod_id}]]
+[[dependencies."${mod_id}"]]
 modId="minecraft"
 type="required"
 versionRange="${minecraft_version_range}"
