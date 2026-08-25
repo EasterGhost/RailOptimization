@@ -103,10 +103,12 @@ java {
     withSourcesJar()
 }
 
-jar {
-    def licenseArchiveName = project.archives_base_name
-    from("LICENSE") {
-        rename { "${it}_${licenseArchiveName}"}
+def licenseArchiveName = project.archives_base_name
+["jar", "sourcesJar"].each { archiveTaskName ->
+    tasks.named(archiveTaskName, Jar) {
+        from("LICENSE") {
+            rename { "${it}_${licenseArchiveName}" }
+        }
     }
 }
 
