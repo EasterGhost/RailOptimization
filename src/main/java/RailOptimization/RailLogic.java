@@ -7,11 +7,12 @@ import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
+import RailOptimization.config.RailOptimizationConfig;
+
 public final class RailLogic {
 	static final byte CHECKED_UNKNOWN = 0;
 	static final byte CHECKED_BLOCKED = 1;
 	static final byte CHECKED_POWERED = 2;
-	static final int MAX_RAIL_POWER_LIMIT = 64;
 
 	private static volatile int railPowerLimit = 8;
 	private static volatile boolean optimizationEnabled = true;
@@ -52,11 +53,7 @@ public final class RailLogic {
 	}
 
 	public static void setRailPowerLimit(int powerLimit) {
-		railPowerLimit = clampRailPowerLimit(powerLimit);
-	}
-
-	static int clampRailPowerLimit(int powerLimit) {
-		return Math.clamp(powerLimit, 1, MAX_RAIL_POWER_LIMIT);
+		railPowerLimit = RailOptimizationConfig.normalizePowerLimit(powerLimit);
 	}
 
 	static int getRailPowerLimit() {

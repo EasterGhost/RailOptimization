@@ -5,6 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
 
+import RailOptimization.config.RailOptimizationConfig;
+
 public final class RailLogicTestAccess {
 	public static final int MODE_OPTIMIZED = 0;
 	public static final int MODE_VANILLA = -1;
@@ -29,7 +31,7 @@ public final class RailLogicTestAccess {
 
 	public static void forcePowerLimitAt(BlockPos pos, int powerLimit) {
 		if (positionBasedTestMode) {
-			POSITION_MODES.put(pos.asLong(), RailLogic.clampRailPowerLimit(powerLimit));
+			POSITION_MODES.put(pos.asLong(), RailOptimizationConfig.normalizePowerLimit(powerLimit));
 		}
 	}
 
@@ -42,11 +44,11 @@ public final class RailLogicTestAccess {
 	}
 
 	public static int clampPowerLimit(int powerLimit) {
-		return RailLogic.clampRailPowerLimit(powerLimit);
+		return RailOptimizationConfig.normalizePowerLimit(powerLimit);
 	}
 
 	public static int maximumPowerLimit() {
-		return RailLogic.MAX_RAIL_POWER_LIMIT;
+		return RailOptimizationConfig.MAX_POWER_LIMIT;
 	}
 
 	public static int currentPowerLimit() {
