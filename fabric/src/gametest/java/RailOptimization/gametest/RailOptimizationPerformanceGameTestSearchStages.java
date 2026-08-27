@@ -107,6 +107,9 @@ public class RailOptimizationPerformanceGameTestSearchStages extends RailOptimiz
 					RailBenchmarkRunner.measureAndReportIsolated(
 							helper, "cached-chunk rail BlockState read", INITIAL_WORLD_READ_OPERATIONS,
 							probe::measure);
+					RailBenchmarkRunner.measureAndReportIsolated(
+							helper, "direct-section rail BlockState read", INITIAL_WORLD_READ_OPERATIONS,
+							probe::measureSection);
 				})
 				.thenSucceed();
 	}

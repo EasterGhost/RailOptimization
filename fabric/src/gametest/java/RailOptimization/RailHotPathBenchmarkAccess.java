@@ -7,7 +7,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 
 public final class RailHotPathBenchmarkAccess {
 	private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_CLIENTS;
@@ -38,6 +40,11 @@ public final class RailHotPathBenchmarkAccess {
 
 	public static BlockReadProbe blockReadProbe(Level level, BlockPos pos) {
 		return new BlockReadProbe(level, pos);
+	}
+
+	public static DepowerStageProbe depowerStageProbe(
+			Level level, BlockPos pos, int powerLimit, int expectedRailCount) {
+		return new DepowerStageProbe(level, pos, powerLimit, expectedRailCount);
 	}
 
 	public static NeighborSignalProbe neighborSignalProbe(Level level, BlockPos pos) {
@@ -198,6 +205,10 @@ public final class RailHotPathBenchmarkAccess {
 		private final Level level;
 		private final BlockPos pos;
 		private final Block expectedBlock;
+		private final LevelChunkSection section;
+		private final int localX;
+		private final int localY;
+		private final int localZ;
 
 		@SuppressWarnings("null")
 		private BlockReadProbe(Level level, BlockPos pos) {
@@ -205,6 +216,11 @@ public final class RailHotPathBenchmarkAccess {
 			this.pos = pos;
 			expectedBlock = level.getBlockState(pos).getBlock();
 			context.getBlockState(level, pos);
+			LevelChunk chunk = level.getChunkAt(pos);
+			section = chunk.getSection(chunk.getSectionIndex(pos.getY()));
+			localX = pos.getX() & 15;
+			localY = pos.getY() & 15;
+			localZ = pos.getZ() & 15;
 		}
 
 		public long measure(int operations) {
@@ -219,6 +235,133 @@ public final class RailHotPathBenchmarkAccess {
 			require(matches == operations,
 					"cached block-state read fixture returned " + matches + " matches for " + operations + " reads");
 			return elapsedNanos;
+		}
+
+		public long measureSection(int operations) {
+			int matches = 0;
+			long startNanos = System.nanoTime();
+			for (int operation = 0; operation < operations; operation++) {
+				if (section.getBlockState(localX, localY, localZ).is(expectedBlock)) {
+					matches++;
+				}
+			}
+			long elapsedNanos = System.nanoTime() - startNanos;
+			require(matches == operations,
+					"direct section block-state read fixture returned " + matches
+							+ " matches for " + operations + " reads");
+			return elapsedNanos;
+		}
+	}
+
+	public static final class DepowerStageProbe {
+		private final RailUpdateContext[] contexts = new RailUpdateContext[CONTEXT_POOL_SIZE];
+		private final Level level;
+		private final BlockPos pos;
+		private final BlockState state;
+		private final PoweredRailBlock railBlock;
+		private final RailShape railShape;
+		private final int expectedRailCount;
+
+		@SuppressWarnings("null")
+		private DepowerStageProbe(
+				Level level, BlockPos pos, int powerLimit, int expectedRailCount) {
+			this.level = level;
+			this.pos = pos;
+			this.expectedRailCount = expectedRailCount;
+			state = level.getBlockState(pos);
+			railBlock = (PoweredRailBlock) state.getBlock();
+			railShape = RailPath.railShape(state);
+			require(RailPath.isPowered(state), "depower-stage source rail must start powered");
+			for (int index = 0; index < contexts.length; index++) {
+				contexts[index] = new RailUpdateContext(powerLimit);
+			}
+		}
+
+		public long measureDecision(int operations) {
+			int remaining = operations;
+			int unpoweredDecisions = 0;
+			long elapsedNanos = 0L;
+			while (remaining > 0) {
+				int count = Math.min(remaining, contexts.length);
+				for (int index = 0; index < count; index++) {
+					contexts[index].reset();
+				}
+				long startNanos = System.nanoTime();
+				for (int index = 0; index < count; index++) {
+					if (!shouldRemainPowered(contexts[index])) {
+						unpoweredDecisions++;
+					}
+				}
+				elapsedNanos += System.nanoTime() - startNanos;
+				remaining -= count;
+			}
+			require(unpoweredDecisions == operations,
+					"depower-stage decision kept " + (operations - unpoweredDecisions)
+							+ " source rails powered");
+			return elapsedNanos;
+		}
+
+		public long measureStraightPlan(int operations, boolean forward) {
+			return measurePlan(operations, context -> RailSignalSearcher.countStraightRailsToDepower(
+					railBlock, level, pos, railShape, forward, context), expectedRailCount);
+		}
+
+		public long measureStraightRejection(int operations, boolean forward) {
+			return measurePlan(operations, context -> RailSignalSearcher.countStraightRailsToDepower(
+					railBlock, level, pos, railShape, forward, context), RailSignalSearcher.COMPLEX_PATH);
+		}
+
+		public long measureConnectedPlan(int operations, boolean forward) {
+			return measurePlan(operations, context -> {
+				int straightCount = RailSignalSearcher.countStraightRailsToDepower(
+						railBlock, level, pos, railShape, forward, context);
+				require(straightCount == RailSignalSearcher.COMPLEX_PATH,
+						"connected depower fixture unexpectedly used the straight path");
+				return RailSignalSearcher.countConnectedRailsToDepower(
+						railBlock, level, pos, state, forward, context);
+			}, expectedRailCount);
+		}
+
+		private long measurePlan(int operations, PlanMeasurement measurement, int expectedResult) {
+			int remaining = operations;
+			long resultSum = 0L;
+			long elapsedNanos = 0L;
+			while (remaining > 0) {
+				int count = Math.min(remaining, contexts.length);
+				for (int index = 0; index < count; index++) {
+					prepareDepowering(contexts[index]);
+				}
+				long startNanos = System.nanoTime();
+				for (int index = 0; index < count; index++) {
+					resultSum += measurement.measure(contexts[index]);
+				}
+				elapsedNanos += System.nanoTime() - startNanos;
+				remaining -= count;
+			}
+			require(resultSum == (long) expectedResult * operations,
+					"depower-stage planner returned an aggregate of " + resultSum
+							+ " instead of " + (long) expectedResult * operations);
+			return elapsedNanos;
+		}
+
+		private void prepareDepowering(RailUpdateContext context) {
+			context.reset();
+			require(!shouldRemainPowered(context),
+					"depower-stage fixture unexpectedly remained powered");
+			context.beginDepowering();
+		}
+
+		private boolean shouldRemainPowered(RailUpdateContext context) {
+			return context.hasNeighborSignal(level, pos)
+					|| RailSignalSearcher.findPoweredRailSignalFaster(
+							railBlock, level, pos, state, true, 0, context)
+					|| RailSignalSearcher.findPoweredRailSignalFaster(
+							railBlock, level, pos, state, false, 0, context);
+		}
+
+		@FunctionalInterface
+		private interface PlanMeasurement {
+			int measure(RailUpdateContext context);
 		}
 	}
 
@@ -255,7 +398,6 @@ public final class RailHotPathBenchmarkAccess {
 					"direct-signal fixture returned " + powered + " powered results instead of " + expected);
 			return elapsedNanos;
 		}
-
 	}
 
 	public static final class ColdSignalSearchProbe {

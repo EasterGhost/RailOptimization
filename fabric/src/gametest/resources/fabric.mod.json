@@ -20,6 +20,7 @@
       "RailOptimization.gametest.RailOptimizationStraightBaselineGameTest",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTest",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTestRealUpdates",
+      "RailOptimization.gametest.RailOptimizationPerformanceGameTestDepowerStages",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTestSearchStages",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTestWorldStages",
       "RailOptimization.gametest.RailOptimizationActivatorRailGameTest",
