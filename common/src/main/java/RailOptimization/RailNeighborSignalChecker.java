@@ -39,7 +39,6 @@ final class RailNeighborSignalChecker {
 		return belowStateWhenNoNeighborSignal(level, chunk, chunkX, chunkZ, x, y, z, scratchPos);
 	}
 
-	@SuppressWarnings("null")
 	static boolean hasNeighborSignalFast(Level level, BlockPos pos, MutableBlockPos scratchPos, LevelChunk chunk, int chunkX, int chunkZ) {
 		return belowStateWhenNoNeighborSignal(level, pos, scratchPos, chunk, chunkX, chunkZ) == null;
 	}
