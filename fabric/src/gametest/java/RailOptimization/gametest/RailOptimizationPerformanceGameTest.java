@@ -226,6 +226,8 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 							RailBenchmarkRunner.allocatedBytesPerOperation(
 									helper, lever, EXTENDED_TOGGLES_PER_ROUND)
 					);
+					RailBenchmarkRunner.reportLastMemoEpochMeasurement(
+							helper, "powerLimit=" + EXTENDED_POWER_LIMIT + " straight state changes");
 
 					assertLeverOff(helper, lever);
 					assertRailsPowered(helper, rails, false);
@@ -279,6 +281,8 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 							RailBenchmarkRunner.allocatedBytesPerOperation(
 									helper, lever, EXTENDED_TOGGLES_PER_ROUND)
 					);
+					RailBenchmarkRunner.reportLastMemoEpochMeasurement(
+							helper, "powerLimit=" + EXTENDED_POWER_LIMIT + " mixed-slope state changes");
 
 					assertLeverOff(helper, lever);
 					assertRailsPowered(helper, rails, false);
@@ -368,6 +372,8 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 							nanosPerOperation / lineLength,
 							RailBenchmarkRunner.allocatedBytesPerOperation(helper, lever, togglesPerRound)
 					);
+					RailBenchmarkRunner.reportLastMemoEpochMeasurement(
+							helper, "powerLimit=" + powerLimit + " north-south straight state changes");
 
 					assertLeverOff(helper, lever);
 					assertRailsPowered(helper, rails, false);

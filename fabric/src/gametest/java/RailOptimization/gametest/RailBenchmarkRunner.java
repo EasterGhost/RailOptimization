@@ -1,5 +1,6 @@
 package RailOptimization.gametest;
 
+import RailOptimization.LevelEpochAccess;
 import com.mojang.logging.LogUtils;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
@@ -10,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeverBlock;
 import org.slf4j.Logger;
 
 final class RailBenchmarkRunner {
@@ -18,6 +20,26 @@ final class RailBenchmarkRunner {
 	private static final long MIN_MEDIAN_SAMPLE_NANOS = 20_000_000L;
 	private static final long TARGET_SAMPLE_NANOS = 30_000_000L;
 	private static final int ISOLATED_WARMUP_ROUNDS = 4;
+	private static final ThreadLocal<EpochMeasurement> LAST_EPOCH_MEASUREMENT =
+			ThreadLocal.withInitial(EpochMeasurement::new);
+
+	private static final class EpochMeasurement {
+		boolean recorded;
+		long before;
+		long after;
+		long minimumAdvance;
+
+		void clear() {
+			recorded = false;
+		}
+
+		void record(long before, long after, long minimumAdvance) {
+			this.recorded = true;
+			this.before = before;
+			this.after = after;
+			this.minimumAdvance = minimumAdvance;
+		}
+	}
 
 	private RailBenchmarkRunner() {
 	}
@@ -31,9 +53,47 @@ final class RailBenchmarkRunner {
 	}
 
 	static long measureLeverToggles(GameTestHelper helper, BlockPos lever, int operations) {
+		verifyLeverTransitionsInvalidateMemo(helper, lever);
+		long epochBefore = currentEpoch(helper);
 		long startNanos = System.nanoTime();
 		runLeverToggles(helper, lever, operations);
-		return System.nanoTime() - startNanos;
+		long elapsedNanos = System.nanoTime() - startNanos;
+		recordMeasuredEpochAdvance(helper, epochBefore, operations);
+		return elapsedNanos;
+	}
+
+	@SuppressWarnings("null")
+	static long measureLeverTransitions(
+			GameTestHelper helper, BlockPos lever, int operations, boolean targetPowered) {
+		setLeverPowered(helper, lever, !targetPowered);
+		verifyLeverTransitionsInvalidateMemo(helper, lever);
+		long epochBefore = currentEpoch(helper);
+		long elapsedNanos = 0L;
+		for (int operation = 0; operation < operations; operation++) {
+			long startNanos = System.nanoTime();
+			helper.pullLever(lever);
+			elapsedNanos += System.nanoTime() - startNanos;
+			helper.pullLever(lever);
+		}
+		boolean finalPowered = helper.getBlockState(lever).getValue(LeverBlock.POWERED);
+		if (finalPowered == targetPowered) {
+			throw new IllegalStateException("directional lever benchmark did not restore its initial state");
+		}
+		recordMeasuredEpochAdvance(helper, epochBefore, (long) operations * 2L);
+		return elapsedNanos;
+	}
+
+	@SuppressWarnings("null")
+	static void pullLeverAndAssertMemoInvalidated(
+			GameTestHelper helper, BlockPos lever) {
+		long before = ((LevelEpochAccess) helper.getLevel())
+				.railoptimization$getBlockChangeEpoch().get();
+		helper.pullLever(lever);
+		long after = ((LevelEpochAccess) helper.getLevel())
+				.railoptimization$getBlockChangeEpoch().get();
+		if (after == before) {
+			throw new IllegalStateException("lever transition did not invalidate the rail update memo epoch");
+		}
 	}
 
 	@SuppressWarnings("null")
@@ -67,6 +127,7 @@ final class RailBenchmarkRunner {
 
 	static BenchmarkResult benchmarkAlternating(
 			LongSupplier vanillaSample, LongSupplier optimizedSample) {
+		LAST_EPOCH_MEASUREMENT.get().clear();
 		long[] vanillaSamples = new long[MEASUREMENT_ROUNDS];
 		long[] optimizedSamples = new long[MEASUREMENT_ROUNDS];
 
@@ -84,6 +145,7 @@ final class RailBenchmarkRunner {
 	}
 
 	static SampleStats sample(LongSupplier sample) {
+		LAST_EPOCH_MEASUREMENT.get().clear();
 		long[] samples = new long[MEASUREMENT_ROUNDS];
 		for (int round = 0; round < MEASUREMENT_ROUNDS; round++) {
 			samples[round] = sample.getAsLong();
@@ -123,6 +185,84 @@ final class RailBenchmarkRunner {
 		);
 	}
 
+	static void measureAndReportDirectional(
+			GameTestHelper helper, String label, int initialOperations, IntToLongFunction measurement) {
+		for (int round = 0; round < ISOLATED_WARMUP_ROUNDS; round++) {
+			measurement.applyAsLong(initialOperations);
+		}
+		int operations = calibrateOperations(initialOperations, measurement);
+		for (int round = 0; round < ISOLATED_WARMUP_ROUNDS; round++) {
+			measurement.applyAsLong(operations);
+		}
+		int measuredOperations = calibrateOperations(operations, measurement);
+
+		SampleStats stats = sample(() -> measurement.applyAsLong(measuredOperations));
+		LOGGER.info(
+				"RailOptimization real-path benchmark [{}]: {} ns/target transition "
+						+ "(MAD={}%), {} target transitions/sample",
+				label,
+				String.format(Locale.ROOT, "%.2f", stats.medianNanos() / (double) measuredOperations),
+				stats.relativeMedianAbsoluteDeviation(),
+				measuredOperations
+		);
+		reportLastMemoEpochMeasurement(helper, label);
+		assertSampleDuration(helper, label, stats.medianNanos());
+	}
+
+	static void measureAndReportDirectionalPair(
+			GameTestHelper helper, String label, int initialOperations,
+			double maxOptimizedToVanillaRatio,
+			IntToLongFunction vanillaMeasurement, IntToLongFunction optimizedMeasurement) {
+		warmUpPair(initialOperations, vanillaMeasurement, optimizedMeasurement);
+		IntToLongFunction shorterMeasurement = operations -> Math.min(
+				vanillaMeasurement.applyAsLong(operations),
+				optimizedMeasurement.applyAsLong(operations));
+		int operations = calibrateOperations(initialOperations, shorterMeasurement);
+		warmUpPair(operations, vanillaMeasurement, optimizedMeasurement);
+		int measuredOperations = calibrateOperations(operations, shorterMeasurement);
+
+		BenchmarkResult result = benchmarkAlternating(
+				() -> vanillaMeasurement.applyAsLong(measuredOperations),
+				() -> optimizedMeasurement.applyAsLong(measuredOperations));
+		reportAndAssert(
+				helper, label, measuredOperations,
+				maxOptimizedToVanillaRatio, result);
+	}
+
+	private static void warmUpPair(
+			int operations, IntToLongFunction vanillaMeasurement,
+			IntToLongFunction optimizedMeasurement) {
+		for (int round = 0; round < ISOLATED_WARMUP_ROUNDS; round++) {
+			vanillaMeasurement.applyAsLong(operations);
+			optimizedMeasurement.applyAsLong(operations);
+			optimizedMeasurement.applyAsLong(operations);
+			vanillaMeasurement.applyAsLong(operations);
+		}
+	}
+
+	private static void verifyLeverTransitionsInvalidateMemo(
+			GameTestHelper helper, BlockPos lever) {
+		pullLeverAndAssertMemoInvalidated(helper, lever);
+		pullLeverAndAssertMemoInvalidated(helper, lever);
+	}
+
+	private static long currentEpoch(GameTestHelper helper) {
+		return ((LevelEpochAccess) helper.getLevel())
+				.railoptimization$getBlockChangeEpoch().get();
+	}
+
+	private static void recordMeasuredEpochAdvance(
+			GameTestHelper helper, long before, long minimumAdvance) {
+		long after = currentEpoch(helper);
+		long actualAdvance = after - before;
+		if (actualAdvance < minimumAdvance) {
+			throw new IllegalStateException(
+					"measured rail transitions did not invalidate memo for every lever write: expected at least "
+							+ minimumAdvance + ", observed " + actualAdvance);
+		}
+		LAST_EPOCH_MEASUREMENT.get().record(before, after, minimumAdvance);
+	}
+
 	private static int calibrateOperations(int initialOperations, IntToLongFunction measurement) {
 		int operations = Integer.highestOneBit(Math.max(2, initialOperations - 1)) << 1;
 		while (measurement.applyAsLong(operations) < TARGET_SAMPLE_NANOS) {
@@ -132,6 +272,25 @@ final class RailBenchmarkRunner {
 			operations <<= 1;
 		}
 		return operations;
+	}
+
+	@SuppressWarnings("null")
+	private static void setLeverPowered(
+			GameTestHelper helper, BlockPos lever, boolean powered) {
+		if (helper.getBlockState(lever).getValue(LeverBlock.POWERED) != powered) {
+			helper.pullLever(lever);
+		}
+	}
+
+	private static void assertSampleDuration(
+			GameTestHelper helper, String label, long medianNanos) {
+		helper.assertTrue(
+				medianNanos >= MIN_MEDIAN_SAMPLE_NANOS,
+				Component.literal(
+						label + " sample is too short for reliable timing: "
+								+ medianNanos / 1_000_000 + " ms"
+				)
+		);
 	}
 
 	private static String allocatedBytesPerOperation(IntToLongFunction measurement, int operations) {
@@ -178,6 +337,7 @@ final class RailBenchmarkRunner {
 				optimizedNoise,
 				speedup
 		);
+		reportLastMemoEpochMeasurement(helper, label);
 		helper.assertTrue(
 				Math.min(result.vanilla().medianNanos(), result.optimized().medianNanos())
 						>= MIN_MEDIAN_SAMPLE_NANOS,
@@ -196,6 +356,25 @@ final class RailBenchmarkRunner {
 								+ " ns/op, speedup=" + speedup + "x"
 				)
 		);
+	}
+
+	static void reportLastMemoEpochMeasurement(
+			GameTestHelper helper, String label) {
+		EpochMeasurement measurement = LAST_EPOCH_MEASUREMENT.get();
+		if (!measurement.recorded) {
+			return;
+		}
+		long actualAdvance = measurement.after - measurement.before;
+		LOGGER.info(
+				"RailOptimization memo epoch [{}]: start={}, end={}, measured advance={}, required minimum={}",
+				label,
+				measurement.before,
+				measurement.after,
+				actualAdvance,
+				measurement.minimumAdvance
+		);
+		helper.assertTrue(actualAdvance >= measurement.minimumAdvance,
+				Component.literal(label + " did not invalidate memo for every measured lever write"));
 	}
 
 	static String allocatedBytesPerOperation(
