@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.function.IntToLongFunction;
 import java.util.function.LongSupplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -15,6 +16,8 @@ final class RailBenchmarkRunner {
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final int MEASUREMENT_ROUNDS = 11;
 	private static final long MIN_MEDIAN_SAMPLE_NANOS = 20_000_000L;
+	private static final long TARGET_SAMPLE_NANOS = 30_000_000L;
+	private static final int ISOLATED_WARMUP_ROUNDS = 4;
 
 	private RailBenchmarkRunner() {
 	}
@@ -86,6 +89,63 @@ final class RailBenchmarkRunner {
 			samples[round] = sample.getAsLong();
 		}
 		return sampleStats(samples);
+	}
+
+	static void measureAndReportIsolated(
+			GameTestHelper helper, String label, int initialOperations, IntToLongFunction measurement) {
+		for (int round = 0; round < ISOLATED_WARMUP_ROUNDS; round++) {
+			measurement.applyAsLong(initialOperations);
+		}
+		int operations = calibrateOperations(initialOperations, measurement);
+		for (int round = 0; round < ISOLATED_WARMUP_ROUNDS; round++) {
+			measurement.applyAsLong(operations);
+		}
+		int measuredOperations = calibrateOperations(operations, measurement);
+
+		SampleStats stats = sample(() -> measurement.applyAsLong(measuredOperations));
+		String nanosPerOperation = String.format(
+				Locale.ROOT, "%.2f", stats.medianNanos() / (double) measuredOperations);
+		String allocatedBytesPerOperation = allocatedBytesPerOperation(measurement, measuredOperations);
+		LOGGER.info(
+				"RailOptimization isolated benchmark [{}]: {} ns/op (MAD={}%), {} allocated bytes/op, {} operations/sample",
+				label,
+				nanosPerOperation,
+				stats.relativeMedianAbsoluteDeviation(),
+				allocatedBytesPerOperation,
+				measuredOperations
+		);
+		helper.assertTrue(
+				stats.medianNanos() >= MIN_MEDIAN_SAMPLE_NANOS,
+				Component.literal(
+						label + " sample is too short for reliable timing: "
+								+ stats.medianNanos() / 1_000_000 + " ms"
+				)
+		);
+	}
+
+	private static int calibrateOperations(int initialOperations, IntToLongFunction measurement) {
+		int operations = Integer.highestOneBit(Math.max(2, initialOperations - 1)) << 1;
+		while (measurement.applyAsLong(operations) < TARGET_SAMPLE_NANOS) {
+			if (operations >= 1 << 29) {
+				return operations;
+			}
+			operations <<= 1;
+		}
+		return operations;
+	}
+
+	private static String allocatedBytesPerOperation(IntToLongFunction measurement, int operations) {
+		if (!(ManagementFactory.getThreadMXBean() instanceof com.sun.management.ThreadMXBean threadBean)
+				|| !threadBean.isThreadAllocatedMemorySupported()) {
+			return "unavailable";
+		}
+		if (!threadBean.isThreadAllocatedMemoryEnabled()) {
+			threadBean.setThreadAllocatedMemoryEnabled(true);
+		}
+		long before = threadBean.getCurrentThreadAllocatedBytes();
+		measurement.applyAsLong(operations);
+		long allocatedBytes = threadBean.getCurrentThreadAllocatedBytes() - before;
+		return String.format(Locale.ROOT, "%.2f", allocatedBytes / (double) operations);
 	}
 
 	private static SampleStats sampleStats(long[] samples) {
