@@ -16,10 +16,10 @@ public final class RailHotPathBenchmarkAccess {
 	private RailHotPathBenchmarkAccess() {
 	}
 
-	public static long measureEpochAdvance(int operations) {
+	public static long measureEpochAdvance(Level level, int operations) {
 		long startNanos = System.nanoTime();
 		for (int operation = 0; operation < operations; operation++) {
-			RailUpdateMemo.onBlockStateChanged();
+			RailUpdateMemo.onBlockStateChanged(level);
 		}
 		return System.nanoTime() - startNanos;
 	}
@@ -106,7 +106,7 @@ public final class RailHotPathBenchmarkAccess {
 			RailUpdateMemo.trackContext(memo);
 			memo.confirm(BlockPos.of(position), powered, DEFAULT_POWER_LIMIT);
 			if (invalidate) {
-				RailUpdateMemo.onBlockStateChanged();
+				RailUpdateMemo.onBlockStateChanged(level);
 			}
 		}
 
@@ -345,7 +345,7 @@ public final class RailHotPathBenchmarkAccess {
 				for (int index = 0; index < count; index++) {
 					memo.confirm(positions[index], true, DEFAULT_POWER_LIMIT);
 				}
-				RailUpdateMemo.onBlockStateChanged();
+				RailUpdateMemo.onBlockStateChanged(level);
 
 				long startNanos = System.nanoTime();
 				for (int index = 0; index < count; index++) {

@@ -1,10 +1,9 @@
 package RailOptimization;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
@@ -21,16 +20,6 @@ public final class RailUpdateMemo {
 	private static final ThreadLocal<LaneWriteDepth> LANE_WRITE_DEPTH = ThreadLocal.withInitial(LaneWriteDepth::new);
 	private static final ThreadLocal<List<RailUpdateMemo>> MEMOS = ThreadLocal.withInitial(ArrayList::new);
 	private static final ThreadLocal<RailUpdateMemo> TOP = new ThreadLocal<>();
-	private static final VarHandle BLOCK_CHANGE_EPOCH_HANDLE;
-	private static volatile long blockChangeEpoch;
-
-	static {
-		try {
-			BLOCK_CHANGE_EPOCH_HANDLE = MethodHandles.lookup().findStaticVarHandle(RailUpdateMemo.class, "blockChangeEpoch", long.class);
-		} catch (ReflectiveOperationException exception) {
-			throw new ExceptionInInitializerError(exception);
-		}
-	}
 
 	private static final class LaneWriteDepth {
 		int value;
@@ -39,17 +28,18 @@ public final class RailUpdateMemo {
 	private final long[] keys = new long[CAPACITY];
 	private final long[] meta = new long[CAPACITY];
 	private Level ownerLevel;
+	private AtomicLong ownerEpoch;
 	private int size;
 	private long writeEpoch;
 
 	RailUpdateMemo() {
 	}
 
-	public static void onBlockStateChanged() {
+	public static void onBlockStateChanged(Level level) {
 		if (LANE_WRITE_DEPTH.get().value != 0) {
 			return;
 		}
-		BLOCK_CHANGE_EPOCH_HANDLE.getAndAdd(1L);
+		levelEpoch(level).incrementAndGet();
 	}
 
 	static void beginLaneWrite() {
@@ -64,7 +54,7 @@ public final class RailUpdateMemo {
 		List<RailUpdateMemo> memos = MEMOS.get();
 		for (int i = memos.size() - 1; i >= 0; --i) {
 			RailUpdateMemo candidate = memos.get(i);
-			if (candidate == memo || candidate.writeEpoch != blockChangeEpoch) {
+			if (candidate == memo || candidate.writeEpoch != candidate.ownerEpoch.get()) {
 				memos.remove(i);
 			}
 		}
@@ -96,6 +86,7 @@ public final class RailUpdateMemo {
 
 	void beginWalk(Level level) {
 		ownerLevel = level;
+		ownerEpoch = levelEpoch(level);
 		Arrays.fill(meta, 0L);
 		size = 0;
 	}
@@ -108,7 +99,8 @@ public final class RailUpdateMemo {
 
 	void confirm(BlockPos pos, boolean powered, int powerLimit) {
 		long position = pos.asLong();
-		long entryMeta = (blockChangeEpoch & EPOCH_MASK)
+		long currentEpoch = ownerEpoch.get();
+		long entryMeta = (currentEpoch & EPOCH_MASK)
 				| ((long) (powerLimit - 1) << POWER_LIMIT_SHIFT)
 				| (powered ? POWERED_MASK : 0)
 				| OCCUPIED_MASK;
@@ -118,14 +110,14 @@ public final class RailUpdateMemo {
 				if (size < CAPACITY) {
 					keys[index] = position;
 					meta[index] = entryMeta;
-					writeEpoch = blockChangeEpoch;
+					writeEpoch = currentEpoch;
 					++size;
 				}
 				return;
 			}
 			if (keys[index] == position) {
 				meta[index] = entryMeta;
-				writeEpoch = blockChangeEpoch;
+				writeEpoch = currentEpoch;
 				return;
 			}
 			index = (index + 1) & MASK;
@@ -152,11 +144,15 @@ public final class RailUpdateMemo {
 		return 0;
 	}
 
-	private static long expectedMeta(int powerLimit, boolean currentPowered) {
-		return (blockChangeEpoch & EPOCH_MASK)
+	private long expectedMeta(int powerLimit, boolean currentPowered) {
+		return (ownerEpoch.get() & EPOCH_MASK)
 				| ((long) (powerLimit - 1) << POWER_LIMIT_SHIFT)
 				| (currentPowered ? POWERED_MASK : 0)
 				| OCCUPIED_MASK;
+	}
+
+	private static AtomicLong levelEpoch(Level level) {
+		return ((LevelEpochAccess) level).railoptimization$getBlockChangeEpoch();
 	}
 
 	private static int hashIndex(long position) {

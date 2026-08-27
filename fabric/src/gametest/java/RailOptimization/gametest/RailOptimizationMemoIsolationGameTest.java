@@ -30,13 +30,16 @@ public class RailOptimizationMemoIsolationGameTest {
 		BlockPos supportPos = railPos.below();
 		BlockPos sourcePos = railPos.east();
 		BlockPos sourceSupportPos = sourcePos.below();
+		BlockPos unrelatedWritePos = railPos.offset(8, 0, 8);
 		BlockState firstRailBefore = firstLevel.getBlockState(railPos);
 		BlockState firstSupportBefore = firstLevel.getBlockState(supportPos);
 		BlockState firstSourceBefore = firstLevel.getBlockState(sourcePos);
+		BlockState firstUnrelatedBefore = firstLevel.getBlockState(unrelatedWritePos);
 		BlockState secondRailBefore = secondLevel.getBlockState(railPos);
 		BlockState secondSupportBefore = secondLevel.getBlockState(supportPos);
 		BlockState secondSourceBefore = secondLevel.getBlockState(sourcePos);
 		BlockState secondSourceSupportBefore = secondLevel.getBlockState(sourceSupportPos);
+		BlockState secondUnrelatedBefore = secondLevel.getBlockState(unrelatedWritePos);
 
 		try {
 			BlockState unpoweredRail = Blocks.POWERED_RAIL.defaultBlockState()
@@ -61,6 +64,15 @@ public class RailOptimizationMemoIsolationGameTest {
 			helper.assertTrue(
 					RailLogicTestAccess.isMemoConfirmed(firstLevel, railPos, 8, true),
 					Component.literal("first-level rail should remain confirmed before the cross-level update"));
+
+			secondLevel.setBlock(unrelatedWritePos, Blocks.SMOOTH_STONE.defaultBlockState(), Block.UPDATE_NONE);
+			helper.assertTrue(
+					RailLogicTestAccess.isMemoConfirmed(firstLevel, railPos, 8, true),
+					Component.literal("a second-level write must not invalidate the first-level memo"));
+			firstLevel.setBlock(unrelatedWritePos, Blocks.SMOOTH_STONE.defaultBlockState(), Block.UPDATE_NONE);
+			helper.assertTrue(
+					!RailLogicTestAccess.isMemoConfirmed(firstLevel, railPos, 8, true),
+					Component.literal("a first-level write must invalidate the first-level memo"));
 			helper.assertTrue(
 					secondLevel.getBlockState(railPos).getValue(PoweredRailBlock.POWERED),
 					Component.literal("second-level rail must remain powered before its neighbor update"));
@@ -73,10 +85,12 @@ public class RailOptimizationMemoIsolationGameTest {
 			firstLevel.setBlock(sourcePos, firstSourceBefore, Block.UPDATE_NONE);
 			firstLevel.setBlock(railPos, firstRailBefore, Block.UPDATE_NONE);
 			firstLevel.setBlock(supportPos, firstSupportBefore, Block.UPDATE_NONE);
+			firstLevel.setBlock(unrelatedWritePos, firstUnrelatedBefore, Block.UPDATE_NONE);
 			secondLevel.setBlock(railPos, secondRailBefore, Block.UPDATE_NONE);
 			secondLevel.setBlock(supportPos, secondSupportBefore, Block.UPDATE_NONE);
 			secondLevel.setBlock(sourcePos, secondSourceBefore, Block.UPDATE_NONE);
 			secondLevel.setBlock(sourceSupportPos, secondSourceSupportBefore, Block.UPDATE_NONE);
+			secondLevel.setBlock(unrelatedWritePos, secondUnrelatedBefore, Block.UPDATE_NONE);
 		}
 		helper.succeed();
 	}

@@ -14,6 +14,6 @@ public abstract class LevelChunkMixin {
 
 	@Inject(method = "setBlockState", at = @At("HEAD"))
 	private void railoptimization$setBlockState(BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> cir) {
-		RailUpdateMemo.onBlockStateChanged();
+		RailUpdateMemo.onBlockStateChanged(((LevelChunk) (Object) this).getLevel());
 	}
 }

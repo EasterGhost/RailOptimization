@@ -19,7 +19,7 @@ public class RailOptimizationPerformanceGameTestSearchStages extends RailOptimiz
 	@GameTest(environment = "railoptimization-gametest:serial_116", maxTicks = 200, padding = 40)
 	public void epochAdvanceCostIsMeasured(GameTestHelper helper) {
 		runAfterSetup(helper, "memo epoch advance", INITIAL_FAST_OPERATIONS,
-				RailHotPathBenchmarkAccess::measureEpochAdvance);
+				operations -> RailHotPathBenchmarkAccess.measureEpochAdvance(helper.getLevel(), operations));
 	}
 
 	@SuppressWarnings("null")
