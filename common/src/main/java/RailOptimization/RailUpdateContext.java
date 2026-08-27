@@ -53,7 +53,6 @@ final class RailUpdateContext {
 		long position = pos.asLong();
 		byte cached = searchCache.get(position, RailSearchCache.DIRECT_SIGNAL);
 		if (cached != RailLogic.CHECKED_UNKNOWN) {
-			// A cached miss has no captured below state; keep the caller's fallback read.
 			return cached == RailLogic.CHECKED_POWERED ? null : unknownBelowState;
 		}
 
