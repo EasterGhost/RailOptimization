@@ -36,6 +36,8 @@
       "RailOptimization.gametest.RailOptimizationDynamicSignalGameTest",
       "RailOptimization.gametest.RailOptimizationMemoIsolationGameTest",
       "RailOptimization.gametest.RailOptimizationBudClockGameTest",
+      "RailOptimization.gametest.RailOptimizationMicroTimingGameTest",
+      "RailOptimization.gametest.RailOptimizationEndpointNotificationGameTest",
       "RailOptimization.RailSearchCacheGameTest",
       "RailOptimization.RailUpdateMemoGameTest"
     ]

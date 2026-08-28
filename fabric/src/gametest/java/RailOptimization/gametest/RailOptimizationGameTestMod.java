@@ -5,12 +5,16 @@ import java.util.HashMap;
 import java.util.Map;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -38,6 +42,8 @@ public class RailOptimizationGameTestMod implements ModInitializer {
 
 	private static final Map<Long, OrderProbeRecord> ORDER_PROBES = new HashMap<>();
 	private static int orderSequence;
+	private static int shapeOrderSequence;
+	private static int eventSequence;
 
 	@SuppressWarnings("null")
 	public static final NeighborCounterBlock NEIGHBOR_COUNTER = new NeighborCounterBlock(
@@ -77,15 +83,21 @@ public class RailOptimizationGameTestMod implements ModInitializer {
 		if (record != null) {
 			record.order = 0;
 			record.snapshot = 0;
+			record.shapeOrder = 0;
+			record.shapeSnapshot = 0;
+			record.neighborEventOrder = 0;
+			record.shapeEventOrder = 0;
 		}
 	}
 
 	public static OrderProbeSnapshot orderProbeSnapshot(BlockPos probePos) {
 		OrderProbeRecord record = ORDER_PROBES.get(probePos.asLong());
 		if (record == null) {
-			return new OrderProbeSnapshot(0, 0);
+			return new OrderProbeSnapshot(0, 0, 0, 0, 0, 0);
 		}
-		return new OrderProbeSnapshot(record.order, record.snapshot);
+		return new OrderProbeSnapshot(
+				record.order, record.snapshot, record.shapeOrder, record.shapeSnapshot,
+				record.neighborEventOrder, record.shapeEventOrder);
 	}
 
 	public static class NeighborCounterBlock extends Block {
@@ -154,6 +166,32 @@ public class RailOptimizationGameTestMod implements ModInitializer {
 				return;
 			}
 
+			record.snapshot = poweredSnapshot(level, record);
+			record.order = ++orderSequence;
+			record.neighborEventOrder = ++eventSequence;
+		}
+
+		@SuppressWarnings("null")
+		@Override
+		protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess tickAccess,
+				BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+			if (!(level instanceof Level runtimeLevel) || runtimeLevel.isClientSide()) {
+				return state;
+			}
+
+			OrderProbeRecord record = ORDER_PROBES.get(pos.asLong());
+			if (record == null || record.shapeOrder != 0 || !record.watches(neighborPos)) {
+				return state;
+			}
+
+			record.shapeSnapshot = poweredSnapshot(level, record);
+			record.shapeOrder = ++shapeOrderSequence;
+			record.shapeEventOrder = ++eventSequence;
+			return state;
+		}
+
+		@SuppressWarnings("null")
+		private static int poweredSnapshot(LevelReader level, OrderProbeRecord record) {
 			int snapshot = 0;
 			for (int railIndex = 0; railIndex < record.watchedRails.length; railIndex++) {
 				BlockState railState = level.getBlockState(record.watchedRails[railIndex]);
@@ -162,22 +200,36 @@ public class RailOptimizationGameTestMod implements ModInitializer {
 					snapshot |= 1 << railIndex;
 				}
 			}
-
-			record.snapshot = snapshot;
-			record.order = ++orderSequence;
+			return snapshot;
 		}
 	}
 
-	public record OrderProbeSnapshot(int order, int snapshot) {
+	public record OrderProbeSnapshot(
+			int order, int snapshot, int shapeOrder, int shapeSnapshot,
+			int neighborEventOrder, int shapeEventOrder) {
 	}
 
 	private static final class OrderProbeRecord {
 		private final BlockPos[] watchedRails;
 		private int order;
 		private int snapshot;
+		private int shapeOrder;
+		private int shapeSnapshot;
+		private int neighborEventOrder;
+		private int shapeEventOrder;
 
 		private OrderProbeRecord(BlockPos[] watchedRails) {
 			this.watchedRails = watchedRails;
+		}
+
+		@SuppressWarnings("null")
+		private boolean watches(BlockPos pos) {
+			for (BlockPos watchedRail : watchedRails) {
+				if (watchedRail.equals(pos)) {
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 }

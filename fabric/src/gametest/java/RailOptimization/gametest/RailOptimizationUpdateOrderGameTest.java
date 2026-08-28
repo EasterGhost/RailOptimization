@@ -9,6 +9,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationUpdateOrderGameTest extends RailOptimizationGameTestSupport {
+	private static final int UPDATE_TYPE_LINE_LENGTH = 5;
+
 	@SuppressWarnings("null")
 	@GameTest(environment = "railoptimization-gametest:serial_46", maxTicks = 120, padding = 40)
 	public void straightRailUpdateOrderMatchesVanilla(GameTestHelper helper) {
@@ -70,6 +72,205 @@ public class RailOptimizationUpdateOrderGameTest extends RailOptimizationGameTes
 				.thenIdle(4)
 				.thenExecute(() -> assertOrderRecordsMatch(helper, mirrorCopy(probes), probes))
 				.thenSucceed();
+	}
+
+	@GameTest(environment = "railoptimization-gametest:serial_144", maxTicks = 120, padding = 40)
+	public void eastWestUpdateTypeOrderMatchesVanilla(GameTestHelper helper) {
+		verifyStraightUpdateTypeOrder(
+				helper, new BlockPos(1, RAIL_Y, 3), Direction.EAST, Direction.SOUTH,
+				RailShape.EAST_WEST, true, "east-west");
+	}
+
+	@GameTest(environment = "railoptimization-gametest:serial_145", maxTicks = 120, padding = 40)
+	public void northSouthUpdateTypeOrderMatchesVanilla(GameTestHelper helper) {
+		verifyStraightUpdateTypeOrder(
+				helper, new BlockPos(3, RAIL_Y, 1), Direction.SOUTH, Direction.EAST,
+				RailShape.NORTH_SOUTH, false, "north-south");
+	}
+
+	@GameTest(environment = "railoptimization-gametest:serial_146", maxTicks = 120, padding = 40)
+	public void eastWestCenteredSourceUpdateOrderMatchesVanilla(GameTestHelper helper) {
+		verifyCenteredSourceUpdateOrder(
+				helper, new BlockPos(1, RAIL_Y, 3), Direction.EAST, Direction.SOUTH,
+				RailShape.EAST_WEST, "east-west centered source");
+	}
+
+	@GameTest(environment = "railoptimization-gametest:serial_147", maxTicks = 120, padding = 40)
+	public void northSouthCenteredSourceUpdateOrderMatchesVanilla(GameTestHelper helper) {
+		verifyCenteredSourceUpdateOrder(
+				helper, new BlockPos(3, RAIL_Y, 1), Direction.SOUTH, Direction.EAST,
+				RailShape.NORTH_SOUTH, "north-south centered source");
+	}
+
+	@SuppressWarnings("null")
+	private static void verifyStraightUpdateTypeOrder(
+			GameTestHelper helper, BlockPos start, Direction railDirection, Direction probeDirection,
+			RailShape railShape, boolean neighborChangedFarToNear, String label) {
+		BlockPos[] rails = straightRails(start, railDirection, UPDATE_TYPE_LINE_LENGTH);
+		BlockPos[] probes = new BlockPos[UPDATE_TYPE_LINE_LENGTH];
+		for (int index = 0; index < probes.length; index++) {
+			probes[index] = rails[index].relative(probeDirection);
+		}
+		BlockPos source = rails[0].relative(probeDirection.getOpposite());
+
+		placeRailLinePair(helper, start, railDirection, UPDATE_TYPE_LINE_LENGTH, railShape);
+		placeOrderRecorderPair(helper, probes, rails);
+
+		helper.startSequence()
+				.thenExecute(() -> {
+					resetOrderRecorders(helper, mirrorCopy(probes));
+					resetOrderRecorders(helper, probes);
+					helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> helper.setBlock(source, Blocks.REDSTONE_BLOCK))
+				.thenIdle(4)
+				.thenExecute(() -> assertUpdateTypeOrder(
+						helper, mirrorCopy(probes), probes, neighborChangedFarToNear, label + " powering"))
+				.thenExecute(() -> {
+					resetOrderRecorders(helper, mirrorCopy(probes));
+					resetOrderRecorders(helper, probes);
+					helper.setBlock(mirrorCopy(source), Blocks.AIR);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> helper.setBlock(source, Blocks.AIR))
+				.thenIdle(4)
+				.thenExecute(() -> assertUpdateTypeOrder(
+						helper, mirrorCopy(probes), probes, neighborChangedFarToNear, label + " depowering"))
+				.thenSucceed();
+	}
+
+	@SuppressWarnings("null")
+	private static void verifyCenteredSourceUpdateOrder(
+			GameTestHelper helper, BlockPos start, Direction railDirection, Direction probeDirection,
+			RailShape railShape, String label) {
+		BlockPos[] rails = straightRails(start, railDirection, UPDATE_TYPE_LINE_LENGTH);
+		BlockPos[] probes = new BlockPos[UPDATE_TYPE_LINE_LENGTH];
+		for (int index = 0; index < probes.length; index++) {
+			probes[index] = rails[index].relative(probeDirection);
+		}
+		int sourceIndex = UPDATE_TYPE_LINE_LENGTH / 2;
+		BlockPos source = rails[sourceIndex].relative(probeDirection.getOpposite());
+
+		placeRailLinePair(helper, start, railDirection, UPDATE_TYPE_LINE_LENGTH, railShape);
+		placeOrderRecorderPair(helper, probes, rails);
+
+		helper.startSequence()
+				.thenExecute(() -> {
+					resetOrderRecorders(helper, mirrorCopy(probes));
+					resetOrderRecorders(helper, probes);
+					helper.setBlock(mirrorCopy(source), Blocks.REDSTONE_BLOCK);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> helper.setBlock(source, Blocks.REDSTONE_BLOCK))
+				.thenIdle(4)
+				.thenExecute(() -> assertCenteredSourceUpdateOrder(
+						helper, mirrorCopy(probes), probes, sourceIndex, label + " powering"))
+				.thenExecute(() -> {
+					resetOrderRecorders(helper, mirrorCopy(probes));
+					resetOrderRecorders(helper, probes);
+					helper.setBlock(mirrorCopy(source), Blocks.AIR);
+				})
+				.thenIdle(4)
+				.thenExecute(() -> helper.setBlock(source, Blocks.AIR))
+				.thenIdle(4)
+				.thenExecute(() -> assertCenteredSourceUpdateOrder(
+						helper, mirrorCopy(probes), probes, sourceIndex, label + " depowering"))
+				.thenSucceed();
+	}
+
+	@SuppressWarnings("null")
+	private static BlockPos[] straightRails(BlockPos start, Direction direction, int length) {
+		BlockPos[] rails = new BlockPos[length];
+		for (int index = 0; index < length; index++) {
+			rails[index] = start.relative(direction, index);
+		}
+		return rails;
+	}
+
+	private static void assertUpdateTypeOrder(
+			GameTestHelper helper, BlockPos[] mirrorProbes, BlockPos[] probes,
+			boolean neighborChangedFarToNear, String label) {
+		RailOptimizationGameTestMod.OrderProbeSnapshot[] vanilla = snapshots(helper, mirrorProbes);
+		RailOptimizationGameTestMod.OrderProbeSnapshot[] optimized = snapshots(helper, probes);
+		int expectedNeighborComparison = neighborChangedFarToNear ? 1 : -1;
+
+		for (int index = 0; index < probes.length; index++) {
+			helper.assertTrue(vanilla[index].order() > 0 && optimized[index].order() > 0,
+					Component.literal(label + " NC probe " + index + " was not updated"));
+			helper.assertTrue(vanilla[index].shapeOrder() > 0 && optimized[index].shapeOrder() > 0,
+					Component.literal(label + " PP probe " + index + " was not updated"));
+			assertMainNeighborChangedBeforeShape(helper, label + " vanilla", vanilla[index], index);
+			assertMainNeighborChangedBeforeShape(helper, label + " optimized", optimized[index], index);
+		}
+
+		for (int near = 0; near < probes.length; near++) {
+			for (int far = near + 1; far < probes.length; far++) {
+				assertPairOrder(helper, label + " vanilla NC", vanilla[near].order(), vanilla[far].order(), expectedNeighborComparison);
+				assertPairOrder(helper, label + " optimized NC", optimized[near].order(), optimized[far].order(), expectedNeighborComparison);
+				assertPairOrder(helper, label + " vanilla PP", vanilla[near].shapeOrder(), vanilla[far].shapeOrder(), 1);
+				assertPairOrder(helper, label + " optimized PP", optimized[near].shapeOrder(), optimized[far].shapeOrder(), 1);
+			}
+		}
+	}
+
+	private static void assertPairOrder(
+			GameTestHelper helper, String label, int nearOrder, int farOrder, int expectedComparison) {
+		int comparison = Integer.compare(nearOrder, farOrder);
+		helper.assertTrue(comparison == expectedComparison,
+				Component.literal(label + " order mismatch: near=" + nearOrder + ", far=" + farOrder));
+	}
+
+	private static void assertCenteredSourceUpdateOrder(
+			GameTestHelper helper, BlockPos[] mirrorProbes, BlockPos[] probes, int sourceIndex, String label) {
+		RailOptimizationGameTestMod.OrderProbeSnapshot[] vanilla = snapshots(helper, mirrorProbes);
+		RailOptimizationGameTestMod.OrderProbeSnapshot[] optimized = snapshots(helper, probes);
+		for (int index = 0; index < probes.length; index++) {
+			if (index != sourceIndex) {
+				helper.assertTrue(vanilla[sourceIndex].shapeOrder() > vanilla[index].shapeOrder(),
+						Component.literal(label + " vanilla source PP was not last: " + describeRecords(vanilla)));
+				helper.assertTrue(optimized[sourceIndex].shapeOrder() > optimized[index].shapeOrder(),
+						Component.literal(label + " optimized source PP was not last: vanilla=" + describeRecords(vanilla)
+								+ ", optimized=" + describeRecords(optimized)));
+			}
+		}
+
+		for (int index = 0; index < probes.length; index++) {
+			helper.assertTrue(vanilla[index].order() > 0 && optimized[index].order() > 0,
+					Component.literal(label + " NC probe " + index + " was not updated"));
+			helper.assertTrue(vanilla[index].shapeOrder() > 0 && optimized[index].shapeOrder() > 0,
+					Component.literal(label + " PP probe " + index + " was not updated"));
+			assertMainNeighborChangedBeforeShape(helper, label + " vanilla", vanilla[index], index);
+			assertMainNeighborChangedBeforeShape(helper, label + " optimized", optimized[index], index);
+		}
+
+		for (int first = 0; first < probes.length; first++) {
+			for (int second = first + 1; second < probes.length; second++) {
+				assertMatchingPairOrder(helper, label + " NC", vanilla[first].order(), vanilla[second].order(),
+						optimized[first].order(), optimized[second].order(), vanilla, optimized);
+				assertMatchingPairOrder(helper, label + " PP", vanilla[first].shapeOrder(), vanilla[second].shapeOrder(),
+						optimized[first].shapeOrder(), optimized[second].shapeOrder(), vanilla, optimized);
+			}
+		}
+	}
+
+	private static void assertMainNeighborChangedBeforeShape(
+			GameTestHelper helper, String label,
+			RailOptimizationGameTestMod.OrderProbeSnapshot snapshot, int probeIndex) {
+		helper.assertTrue(snapshot.neighborEventOrder() < snapshot.shapeEventOrder(),
+				Component.literal(label + " probe " + probeIndex + " received PP before its main NC"));
+	}
+
+	private static void assertMatchingPairOrder(
+			GameTestHelper helper, String label, int vanillaFirst, int vanillaSecond,
+			int optimizedFirst, int optimizedSecond,
+			RailOptimizationGameTestMod.OrderProbeSnapshot[] vanilla,
+			RailOptimizationGameTestMod.OrderProbeSnapshot[] optimized) {
+		int vanillaComparison = Integer.compare(vanillaFirst, vanillaSecond);
+		int optimizedComparison = Integer.compare(optimizedFirst, optimizedSecond);
+		helper.assertTrue(vanillaComparison == optimizedComparison,
+				Component.literal(label + " relative order mismatch, vanilla=" + describeRecords(vanilla)
+						+ ", optimized=" + describeRecords(optimized)));
 	}
 
 	private static BlockPos[] eastWestRails(BlockPos start, int length) {
@@ -140,7 +341,15 @@ public class RailOptimizationUpdateOrderGameTest extends RailOptimizationGameTes
 					.append(":order=")
 					.append(records[probeIndex].order())
 					.append(",snapshot=")
-					.append(records[probeIndex].snapshot());
+					.append(records[probeIndex].snapshot())
+					.append(",shapeOrder=")
+					.append(records[probeIndex].shapeOrder())
+					.append(",shapeSnapshot=")
+					.append(records[probeIndex].shapeSnapshot())
+					.append(",neighborEventOrder=")
+					.append(records[probeIndex].neighborEventOrder())
+					.append(",shapeEventOrder=")
+					.append(records[probeIndex].shapeEventOrder());
 		}
 		return builder.append(']').toString();
 	}

@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 
 final class RailLaneUpdater {
 	private static final BooleanProperty POWERED = PoweredRailBlock.POWERED;
-	private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_CLIENTS;
+	private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
 	private RailLaneUpdater() {
 	}
@@ -40,7 +40,7 @@ final class RailLaneUpdater {
 			RailUpdateMemo.endLaneWrite();
 		}
 
-		updateChangedRails(world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount,
+		updateChangedRails(world, mainState, railShape, firstDirectionCount, secondDirectionCount,
 				changedRails, context);
 	}
 
@@ -64,7 +64,7 @@ final class RailLaneUpdater {
 			RailUpdateMemo.endLaneWrite();
 		}
 
-		updateChangedRails(world, pos, mainState, railShape, firstDirectionCount, secondDirectionCount, changedRails, context);
+		updateChangedRails(world, mainState, railShape, firstDirectionCount, secondDirectionCount, changedRails, context);
 	}
 
 	private static Direction[] getRailDirections(RailShape railShape) {
@@ -218,28 +218,8 @@ final class RailLaneUpdater {
 		changedRails.add(pos, state);
 	}
 
-	private static void updateChangedRails(Level world, BlockPos pos, BlockState mainState, RailShape railShape, int firstDirectionCount,
+	private static void updateChangedRails(Level world, BlockState mainState, RailShape railShape, int firstDirectionCount,
 			int secondDirectionCount, RailChangeList changedRails, RailUpdateContext context) {
-		Direction[] directions = getRailDirections(railShape);
-		if (directions != null && !changedRails.hasSlope()) {
-			RailUpdateNotifier.updateRails(railShape == RailShape.EAST_WEST, world, pos, mainState, firstDirectionCount, secondDirectionCount,
-					context.scratchPos);
-			return;
-		}
-
-		Block block = mainState.getBlock();
-		MutableBlockPos scratchPos = context.scratchPos;
-		for (int i = changedRails.size() - 1; i >= 0; i--) {
-			long railPos = changedRails.position(i);
-			int x = BlockPos.getX(railPos);
-			int y = BlockPos.getY(railPos);
-			int z = BlockPos.getZ(railPos);
-			RailUpdateNotifier.notifyNeighborChanged(world, x, y, z, block, scratchPos);
-			RailUpdateNotifier.notifyNeighborChanged(world, x, y - 1, z, block, scratchPos);
-
-			if (changedRails.isAscending(i)) {
-				RailUpdateNotifier.notifyNeighborChanged(world, x, y + 1, z, block, scratchPos);
-			}
-		}
+		RailUpdateNotifier.updateRails(world, mainState.getBlock(), railShape, firstDirectionCount, secondDirectionCount, changedRails, context.scratchPos);
 	}
 }
