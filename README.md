@@ -8,7 +8,7 @@
 [![Hits Of Code](https://hitsofcode.com/github/EasterGhost/RailOptimization?branch=main)](https://github.com/EasterGhost/RailOptimization)
 [![Modrinth Downloads](https://img.shields.io/modrinth/dt/railoptimization?style=round&logo=modrinth)](https://modrinth.com/mod/railoptimization)
 
-A Fabric and NeoForge mod that makes powered rails and activator rails update faster.
+A simple mod that makes powered rails and activator rails update faster.
 
 </div>
 
@@ -28,14 +28,13 @@ RailOptimization replaces repeated vanilla rail searches and recursive updates w
 
 Use the jar that matches your Minecraft version range:
 
-| Jar | Minecraft versions |
-| --- | --- |
-| `railoptimization-*+mc1.20.1-fabric.jar` | 1.20-1.21.1 |
-| `railoptimization-*+mc1.21.2-fabric.jar` | 1.21.2-1.21.4 |
-| `railoptimization-*+mc1.21.5-fabric.jar` | 1.21.5-1.21.10 |
-| `railoptimization-*+mc1.21.11-fabric.jar` | 1.21.11 |
-| `railoptimization-*+mc26.1.2-fabric.jar` | 26.1-26.2 |
-| `railoptimization-*+mc26.1.2-neoforge.jar` | 26.1.2 |
+| Jar | Loaders | Minecraft versions |
+| --- | --- | --- |
+| `railoptimization-<version>+mc1.20.1-<loader>.jar` | Fabric | 1.20-1.21.1 |
+| `railoptimization-<version>+mc1.21.2-<loader>.jar` | Fabric | 1.21.2-1.21.4 |
+| `railoptimization-<version>+mc1.21.5-<loader>.jar` | Fabric | 1.21.5-1.21.10 |
+| `railoptimization-<version>+mc1.21.11-<loader>.jar` | Fabric | 1.21.11 |
+| `railoptimization-<version>+mc26.1.2-<loader>.jar` | Fabric, NeoForge | 26.1-26.2 |
 
 Use the jar for your mod loader. Fabric builds require Fabric Loader and Fabric API; NeoForge builds require NeoForge.
 
