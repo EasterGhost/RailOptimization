@@ -65,10 +65,7 @@ final class RailNeighborSignalChecker {
 			}
 
 			for (Direction directDirection : DIRECT_SIGNAL_DIRECTIONS[direction.ordinal()]) {
-				scratchPos.set(
-						neighborX + directDirection.getStepX(),
-						neighborY + directDirection.getStepY(),
-						neighborZ + directDirection.getStepZ());
+				scratchPos.set(neighborX + directDirection.getStepX(), neighborY + directDirection.getStepY(), neighborZ + directDirection.getStepZ());
 				BlockState directState = getBlockState(level, chunk, chunkX, chunkZ, scratchPos);
 				if (directState.getDirectSignal(level, scratchPos, directDirection) > 0) {
 					return null;
@@ -99,10 +96,7 @@ final class RailNeighborSignalChecker {
 			}
 
 			for (Direction directDirection : DIRECT_SIGNAL_DIRECTIONS[direction.ordinal()]) {
-				scratchPos.set(
-						neighborX + directDirection.getStepX(),
-						neighborY + directDirection.getStepY(),
-						neighborZ + directDirection.getStepZ());
+				scratchPos.set(neighborX + directDirection.getStepX(), neighborY + directDirection.getStepY(), neighborZ + directDirection.getStepZ());
 				BlockState directState = chunk.getBlockState(scratchPos);
 				if (directState.getDirectSignal(level, scratchPos, directDirection) > 0) {
 					return null;

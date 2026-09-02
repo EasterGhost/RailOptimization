@@ -40,8 +40,7 @@ final class RailLaneUpdater {
 			RailUpdateMemo.endLaneWrite();
 		}
 
-		updateChangedRails(world, mainState, railShape, firstDirectionCount, secondDirectionCount,
-				changedRails, context);
+		updateChangedRails(world, mainState, railShape, firstDirectionCount, secondDirectionCount, changedRails, context);
 	}
 
 	static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState, RailShape railShape, RailUpdateContext context) {
@@ -218,8 +217,8 @@ final class RailLaneUpdater {
 		changedRails.add(pos, state);
 	}
 
-	private static void updateChangedRails(Level world, BlockState mainState, RailShape railShape, int firstDirectionCount,
-			int secondDirectionCount, RailChangeList changedRails, RailUpdateContext context) {
+	private static void updateChangedRails(Level world, BlockState mainState, RailShape railShape, int firstDirectionCount, int secondDirectionCount,
+			RailChangeList changedRails, RailUpdateContext context) {
 		RailUpdateNotifier.updateRails(world, mainState.getBlock(), railShape, firstDirectionCount, secondDirectionCount, changedRails, context.scratchPos);
 	}
 }

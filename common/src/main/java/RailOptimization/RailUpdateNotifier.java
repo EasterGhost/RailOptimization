@@ -15,40 +15,28 @@ final class RailUpdateNotifier {
 	private RailUpdateNotifier() {
 	}
 
-	static void updateRails(
-			Level world, Block sourceBlock, RailShape sourceShape,
-			int firstDirectionCount, int secondDirectionCount,
+	static void updateRails(Level world, Block sourceBlock, RailShape sourceShape, int firstDirectionCount, int secondDirectionCount,
 			RailChangeList changedRails, MutableBlockPos scratchPos) {
-		boolean flatPath = !changedRails.hasSlope()
-				&& (sourceShape == RailShape.EAST_WEST || sourceShape == RailShape.NORTH_SOUTH);
+		boolean flatPath = !changedRails.hasSlope() && (sourceShape == RailShape.EAST_WEST || sourceShape == RailShape.NORTH_SOUTH);
 		if (RailPath.RAIL_AXIS[sourceShape.ordinal()] == RailPath.AXIS_EAST_WEST) {
-			updateEastWestRails(
-					world, sourceBlock, firstDirectionCount, secondDirectionCount,
-					changedRails, flatPath, scratchPos);
+			updateEastWestRails(world, sourceBlock, firstDirectionCount, secondDirectionCount, changedRails, flatPath, scratchPos);
 			return;
 		}
-		updateNorthSouthRails(
-				world, sourceBlock, firstDirectionCount, secondDirectionCount,
-				changedRails, flatPath, scratchPos);
+		updateNorthSouthRails(world, sourceBlock, firstDirectionCount, secondDirectionCount, changedRails, flatPath, scratchPos);
 	}
 
-	private static void updateEastWestRails(
-			Level world, Block sourceBlock, int firstDirectionCount, int secondDirectionCount,
-			RailChangeList changedRails, boolean flatPath, MutableBlockPos scratchPos) {
+	private static void updateEastWestRails(Level world, Block sourceBlock, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails,
+			boolean flatPath, MutableBlockPos scratchPos) {
 		int firstStart = 1;
 		int firstEnd = firstDirectionCount;
 		int secondStart = firstEnd + 1;
 		int secondEnd = firstEnd + secondDirectionCount;
 
 		for (int index = firstEnd; index >= firstStart; --index) {
-			notifyRail(
-					world, sourceBlock, changedRails, index,
-					flatPath && index == firstEnd ? Direction.WEST : null, scratchPos);
+			notifyRail(world, sourceBlock, changedRails, index, flatPath && index == firstEnd ? Direction.WEST : null, scratchPos);
 		}
 		for (int index = secondEnd; index >= secondStart; --index) {
-			notifyRail(
-					world, sourceBlock, changedRails, index,
-					flatPath && index == secondEnd ? Direction.EAST : null, scratchPos);
+			notifyRail(world, sourceBlock, changedRails, index, flatPath && index == secondEnd ? Direction.EAST : null, scratchPos);
 		}
 
 		notifyMain(world, sourceBlock, changedRails, 0, scratchPos);
@@ -68,9 +56,8 @@ final class RailUpdateNotifier {
 		}
 	}
 
-	private static void updateNorthSouthRails(
-			Level world, Block sourceBlock, int firstDirectionCount, int secondDirectionCount,
-			RailChangeList changedRails, boolean flatPath, MutableBlockPos scratchPos) {
+	private static void updateNorthSouthRails(Level world, Block sourceBlock, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails,
+			boolean flatPath, MutableBlockPos scratchPos) {
 		int firstStart = 1;
 		int firstEnd = firstDirectionCount;
 		int secondStart = firstEnd + 1;
@@ -84,12 +71,8 @@ final class RailUpdateNotifier {
 			notifyOuter(world, sourceBlock, changedRails, 0, Direction.NORTH, 0, scratchPos);
 		}
 
-		notifyNorthSouthBranch(
-				world, sourceBlock, changedRails, secondStart, secondEnd,
-				flatPath ? Direction.NORTH : null, scratchPos);
-		notifyNorthSouthBranch(
-				world, sourceBlock, changedRails, firstStart, firstEnd,
-				flatPath ? Direction.SOUTH : null, scratchPos);
+		notifyNorthSouthBranch(world, sourceBlock, changedRails, secondStart, secondEnd, flatPath ? Direction.NORTH : null, scratchPos);
+		notifyNorthSouthBranch(world, sourceBlock, changedRails, firstStart, firstEnd, flatPath ? Direction.SOUTH : null, scratchPos);
 
 		notifyShape(world, changedRails, 0, scratchPos);
 		notifySupport(world, sourceBlock, changedRails, 0, scratchPos);
@@ -101,9 +84,8 @@ final class RailUpdateNotifier {
 		}
 	}
 
-	private static void notifyNorthSouthBranch(
-			Level world, Block sourceBlock, RailChangeList changedRails,
-			int start, int end, Direction outwardDirection, MutableBlockPos scratchPos) {
+	private static void notifyNorthSouthBranch(Level world, Block sourceBlock, RailChangeList changedRails, int start, int end, Direction outwardDirection,
+			MutableBlockPos scratchPos) {
 		for (int index = start; index <= end; ++index) {
 			notifyMain(world, sourceBlock, changedRails, index, scratchPos);
 			if (outwardDirection != null && index == end) {
@@ -119,9 +101,8 @@ final class RailUpdateNotifier {
 		}
 	}
 
-	private static void notifyRail(
-			Level world, Block sourceBlock, RailChangeList changedRails,
-			int index, Direction outwardDirection, MutableBlockPos scratchPos) {
+	private static void notifyRail(Level world, Block sourceBlock, RailChangeList changedRails, int index, Direction outwardDirection,
+			MutableBlockPos scratchPos) {
 		notifyMain(world, sourceBlock, changedRails, index, scratchPos);
 		if (outwardDirection != null) {
 			notifyOuter(world, sourceBlock, changedRails, index, outwardDirection, 0, scratchPos);
@@ -134,16 +115,13 @@ final class RailUpdateNotifier {
 	}
 
 	@SuppressWarnings("null")
-	private static void notifyMain(
-			Level world, Block sourceBlock, RailChangeList changedRails,
-			int index, MutableBlockPos scratchPos) {
+	private static void notifyMain(Level world, Block sourceBlock, RailChangeList changedRails, int index, MutableBlockPos scratchPos) {
 		setPosition(scratchPos, changedRails.position(index), 0);
 		world.updateNeighborsAt(scratchPos, sourceBlock);
 	}
 
 	@SuppressWarnings("null")
-	private static void notifyShape(
-			Level world, RailChangeList changedRails, int index, MutableBlockPos scratchPos) {
+	private static void notifyShape(Level world, RailChangeList changedRails, int index, MutableBlockPos scratchPos) {
 		setPosition(scratchPos, changedRails.position(index), 0);
 		BlockState oldState = changedRails.state(index);
 		BlockState newState = world.getBlockState(scratchPos);
@@ -153,9 +131,7 @@ final class RailUpdateNotifier {
 	}
 
 	@SuppressWarnings("null")
-	private static void notifySupport(
-			Level world, Block sourceBlock, RailChangeList changedRails,
-			int index, MutableBlockPos scratchPos) {
+	private static void notifySupport(Level world, Block sourceBlock, RailChangeList changedRails, int index, MutableBlockPos scratchPos) {
 		long position = changedRails.position(index);
 		setPosition(scratchPos, position, -1);
 		world.updateNeighborsAt(scratchPos, sourceBlock);
@@ -166,14 +142,10 @@ final class RailUpdateNotifier {
 	}
 
 	@SuppressWarnings("null")
-	private static void notifyOuter(
-			Level world, Block sourceBlock, RailChangeList changedRails,
-			int index, Direction direction, int yOffset, MutableBlockPos scratchPos) {
+	private static void notifyOuter(Level world, Block sourceBlock, RailChangeList changedRails, int index, Direction direction, int yOffset,
+			MutableBlockPos scratchPos) {
 		long position = changedRails.position(index);
-		scratchPos.set(
-				BlockPos.getX(position) + direction.getStepX(),
-				BlockPos.getY(position) + yOffset,
-				BlockPos.getZ(position) + direction.getStepZ());
+		scratchPos.set(BlockPos.getX(position) + direction.getStepX(), BlockPos.getY(position) + yOffset, BlockPos.getZ(position) + direction.getStepZ());
 		world.neighborChanged(scratchPos.immutable(), sourceBlock, null);
 	}
 

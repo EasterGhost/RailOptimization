@@ -49,10 +49,7 @@ public final class RailOptimizationConfigManager {
 	}
 
 	public static void initialize(Path configDirectory) {
-		configPath = Objects.requireNonNull(configDirectory, "configDirectory")
-				.resolve(CONFIG_FILE_NAME)
-				.toAbsolutePath()
-				.normalize();
+		configPath = Objects.requireNonNull(configDirectory, "configDirectory").resolve(CONFIG_FILE_NAME).toAbsolutePath().normalize();
 		Path configPath = getConfigPath();
 		RailOptimizationConfig config = RailOptimizationConfig.defaults();
 		boolean configExists = Files.exists(configPath);

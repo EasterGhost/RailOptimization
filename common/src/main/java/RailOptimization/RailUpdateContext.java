@@ -58,10 +58,8 @@ final class RailUpdateContext {
 
 		int posChunkX = pos.getX() >> 4;
 		int posChunkZ = pos.getZ() >> 4;
-		BlockState belowState = RailNeighborSignalChecker.belowStateWhenNoNeighborSignal(
-				level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
-		searchCache.put(position, RailSearchCache.DIRECT_SIGNAL,
-				belowState == null ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
+		BlockState belowState = RailNeighborSignalChecker.belowStateWhenNoNeighborSignal(level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
+		searchCache.put(position, RailSearchCache.DIRECT_SIGNAL, belowState == null ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
 		return belowState;
 	}
 

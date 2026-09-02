@@ -42,29 +42,13 @@ public final class RailOptimizationNeoForgeGameTest {
 		registerTest(event, environment, "activator_rail_line", helper -> testRailLine(helper, Blocks.ACTIVATOR_RAIL));
 	}
 
-	private static void registerTest(
-			RegisterGameTestsEvent event,
-			Holder<TestEnvironmentDefinition<?>> environment,
-			String name,
+	private static void registerTest(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String name,
 			Consumer<GameTestHelper> body) {
-		TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(
-				environment,
-				EMPTY_STRUCTURE,
-				40,
-				0,
-				true,
-				Rotation.NONE,
-				false,
-				1,
-				1,
-				false,
-				16);
+		TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(environment, EMPTY_STRUCTURE, 40, 0, true, Rotation.NONE, false, 1, 1, false, 16);
 		event.registerTest(id(name), testData -> createTest(testData, body), data);
 	}
 
-	private static GameTestInstance createTest(
-			TestData<Holder<TestEnvironmentDefinition<?>>> data,
-			Consumer<GameTestHelper> body) {
+	private static GameTestInstance createTest(TestData<Holder<TestEnvironmentDefinition<?>>> data, Consumer<GameTestHelper> body) {
 		return new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, data) {
 			@Override
 			public void run(GameTestHelper helper) {
@@ -77,8 +61,7 @@ public final class RailOptimizationNeoForgeGameTest {
 		RailLogic.setOptimizationEnabled(true);
 		RailLogic.setRailPowerLimit(8);
 
-		BlockState railState = railBlock.defaultBlockState()
-				.setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST);
+		BlockState railState = railBlock.defaultBlockState().setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST);
 		for (int index = 0; index < RAIL_COUNT; index++) {
 			BlockPos railPos = FIRST_RAIL.offset(index, 0, 0);
 			helper.setBlock(railPos.below(), Blocks.SMOOTH_STONE);
@@ -96,10 +79,7 @@ public final class RailOptimizationNeoForgeGameTest {
 				.thenIdle(2)
 				.thenExecute(() -> {
 					for (int index = 0; index < RAIL_COUNT; index++) {
-						helper.assertBlockProperty(
-								FIRST_RAIL.offset(index, 0, 0),
-								PoweredRailBlock.POWERED,
-								false);
+						helper.assertBlockProperty(FIRST_RAIL.offset(index, 0, 0), PoweredRailBlock.POWERED, false);
 					}
 				})
 				.thenSucceed();

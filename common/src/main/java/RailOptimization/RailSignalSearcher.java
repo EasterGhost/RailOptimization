@@ -138,8 +138,8 @@ final class RailSignalSearcher {
 		return Math.min(powerLimit, poweredLength);
 	}
 
-	private static int findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z, boolean forward, int distance,
-			RailShape expectedShape, RailUpdateContext context) {
+	private static int findPoweredRailSignalAt(PoweredRailBlock self, Level world, int x, int y, int z, boolean forward, int distance, RailShape expectedShape,
+			RailUpdateContext context) {
 		long posKey = BlockPos.asLong(x, y, z);
 		byte cacheFlags = checkedPosFlags(forward, expectedShape);
 		int cachedCost = context.getPoweredSearchCost(posKey, cacheFlags);
@@ -171,13 +171,11 @@ final class RailSignalSearcher {
 			context.cachePoweredSearchCost(posKey, cacheFlags, poweredDistance - distance);
 			return poweredDistance;
 		}
-		return !RailPath.isPoweredRailWithAxis(self, belowState, expectedShape)
-				? SEARCH_NOT_FOUND_BELOW_BLOCKED
-				: SEARCH_NOT_FOUND;
+		return !RailPath.isPoweredRailWithAxis(self, belowState, expectedShape) ? SEARCH_NOT_FOUND_BELOW_BLOCKED : SEARCH_NOT_FOUND;
 	}
 
-	private static int findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z, BlockState state,
-			boolean forward, int distance, RailUpdateContext context) {
+	private static int findPoweredRailSignalFromState(PoweredRailBlock self, Level level, int x, int y, int z, BlockState state, boolean forward, int distance,
+			RailUpdateContext context) {
 		if (distance >= RailLogic.getRailPowerLimit()) {
 			return SEARCH_NOT_FOUND;
 		}
@@ -193,8 +191,7 @@ final class RailSignalSearcher {
 		int nextZ = z + RailPath.STEP_Z[stepIndex];
 		RailShape flatShape = RailPath.STEP_FLAT[stepIndex];
 
-		int poweredDistance = findPoweredRailSignalAt(
-				self, level, nextX, nextY, nextZ, forward, distance, flatShape, context);
+		int poweredDistance = findPoweredRailSignalAt(self, level, nextX, nextY, nextZ, forward, distance, flatShape, context);
 		if (poweredDistance >= 0) {
 			return poweredDistance;
 		}
@@ -202,8 +199,7 @@ final class RailSignalSearcher {
 			return SEARCH_NOT_FOUND;
 		}
 
-		poweredDistance = findPoweredRailSignalAt(
-				self, level, nextX, nextY - 1, nextZ, forward, distance, flatShape, context);
+		poweredDistance = findPoweredRailSignalAt(self, level, nextX, nextY - 1, nextZ, forward, distance, flatShape, context);
 		return poweredDistance >= 0 ? poweredDistance : SEARCH_NOT_FOUND;
 	}
 }
