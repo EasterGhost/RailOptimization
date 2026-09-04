@@ -122,6 +122,13 @@ public final class RailUpdateMemo {
 			}
 			index = (index + 1) & MASK;
 		}
+
+		Arrays.fill(meta, 0L);
+		index = hashIndex(position);
+		keys[index] = position;
+		meta[index] = entryMeta;
+		writeEpoch = currentEpoch;
+		size = 1;
 	}
 
 	private int checkEntry(long position, int powerLimit, boolean currentPowered) {

@@ -49,6 +49,43 @@ public class RailUpdateMemoGameTest {
 		helper.succeed();
 	}
 
+	@GameTest(environment = "railoptimization-gametest:serial_152", maxTicks = 1)
+	public void memoRecoversAfterStaleEntriesFillTable(GameTestHelper helper) {
+		try {
+			Method checkEntry = RailUpdateMemo.class.getDeclaredMethod(
+					"checkEntry", long.class, int.class, boolean.class);
+			checkEntry.setAccessible(true);
+			var capacityField = RailUpdateMemo.class.getDeclaredField("CAPACITY");
+			capacityField.setAccessible(true);
+			int memoCapacity = capacityField.getInt(null);
+
+			AtomicLong epoch = ((LevelEpochAccess) helper.getLevel()).railoptimization$getBlockChangeEpoch();
+			long originalEpoch = epoch.get();
+			try {
+				epoch.set(1L);
+				RailUpdateMemo memo = new RailUpdateMemo();
+				memo.beginWalk(helper.getLevel());
+				for (int index = 0; index < memoCapacity; ++index) {
+					epoch.incrementAndGet();
+					memo.confirm(new BlockPos(index, 64, 0), true, 8);
+				}
+
+				epoch.incrementAndGet();
+				long recoveredPosition = new BlockPos(memoCapacity, 64, 0).asLong();
+				memo.confirm(BlockPos.of(recoveredPosition), true, 8);
+				helper.assertValueEqual(
+						1,
+						invokeCheck(checkEntry, memo, recoveredPosition),
+						"memo entry inserted after stale entries filled the table");
+			} finally {
+				epoch.set(originalEpoch);
+			}
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException("Unable to inspect RailUpdateMemo", exception);
+		}
+		helper.succeed();
+	}
+
 	@GameTest(environment = "railoptimization-gametest:serial_113", maxTicks = 1)
 	public void blockChangeEpochAdvancesAtomically(GameTestHelper helper) {
 		Thread[] workers = new Thread[EPOCH_WORKER_COUNT];
