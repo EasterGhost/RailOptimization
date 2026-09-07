@@ -28,7 +28,7 @@ public class RailOptimizationPerformanceGameTest extends RailOptimizationGameTes
 	private static final int INDIRECT_UPDATE_STABILIZATION_OPERATIONS = 10_000;
 	private static final int TOGGLES_PER_ROUND = 2_000;
 	private static final int UNCHANGED_UPDATES_PER_ROUND = 300_000;
-	private static final int INDIRECT_UPDATES_PER_ROUND = 200_000;
+	private static final int INDIRECT_UPDATES_PER_ROUND = 500_000;
 	private static final int EXTENDED_POWER_LIMIT = 64;
 	private static final int EXTENDED_TOGGLES_PER_ROUND = 160;
 	private static final double MAX_STATE_CHANGE_TIME_RATIO = 0.95;

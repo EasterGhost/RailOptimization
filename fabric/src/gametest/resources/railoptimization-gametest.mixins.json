@@ -4,7 +4,8 @@
   "package": "RailOptimization.gametest.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "RailLogicGameTestMixin"
+    "RailLogicGameTestMixin",
+    "NeighborUpdaterGameTestMixin"
   ],
   "injectors": {
     "defaultRequire": 1

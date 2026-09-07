@@ -29,6 +29,12 @@ public final class RailLogicTestAccess {
 		}
 	}
 
+	public static void forceOptimizedAt(BlockPos pos) {
+		if (positionBasedTestMode) {
+			POSITION_MODES.remove(pos.asLong());
+		}
+	}
+
 	public static void forcePowerLimitAt(BlockPos pos, int powerLimit) {
 		if (positionBasedTestMode) {
 			POSITION_MODES.put(pos.asLong(), RailOptimizationConfig.normalizePowerLimit(powerLimit));

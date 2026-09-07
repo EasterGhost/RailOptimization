@@ -19,6 +19,7 @@
       "RailOptimization.gametest.RailOptimizationPowerLimitGameTest",
       "RailOptimization.gametest.RailOptimizationStraightBaselineGameTest",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTest",
+      "RailOptimization.gametest.RailOptimizationEndpointPerformanceGameTest",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTestRealUpdates",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTestDepowerStages",
       "RailOptimization.gametest.RailOptimizationPerformanceGameTestSearchStages",
@@ -38,6 +39,9 @@
       "RailOptimization.gametest.RailOptimizationBudClockGameTest",
       "RailOptimization.gametest.RailOptimizationMicroTimingGameTest",
       "RailOptimization.gametest.RailOptimizationEndpointNotificationGameTest",
+      "RailOptimization.gametest.RailOptimizationReviewBehaviorGameTest",
+      "RailOptimization.gametest.RailOptimizationNcEndGameTest",
+      "RailOptimization.gametest.RailOptimizationNotificationControlGameTest",
       "RailOptimization.RailSearchCacheGameTest",
       "RailOptimization.RailUpdateMemoGameTest"
     ]
