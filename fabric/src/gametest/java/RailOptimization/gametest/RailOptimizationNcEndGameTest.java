@@ -213,7 +213,6 @@ public class RailOptimizationNcEndGameTest extends RailOptimizationGameTestSuppo
 		helper.assertBlockProperty(origin.offset(PISTONS[1]).offset(0, pistonYOffset, 0), PistonBaseBlock.FACING, Direction.WEST);
 	}
 
-	@SuppressWarnings("null")
 	private static void buildCircuit(GameTestHelper helper, BlockPos origin) {
 		BlockState glass = Blocks.GLASS.defaultBlockState();
 		BlockState stone = Blocks.SMOOTH_STONE.defaultBlockState();
