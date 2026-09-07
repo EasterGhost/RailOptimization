@@ -9,7 +9,6 @@ def modVersion = project.mod_version.toString()
 def mavenGroup = project.maven_group.toString()
 def archivesBaseName = project.archives_base_name.toString()
 def fabricMetadataFile = file('../fabric/src/main/resources/fabric.mod.json')
-// Some Gradle language servers omit groovy-json from their static analysis classpath.
 def jsonSlurper = Class.forName('groovy.json.JsonSlurper').getDeclaredConstructor().newInstance()
 def fabricMetadata = jsonSlurper.parse(fabricMetadataFile)
 def fabricMinecraftRequirement = fabricMetadata.depends.minecraft.toString()
@@ -49,7 +48,7 @@ sourceSets {
             srcDirs = [file('../common/src/main/java'), file('src/main/java')]
         }
         resources {
-            srcDirs = [file('../common/src/main/resources')]
+            srcDirs = [file('../common/src/main/resources'), file('src/main/resources')]
         }
     }
     gametest {

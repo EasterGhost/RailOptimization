@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "RailOptimization.neoforge.mixin",
+  "plugin": "RailOptimization.neoforge.mixin.NeoForgeCompatibilityMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "RailNeighborSignalCheckerMixin",
+    "RailPathMixin",
+    "RailSignalSearcherMixin",
+    "RailUpdateNotifierMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

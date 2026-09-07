@@ -19,6 +19,9 @@ authorEmails="${mod_author_emails}"
 [[mixins]]
 config="railoptimization.mixins.json"
 
+[[mixins]]
+config="railoptimization-neoforge.mixins.json"
+
 [[dependencies."${mod_id}"]]
 modId="neoforge"
 type="required"
