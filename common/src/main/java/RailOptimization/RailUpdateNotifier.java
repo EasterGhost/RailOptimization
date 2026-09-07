@@ -7,6 +7,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
+import net.minecraft.world.level.redstone.ExperimentalRedstoneUtils;
+import net.minecraft.world.level.redstone.Orientation;
+import org.jspecify.annotations.Nullable;
 
 final class RailUpdateNotifier {
 	private static final int SHAPE_UPDATE_FLAGS = Block.UPDATE_CLIENTS;
@@ -31,16 +34,20 @@ final class RailUpdateNotifier {
 		int firstEnd = firstDirectionCount;
 		int secondStart = firstEnd + 1;
 		int secondEnd = firstEnd + secondDirectionCount;
+		boolean earlyWestEndpoint = flatPath && firstDirectionCount == 0 && secondDirectionCount > 0;
 
 		for (int index = firstEnd; index >= firstStart; --index) {
 			notifyRail(world, sourceBlock, changedRails, index, flatPath && index == firstEnd ? Direction.WEST : null, scratchPos);
+		}
+		if (earlyWestEndpoint) {
+			notifyOuter(world, sourceBlock, changedRails, 0, Direction.WEST, 0, scratchPos);
 		}
 		for (int index = secondEnd; index >= secondStart; --index) {
 			notifyRail(world, sourceBlock, changedRails, index, flatPath && index == secondEnd ? Direction.EAST : null, scratchPos);
 		}
 
 		notifyMain(world, sourceBlock, changedRails, 0, scratchPos);
-		if (flatPath && firstDirectionCount == 0) {
+		if (flatPath && firstDirectionCount == 0 && !earlyWestEndpoint) {
 			notifyOuter(world, sourceBlock, changedRails, 0, Direction.WEST, 0, scratchPos);
 		}
 		if (flatPath && secondDirectionCount == 0) {
@@ -56,22 +63,34 @@ final class RailUpdateNotifier {
 		}
 	}
 
+	@SuppressWarnings("null")
 	private static void updateNorthSouthRails(Level world, Block sourceBlock, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails,
 			boolean flatPath, MutableBlockPos scratchPos) {
 		int firstStart = 1;
 		int firstEnd = firstDirectionCount;
 		int secondStart = firstEnd + 1;
 		int secondEnd = firstEnd + secondDirectionCount;
+		boolean deferredSouthEndpoint = flatPath && firstDirectionCount == 0 && secondDirectionCount > 0;
 
-		notifyMain(world, sourceBlock, changedRails, 0, scratchPos);
-		if (flatPath && firstDirectionCount == 0) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.SOUTH, 0, scratchPos);
+		Orientation mainOrientation = null;
+		if (deferredSouthEndpoint) {
+			setPosition(scratchPos, changedRails.position(0), 0);
+			mainOrientation = ExperimentalRedstoneUtils.initialOrientation(world, null, null);
+			world.updateNeighborsAtExceptFromFacing(scratchPos, sourceBlock, Direction.SOUTH, mainOrientation);
+		} else {
+			notifyMain(world, sourceBlock, changedRails, 0, scratchPos);
+			if (flatPath && firstDirectionCount == 0) {
+				notifyOuter(world, sourceBlock, changedRails, 0, Direction.SOUTH, 0, scratchPos);
+			}
 		}
 		if (flatPath && secondDirectionCount == 0) {
 			notifyOuter(world, sourceBlock, changedRails, 0, Direction.NORTH, 0, scratchPos);
 		}
 
 		notifyNorthSouthBranch(world, sourceBlock, changedRails, secondStart, secondEnd, flatPath ? Direction.NORTH : null, scratchPos);
+		if (deferredSouthEndpoint) {
+			notifyDeferredSouthEndpoint(world, sourceBlock, changedRails.position(0), mainOrientation, scratchPos);
+		}
 		notifyNorthSouthBranch(world, sourceBlock, changedRails, firstStart, firstEnd, flatPath ? Direction.SOUTH : null, scratchPos);
 
 		notifyShape(world, changedRails, 0, scratchPos);
@@ -82,6 +101,15 @@ final class RailUpdateNotifier {
 		if (flatPath && secondDirectionCount == 0) {
 			notifyOuter(world, sourceBlock, changedRails, 0, Direction.NORTH, -1, scratchPos);
 		}
+	}
+
+	@SuppressWarnings("null")
+	private static void notifyDeferredSouthEndpoint(Level world, Block sourceBlock, long sourcePosition,
+			@Nullable Orientation mainOrientation, MutableBlockPos scratchPos) {
+		scratchPos.set(BlockPos.getX(sourcePosition), BlockPos.getY(sourcePosition), BlockPos.getZ(sourcePosition) + 1);
+		BlockPos endpoint = scratchPos.immutable();
+		world.neighborChanged(endpoint, sourceBlock, mainOrientation == null ? null : mainOrientation.withFront(Direction.SOUTH));
+		world.neighborChanged(endpoint, sourceBlock, null);
 	}
 
 	private static void notifyNorthSouthBranch(Level world, Block sourceBlock, RailChangeList changedRails, int start, int end, Direction outwardDirection,
