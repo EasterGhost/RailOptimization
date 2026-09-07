@@ -33,18 +33,31 @@ public final class RailOptimizationNeoForgeGameTest {
 	private static final int RAIL_COUNT = 10;
 
 	public RailOptimizationNeoForgeGameTest(IEventBus modEventBus) {
+		RailOptimizationNeoForgeReviewGameTest.registerBlocks(modEventBus);
+		RailOptimizationNeoForgeFollowupGameTest.registerBlocks(modEventBus);
 		modEventBus.addListener(this::registerGameTests);
 	}
 
 	private void registerGameTests(RegisterGameTestsEvent event) {
+		if (Boolean.getBoolean("railoptimization.gametest.benchmarkOnly")) {
+			RailOptimizationNeoForgePerformanceGameTest.registerTests(event);
+			return;
+		}
 		Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(TEST_ENVIRONMENT);
 		registerTest(event, environment, "powered_rail_line", helper -> testRailLine(helper, Blocks.POWERED_RAIL));
 		registerTest(event, environment, "activator_rail_line", helper -> testRailLine(helper, Blocks.ACTIVATOR_RAIL));
+		RailOptimizationNeoForgeReviewGameTest.registerTests(event);
+		RailOptimizationNeoForgeFollowupGameTest.registerTests(event);
 	}
 
-	private static void registerTest(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String name,
+	static void registerTest(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String name,
 			Consumer<GameTestHelper> body) {
-		TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(environment, EMPTY_STRUCTURE, 40, 0, true, Rotation.NONE, false, 1, 1, false, 16);
+		registerTest(event, environment, name, EMPTY_STRUCTURE, 40, body);
+	}
+
+	static void registerTest(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String name,
+			Identifier structure, int maxTicks, Consumer<GameTestHelper> body) {
+		TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(environment, structure, maxTicks, 0, true, Rotation.NONE, false, 1, 1, false, 16);
 		event.registerTest(id(name), testData -> createTest(testData, body), data);
 	}
 
@@ -52,7 +65,12 @@ public final class RailOptimizationNeoForgeGameTest {
 		return new FunctionGameTestInstance(BuiltinTestFunctions.ALWAYS_PASS, data) {
 			@Override
 			public void run(GameTestHelper helper) {
-				body.accept(helper);
+				try {
+					body.accept(helper);
+				} catch (RuntimeException | Error failure) {
+					com.mojang.logging.LogUtils.getLogger().error("NeoForge GameTest failed", failure);
+					throw failure;
+				}
 			}
 		};
 	}

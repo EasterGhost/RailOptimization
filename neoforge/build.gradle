@@ -94,6 +94,9 @@ neoForge {
             gameDirectory = project.file('run/gametest')
             sourceSet = sourceSets.gametest
             systemProperty 'neoforge.enabledGameTestNamespaces', 'railoptimization_gametest'
+            if (project.hasProperty('benchmarkOnly')) {
+                systemProperty 'railoptimization.gametest.benchmarkOnly', 'true'
+            }
             loadedMods = [mods.railoptimization, mods.railoptimization_gametest]
         }
     }

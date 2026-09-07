@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "railoptimization_gametest:powered_variant",
+    "railoptimization_gametest:activator_variant"
+  ]
+}
