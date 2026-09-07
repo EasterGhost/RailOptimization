@@ -38,6 +38,8 @@ fabricApi {
     }
 }
 
+apply from: rootProject.file('gradle/gametest-structures.gradle')
+
 gradle.projectsEvaluated {
     def gametestFilter = project.findProperty("gametestFilter")
     if (gametestFilter) {

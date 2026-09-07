@@ -1,0 +1,94 @@
+import javax.inject.Inject
+import java.util.zip.GZIPOutputStream
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+
+@CacheableTask
+abstract class GenerateGametestStructures extends DefaultTask {
+    @Input
+    abstract MapProperty<String, List<Integer>> getStructures()
+
+    @Input
+    abstract Property<Integer> getDataVersion()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDirectory()
+
+    @Inject
+    protected abstract FileSystemOperations getFileSystemOperations()
+
+    @TaskAction
+    void generate() {
+        File directory = outputDirectory.get().asFile
+        fileSystemOperations.delete { delete(directory) }
+        structures.get().each { identifier, dimensions ->
+            String[] parts = identifier.split(':', 2)
+            File target = new File(directory, "data/${parts[0]}/structure/${parts[1]}.nbt")
+            target.parentFile.mkdirs()
+            target.withOutputStream { stream ->
+                new DataOutputStream(new GZIPOutputStream(stream)).withCloseable { output ->
+                    GenerateGametestStructures.writeTag(output, 10, '')
+                    GenerateGametestStructures.writeTag(output, 3, 'DataVersion')
+                    output.writeInt(dataVersion.get())
+                    GenerateGametestStructures.writeIntList(output, 'size', dimensions)
+                    GenerateGametestStructures.writeTag(output, 9, 'palette')
+                    output.writeByte(10)
+                    output.writeInt(1)
+                    GenerateGametestStructures.writeTag(output, 8, 'Name')
+                    output.writeUTF('minecraft:air')
+                    output.writeByte(0)
+                    GenerateGametestStructures.writeTag(output, 9, 'blocks')
+                    output.writeByte(10)
+                    output.writeInt(1)
+                    GenerateGametestStructures.writeIntList(output, 'pos', [0, 0, 0])
+                    GenerateGametestStructures.writeTag(output, 3, 'state')
+                    output.writeInt(0)
+                    output.writeByte(0)
+                    GenerateGametestStructures.writeTag(output, 9, 'entities')
+                    output.writeByte(10)
+                    output.writeInt(0)
+                    output.writeByte(0)
+                }
+            }
+        }
+    }
+
+    static void writeTag(DataOutputStream output, int type, String name) {
+        output.writeByte(type)
+        output.writeUTF(name)
+    }
+
+    static void writeIntList(DataOutputStream output, String name, List<Integer> values) {
+        writeTag(output, 9, name)
+        output.writeByte(3)
+        output.writeInt(values.size())
+        values.each { output.writeInt(it) }
+    }
+}
+
+def structureSizes = [
+        fabric: [
+                'railoptimization-gametest:review_tall_empty': [8, 28, 8],
+                'railoptimization-gametest:review_benchmark_empty': [16, 28, 16]
+        ],
+        neoforge: [
+                'railoptimization_gametest:review_compat_empty': [32, 28, 32],
+                'railoptimization_gametest:benchmark_empty': [160, 28, 48]
+        ]
+][project.name]
+
+def generateGametestStructures = tasks.register('generateGametestStructures', GenerateGametestStructures) {
+    structures.set(structureSizes)
+    dataVersion.set(4903)
+    outputDirectory.set(layout.buildDirectory.dir('generated/resources/gametestStructures'))
+}
+
+sourceSets.named('gametest') {
+    resources.srcDir(generateGametestStructures)
+}

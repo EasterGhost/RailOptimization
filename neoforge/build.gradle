@@ -57,6 +57,8 @@ sourceSets {
     }
 }
 
+apply from: rootProject.file('gradle/gametest-structures.gradle')
+
 configurations {
     gametestImplementation.extendsFrom implementation
     gametestRuntimeOnly.extendsFrom runtimeOnly
