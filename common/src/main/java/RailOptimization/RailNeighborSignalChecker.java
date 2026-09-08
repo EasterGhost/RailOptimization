@@ -8,9 +8,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 final class RailNeighborSignalChecker {
-	private static final Direction[] SIGNAL_DIRECTIONS = new Direction[] { Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST,
+	private static final Direction[] SGN_DIR = new Direction[] { Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST,
 			Direction.EAST };
-	private static final Direction[][] DIRECT_SIGNAL_DIRECTIONS = createDirectSignalDirections();
+	private static final Direction[][] DIRECT_SGN_DIR = createDirectSignalDirections();
 
 	private RailNeighborSignalChecker() {
 	}
@@ -47,7 +47,7 @@ final class RailNeighborSignalChecker {
 	private static BlockState belowStateWhenNoNeighborSignal(Level level, LevelChunk chunk, int chunkX, int chunkZ, int x, int y, int z,
 			MutableBlockPos scratchPos) {
 		BlockState belowState = null;
-		for (Direction direction : SIGNAL_DIRECTIONS) {
+		for (Direction direction : SGN_DIR) {
 			int neighborX = x + direction.getStepX();
 			int neighborY = y + direction.getStepY();
 			int neighborZ = z + direction.getStepZ();
@@ -64,7 +64,7 @@ final class RailNeighborSignalChecker {
 				continue;
 			}
 
-			for (Direction directDirection : DIRECT_SIGNAL_DIRECTIONS[direction.ordinal()]) {
+			for (Direction directDirection : DIRECT_SGN_DIR[direction.ordinal()]) {
 				scratchPos.set(neighborX + directDirection.getStepX(), neighborY + directDirection.getStepY(), neighborZ + directDirection.getStepZ());
 				BlockState directState = getBlockState(level, chunk, chunkX, chunkZ, scratchPos);
 				if (directState.getDirectSignal(level, scratchPos, directDirection) > 0) {
@@ -78,7 +78,7 @@ final class RailNeighborSignalChecker {
 	@SuppressWarnings("null")
 	private static BlockState belowStateWhenNoNeighborSignalInChunk(Level level, LevelChunk chunk, int x, int y, int z, MutableBlockPos scratchPos) {
 		BlockState belowState = null;
-		for (Direction direction : SIGNAL_DIRECTIONS) {
+		for (Direction direction : SGN_DIR) {
 			int neighborX = x + direction.getStepX();
 			int neighborY = y + direction.getStepY();
 			int neighborZ = z + direction.getStepZ();
@@ -95,7 +95,7 @@ final class RailNeighborSignalChecker {
 				continue;
 			}
 
-			for (Direction directDirection : DIRECT_SIGNAL_DIRECTIONS[direction.ordinal()]) {
+			for (Direction directDirection : DIRECT_SGN_DIR[direction.ordinal()]) {
 				scratchPos.set(neighborX + directDirection.getStepX(), neighborY + directDirection.getStepY(), neighborZ + directDirection.getStepZ());
 				BlockState directState = chunk.getBlockState(scratchPos);
 				if (directState.getDirectSignal(level, scratchPos, directDirection) > 0) {
@@ -108,11 +108,11 @@ final class RailNeighborSignalChecker {
 
 	private static Direction[][] createDirectSignalDirections() {
 		Direction[][] directions = new Direction[Direction.values().length][];
-		for (Direction direction : SIGNAL_DIRECTIONS) {
+		for (Direction direction : SGN_DIR) {
 			Direction opposite = direction.getOpposite();
-			Direction[] directDirections = new Direction[SIGNAL_DIRECTIONS.length - 1];
+			Direction[] directDirections = new Direction[SGN_DIR.length - 1];
 			int index = 0;
-			for (Direction directDirection : SIGNAL_DIRECTIONS) {
+			for (Direction directDirection : SGN_DIR) {
 				if (directDirection != opposite) {
 					directDirections[index++] = directDirection;
 				}
@@ -123,9 +123,7 @@ final class RailNeighborSignalChecker {
 	}
 
 	private static BlockState getBlockState(Level level, LevelChunk chunk, int chunkX, int chunkZ, BlockPos pos) {
-		if ((pos.getX() >> 4) == chunkX
-				&& (pos.getZ() >> 4) == chunkZ
-				&& level.isInValidBounds(pos)) {
+		if ((pos.getX() >> 4) == chunkX && (pos.getZ() >> 4) == chunkZ && level.isInValidBounds(pos)) {
 			return chunk.getBlockState(pos);
 		}
 		return level.getBlockState(pos);

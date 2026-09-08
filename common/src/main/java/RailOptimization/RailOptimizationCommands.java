@@ -26,8 +26,7 @@ public final class RailOptimizationCommands {
 				.then(Commands.literal("powerLimit")
 						.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
 						.then(Commands.argument("value", IntegerArgumentType.integer())
-								.executes(context -> setPowerLimit(context.getSource(),
-										IntegerArgumentType.getInteger(context, "value")))))
+								.executes(context -> setPowerLimit(context.getSource(), IntegerArgumentType.getInteger(context, "value")))))
 				.then(Commands.literal("reload")
 						.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
 						.executes(context -> reloadConfig(context.getSource()))));
