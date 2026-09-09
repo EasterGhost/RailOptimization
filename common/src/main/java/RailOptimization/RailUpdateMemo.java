@@ -43,11 +43,13 @@ public final class RailUpdateMemo {
 	}
 
 	static void beginLaneWrite() {
+		RailSupportCache.beginLaneWrite();
 		LANE_WRITE_DEPTH.get().value++;
 	}
 
 	static void endLaneWrite() {
 		LANE_WRITE_DEPTH.get().value--;
+		RailSupportCache.endLaneWrite();
 	}
 
 	static void trackContext(RailUpdateMemo memo) {

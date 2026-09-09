@@ -42,7 +42,8 @@
       "RailOptimization.gametest.RailOptimizationNcEndGameTest",
       "RailOptimization.gametest.RailOptimizationNotificationControlGameTest",
       "RailOptimization.RailSearchCacheGameTest",
-      "RailOptimization.RailUpdateMemoGameTest"
+      "RailOptimization.RailUpdateMemoGameTest",
+      "RailOptimization.RailSupportCacheGameTest"
     ]
   },
   "mixins": [
