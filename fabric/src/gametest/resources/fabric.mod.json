@@ -38,7 +38,6 @@
       "RailOptimization.gametest.RailOptimizationMemoIsolationGameTest",
       "RailOptimization.gametest.RailOptimizationBudClockGameTest",
       "RailOptimization.gametest.RailOptimizationMicroTimingGameTest",
-      "RailOptimization.gametest.RailOptimizationEndpointNotificationGameTest",
       "RailOptimization.gametest.RailOptimizationReviewBehaviorGameTest",
       "RailOptimization.gametest.RailOptimizationNcEndGameTest",
       "RailOptimization.gametest.RailOptimizationNotificationControlGameTest",

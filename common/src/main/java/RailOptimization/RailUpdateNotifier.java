@@ -28,6 +28,7 @@ final class RailUpdateNotifier {
 		updateNorthSouthRails(world, sourceBlock, firstDirectionCount, secondDirectionCount, changedRails, flatPath, scratchPos);
 	}
 
+	@SuppressWarnings("null")
 	private static void updateEastWestRails(Level world, Block sourceBlock, int firstDirectionCount, int secondDirectionCount, RailChangeList changedRails,
 			boolean flatPath, MutableBlockPos scratchPos) {
 		int firstStart = 1;
@@ -37,30 +38,24 @@ final class RailUpdateNotifier {
 		boolean earlyWestEndpoint = flatPath && firstDirectionCount == 0 && secondDirectionCount > 0;
 
 		for (int index = firstEnd; index >= firstStart; --index) {
-			notifyRail(world, sourceBlock, changedRails, index, flatPath && index == firstEnd ? Direction.WEST : null, scratchPos);
+			notifyRail(world, sourceBlock, changedRails, index, scratchPos);
 		}
 		if (earlyWestEndpoint) {
 			notifyOuter(world, sourceBlock, changedRails, 0, Direction.WEST, 0, scratchPos);
 		}
 		for (int index = secondEnd; index >= secondStart; --index) {
-			notifyRail(world, sourceBlock, changedRails, index, flatPath && index == secondEnd ? Direction.EAST : null, scratchPos);
+			notifyRail(world, sourceBlock, changedRails, index, scratchPos);
 		}
 
-		notifyMain(world, sourceBlock, changedRails, 0, scratchPos);
-		if (flatPath && firstDirectionCount == 0 && !earlyWestEndpoint) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.WEST, 0, scratchPos);
-		}
-		if (flatPath && secondDirectionCount == 0) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.EAST, 0, scratchPos);
+		if (earlyWestEndpoint) {
+			setPosition(scratchPos, changedRails.position(0), 0);
+			world.updateNeighborsAtExceptFromFacing(scratchPos, sourceBlock, Direction.WEST,
+					ExperimentalRedstoneUtils.initialOrientation(world, null, null));
+		} else {
+			notifyMain(world, sourceBlock, changedRails, 0, scratchPos);
 		}
 		notifyShape(world, changedRails, 0, scratchPos);
 		notifySupport(world, sourceBlock, changedRails, 0, scratchPos);
-		if (flatPath && firstDirectionCount == 0) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.WEST, -1, scratchPos);
-		}
-		if (flatPath && secondDirectionCount == 0) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.EAST, -1, scratchPos);
-		}
 	}
 
 	@SuppressWarnings("null")
@@ -79,28 +74,16 @@ final class RailUpdateNotifier {
 			world.updateNeighborsAtExceptFromFacing(scratchPos, sourceBlock, Direction.SOUTH, mainOrientation);
 		} else {
 			notifyMain(world, sourceBlock, changedRails, 0, scratchPos);
-			if (flatPath && firstDirectionCount == 0) {
-				notifyOuter(world, sourceBlock, changedRails, 0, Direction.SOUTH, 0, scratchPos);
-			}
-		}
-		if (flatPath && secondDirectionCount == 0) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.NORTH, 0, scratchPos);
 		}
 
-		notifyNorthSouthBranch(world, sourceBlock, changedRails, secondStart, secondEnd, flatPath ? Direction.NORTH : null, scratchPos);
+		notifyNorthSouthBranch(world, sourceBlock, changedRails, secondStart, secondEnd, scratchPos);
 		if (deferredSouthEndpoint) {
 			notifyDeferredSouthEndpoint(world, sourceBlock, changedRails.position(0), mainOrientation, scratchPos);
 		}
-		notifyNorthSouthBranch(world, sourceBlock, changedRails, firstStart, firstEnd, flatPath ? Direction.SOUTH : null, scratchPos);
+		notifyNorthSouthBranch(world, sourceBlock, changedRails, firstStart, firstEnd, scratchPos);
 
 		notifyShape(world, changedRails, 0, scratchPos);
 		notifySupport(world, sourceBlock, changedRails, 0, scratchPos);
-		if (flatPath && firstDirectionCount == 0) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.SOUTH, -1, scratchPos);
-		}
-		if (flatPath && secondDirectionCount == 0) {
-			notifyOuter(world, sourceBlock, changedRails, 0, Direction.NORTH, -1, scratchPos);
-		}
 	}
 
 	@SuppressWarnings("null")
@@ -109,37 +92,24 @@ final class RailUpdateNotifier {
 		scratchPos.set(BlockPos.getX(sourcePosition), BlockPos.getY(sourcePosition), BlockPos.getZ(sourcePosition) + 1);
 		BlockPos endpoint = scratchPos.immutable();
 		world.neighborChanged(endpoint, sourceBlock, mainOrientation == null ? null : mainOrientation.withFront(Direction.SOUTH));
-		world.neighborChanged(endpoint, sourceBlock, null);
 	}
 
-	private static void notifyNorthSouthBranch(Level world, Block sourceBlock, RailChangeList changedRails, int start, int end, Direction outwardDirection,
+	private static void notifyNorthSouthBranch(Level world, Block sourceBlock, RailChangeList changedRails, int start, int end,
 			MutableBlockPos scratchPos) {
 		for (int index = start; index <= end; ++index) {
 			notifyMain(world, sourceBlock, changedRails, index, scratchPos);
-			if (outwardDirection != null && index == end) {
-				notifyOuter(world, sourceBlock, changedRails, index, outwardDirection, 0, scratchPos);
-			}
 		}
 		for (int index = end; index >= start; --index) {
 			notifyShape(world, changedRails, index, scratchPos);
 			notifySupport(world, sourceBlock, changedRails, index, scratchPos);
-			if (outwardDirection != null && index == end) {
-				notifyOuter(world, sourceBlock, changedRails, index, outwardDirection, -1, scratchPos);
-			}
 		}
 	}
 
-	private static void notifyRail(Level world, Block sourceBlock, RailChangeList changedRails, int index, Direction outwardDirection,
+	private static void notifyRail(Level world, Block sourceBlock, RailChangeList changedRails, int index,
 			MutableBlockPos scratchPos) {
 		notifyMain(world, sourceBlock, changedRails, index, scratchPos);
-		if (outwardDirection != null) {
-			notifyOuter(world, sourceBlock, changedRails, index, outwardDirection, 0, scratchPos);
-		}
 		notifyShape(world, changedRails, index, scratchPos);
 		notifySupport(world, sourceBlock, changedRails, index, scratchPos);
-		if (outwardDirection != null) {
-			notifyOuter(world, sourceBlock, changedRails, index, outwardDirection, -1, scratchPos);
-		}
 	}
 
 	@SuppressWarnings("null")

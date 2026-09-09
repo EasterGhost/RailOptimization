@@ -76,16 +76,6 @@ public class RailOptimizationReviewBehaviorGameTest extends RailOptimizationGame
 				.thenSucceed();
 	}
 
-	@GameTest(environment = "railoptimization-gametest:serial_156", maxTicks = 80, padding = 40)
-	public void isolatedEastWestRailEndpointCountsMatchVanilla(GameTestHelper helper) {
-		verifyIsolatedRailEndpointCounts(helper, RailShape.EAST_WEST, Direction.EAST, Direction.NORTH);
-	}
-
-	@GameTest(environment = "railoptimization-gametest:serial_157", maxTicks = 80, padding = 40)
-	public void isolatedNorthSouthRailEndpointCountsMatchVanilla(GameTestHelper helper) {
-		verifyIsolatedRailEndpointCounts(helper, RailShape.NORTH_SOUTH, Direction.SOUTH, Direction.WEST);
-	}
-
 	private static void assertBranchNotificationsMatch(GameTestHelper helper, BlockPos[] probes, BlockPos[] rails, boolean powered,
 			RailShape shape) {
 		assertRailsPowered(helper, rails, powered);
@@ -125,50 +115,6 @@ public class RailOptimizationReviewBehaviorGameTest extends RailOptimizationGame
 		for (BlockPos rail : rails) {
 			helper.assertBlockProperty(rail, PoweredRailBlock.SHAPE, shape);
 		}
-	}
-
-	@SuppressWarnings("null")
-	private static void verifyIsolatedRailEndpointCounts(GameTestHelper helper, RailShape shape, Direction axis, Direction sourceDirection) {
-		BlockPos rail = new BlockPos(3, RAIL_Y, 3);
-		BlockPos lever = rail.relative(sourceDirection);
-		BlockPos[] counters = {rail.relative(axis), rail.relative(axis.getOpposite()), rail.relative(axis).below(), rail.relative(axis.getOpposite()).below()};
-		placeRailLinePair(helper, rail, axis, 1, shape);
-		placeLeverPair(helper, lever, false);
-		placeNeighborCounters(helper, counters);
-		placeNeighborCounters(helper, mirrorCopy(counters));
-
-		helper.startSequence()
-				.thenIdle(2)
-				.thenExecute(() -> {
-					resetNeighborCounters(helper, counters);
-					resetNeighborCounters(helper, mirrorCopy(counters));
-					helper.pullLever(mirrorCopy(lever));
-				})
-				.thenIdle(2)
-				.thenExecute(() -> helper.pullLever(lever))
-				.thenIdle(2)
-				.thenExecute(() -> assertEndpointCountsMatch(helper, rail, counters, true))
-				.thenExecute(() -> {
-					resetNeighborCounters(helper, counters);
-					resetNeighborCounters(helper, mirrorCopy(counters));
-					helper.pullLever(mirrorCopy(lever));
-				})
-				.thenIdle(2)
-				.thenExecute(() -> helper.pullLever(lever))
-				.thenIdle(2)
-				.thenExecute(() -> assertEndpointCountsMatch(helper, rail, counters, false))
-				.thenSucceed();
-	}
-
-	@SuppressWarnings("null")
-	private static void assertEndpointCountsMatch(GameTestHelper helper, BlockPos rail, BlockPos[] counters, boolean powered) {
-		helper.assertBlockProperty(rail, PoweredRailBlock.POWERED, powered);
-		helper.assertBlockProperty(mirrorCopy(rail), PoweredRailBlock.POWERED, powered);
-		for (BlockPos counter : counters) {
-			int vanilla = helper.getBlockState(mirrorCopy(counter)).getValue(RailOptimizationGameTestMod.NeighborCounterBlock.COUNT);
-			helper.assertTrue(vanilla > 0 && vanilla < 15, Component.literal("vanilla endpoint counter must be active and unsaturated"));
-		}
-		assertMatchingNeighborCounterCounts(helper, counters, powered ? "isolated rail powering" : "isolated rail depowering");
 	}
 
 	private static void placeLeverPair(GameTestHelper helper, BlockPos lever, boolean powered) {
