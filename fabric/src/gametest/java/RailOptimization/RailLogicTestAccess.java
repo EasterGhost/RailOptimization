@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import RailOptimization.config.RailOptimizationConfig;
 
@@ -66,6 +67,9 @@ public final class RailLogicTestAccess {
 	}
 
 	public static boolean hasNeighborSignalFast(Level level, BlockPos pos) {
-		return RailNeighborSignalChecker.hasNeighborSignalFast(level, pos, new MutableBlockPos());
+		int chunkX = pos.getX() >> 4;
+		int chunkZ = pos.getZ() >> 4;
+		LevelChunk chunk = level.getChunk(chunkX, chunkZ);
+		return RailNeighborSignalChecker.hasNeighborSignalFast(level, pos, new MutableBlockPos(), chunk, chunkX, chunkZ);
 	}
 }

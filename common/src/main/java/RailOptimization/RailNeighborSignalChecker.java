@@ -15,17 +15,6 @@ final class RailNeighborSignalChecker {
 	private RailNeighborSignalChecker() {
 	}
 
-	static boolean hasNeighborSignalFast(
-			Level level, BlockPos pos, MutableBlockPos scratchPos) {
-		int x = pos.getX();
-		int z = pos.getZ();
-		int chunkX = x >> 4;
-		int chunkZ = z >> 4;
-		LevelChunk chunk = level.getChunk(chunkX, chunkZ);
-
-		return hasNeighborSignalFast(level, pos, scratchPos, chunk, chunkX, chunkZ);
-	}
-
 	static BlockState belowStateWhenNoNeighborSignal(Level level, BlockPos pos, MutableBlockPos scratchPos, LevelChunk chunk, int chunkX, int chunkZ) {
 		int x = pos.getX();
 		int y = pos.getY();

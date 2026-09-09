@@ -37,7 +37,8 @@ final class RailUpdateContext {
 
 	boolean hasNeighborSignal(Level level, BlockPos pos) {
 		long position = pos.asLong();
-		byte cached = searchCache.get(position, RailSearchCache.DIRECT_SIGNAL);
+		int entry = searchCache.directSignalEntry(position);
+		byte cached = searchCache.entryState(entry);
 		if (cached != RailLogic.CHECKED_UNKNOWN) {
 			return cached == RailLogic.CHECKED_POWERED;
 		}
@@ -45,13 +46,14 @@ final class RailUpdateContext {
 		int posChunkX = pos.getX() >> 4;
 		int posChunkZ = pos.getZ() >> 4;
 		boolean powered = RailNeighborSignalChecker.hasNeighborSignalFast(level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
-		searchCache.put(position, RailSearchCache.DIRECT_SIGNAL, powered ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
+		searchCache.putDirectSignal(position, entry, powered ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
 		return powered;
 	}
 
 	BlockState belowStateWhenNoNeighborSignal(Level level, BlockPos pos, BlockState unknownBelowState) {
 		long position = pos.asLong();
-		byte cached = searchCache.get(position, RailSearchCache.DIRECT_SIGNAL);
+		int entry = searchCache.directSignalEntry(position);
+		byte cached = searchCache.entryState(entry);
 		if (cached != RailLogic.CHECKED_UNKNOWN) {
 			return cached == RailLogic.CHECKED_POWERED ? null : unknownBelowState;
 		}
@@ -59,7 +61,7 @@ final class RailUpdateContext {
 		int posChunkX = pos.getX() >> 4;
 		int posChunkZ = pos.getZ() >> 4;
 		BlockState belowState = RailNeighborSignalChecker.belowStateWhenNoNeighborSignal(level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
-		searchCache.put(position, RailSearchCache.DIRECT_SIGNAL, belowState == null ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
+		searchCache.putDirectSignal(position, entry, belowState == null ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
 		return belowState;
 	}
 

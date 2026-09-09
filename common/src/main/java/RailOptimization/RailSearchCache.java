@@ -50,7 +50,23 @@ final class RailSearchCache {
 	}
 
 	void put(long position, byte entryFlags, byte state) {
-		int index = findOrEmpty(position, entryFlags);
+		putAt(position, entryFlags, state, findOrEmpty(position, entryFlags));
+	}
+
+	int directSignalEntry(long position) {
+		return findOrEmpty(position, DIRECT_SIGNAL);
+	}
+
+	byte entryState(int entry) {
+		return entry >= 0 ? (byte) (meta[entry] >>> META_STATE_SHIFT) : RailLogic.CHECKED_UNKNOWN;
+	}
+
+	// No write to this cache may intervene between lookup and store.
+	void putDirectSignal(long position, int entry, byte state) {
+		putAt(position, DIRECT_SIGNAL, state, entry);
+	}
+
+	private void putAt(long position, byte entryFlags, byte state, int index) {
 		if (index >= 0) {
 			meta[index] = (meta[index] & ~(META_BYTE_MASK << META_STATE_SHIFT)) | ((state & META_BYTE_MASK) << META_STATE_SHIFT);
 			return;

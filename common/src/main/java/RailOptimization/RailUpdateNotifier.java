@@ -154,7 +154,7 @@ final class RailUpdateNotifier {
 		BlockState oldState = changedRails.state(index);
 		BlockState newState = world.getBlockState(scratchPos);
 		oldState.updateIndirectNeighbourShapes(world, scratchPos, SHAPE_UPDATE_FLAGS, SHAPE_UPDATE_LIMIT);
-		newState.updateNeighbourShapes(world, scratchPos, SHAPE_UPDATE_FLAGS, SHAPE_UPDATE_LIMIT);
+		newState.updateNeighbourShapes(world, scratchPos.immutable(), SHAPE_UPDATE_FLAGS, SHAPE_UPDATE_LIMIT);
 		newState.updateIndirectNeighbourShapes(world, scratchPos, SHAPE_UPDATE_FLAGS, SHAPE_UPDATE_LIMIT);
 	}
 
