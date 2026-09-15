@@ -24,12 +24,15 @@ public final class RailSupportCache {
 
 	public static boolean shouldBeRemoved(BlockPos pos, Level level, RailShape shape) {
 		Cache cache = CACHE.get();
-		if (cache.writeDepth != 0) return (supportFlags(pos, level, shape, false) & SUPPORTED) == 0;
-		if (cache.level != level || cache.observedEpoch != cache.epoch.get()) refresh(cache, level);
+		if (cache.writeDepth != 0)
+			return (supportFlags(pos, level, shape, false) & SUPPORTED) == 0;
+		if (cache.level != level || cache.observedEpoch != cache.epoch.get())
+			refresh(cache, level);
 		long position = pos.asLong();
 		int index = (int) ((position * HASH_MULTIPLIER) >>> HASH_SHIFT);
 		if (cache.generations[index] == cache.generation && cache.positions[index] == position
-				&& cache.shapes[index] == shape.ordinal()) return false;
+				&& cache.shapes[index] == shape.ordinal())
+			return false;
 		return checkAndRecord(cache, pos, level, shape, position, index);
 	}
 
@@ -48,7 +51,8 @@ public final class RailSupportCache {
 
 	private static int supportFlags(BlockPos pos, Level level, RailShape shape, boolean allowReuse) {
 		int below = supportFlags(level, pos.below(), allowReuse);
-		if (below == 0) return 0;
+		if (below == 0)
+			return 0;
 		BlockPos risingSupport = switch (shape) {
 			case ASCENDING_EAST -> pos.east();
 			case ASCENDING_WEST -> pos.west();
@@ -62,7 +66,8 @@ public final class RailSupportCache {
 	@SuppressWarnings("null")
 	private static int supportFlags(Level level, BlockPos pos, boolean allowReuse) {
 		BlockState state = level.getBlockState(pos);
-		if (!state.isFaceSturdy(level, pos, Direction.UP, SupportType.RIGID)) return 0;
+		if (!state.isFaceSturdy(level, pos, Direction.UP, SupportType.RIGID))
+			return 0;
 		return allowReuse && !state.getBlock().hasDynamicShape() && !state.hasBlockEntity()
 				&& !(state.getBlock() instanceof PoweredRailBlock) ? REUSABLE : SUPPORTED;
 	}
