@@ -1,0 +1,8 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.1.39'
+}
+
+repositories { mavenCentral() }
+apply from: 'platform.gradle'

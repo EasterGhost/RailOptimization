@@ -1,0 +1,184 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '7.0.29'
+    id 'net.minecraftforge.renamer' version '1.0.14'
+    id 'net.minecraftforge.jarjar' version '0.2.3'
+}
+
+def minecraftVersion = project.minecraft_version.toString()
+def forgeVersion = project.findProperty('forge_version') ?: rootProject.platformVersions.forge
+def needsSrg = minecraftVersion != '1.20.6'
+version = "${project.mod_version}+mc${minecraftVersion}-forge"
+group = project.maven_group
+base.archivesName = project.archives_base_name.toLowerCase()
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+sourceSets.main {
+    java.srcDirs = [file('../common/src/main/java'), file('../common/src/legacyPermission/java'), file('src/main/java')]
+    resources.srcDirs = [file('../common/src/main/resources'), file('src/main/resources')]
+}
+
+minecraft {
+    mappings channel: 'official', version: minecraftVersion
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir("run/${name}")
+            args '--mixin.config=railoptimization.mixins.json', '--mixin.config=railoptimization-forge.mixins.json'
+        }
+        register('client')
+        register('server') { args '--nogui' }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+jarJar.register()
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forgeVersion}")
+    compileOnly 'org.jspecify:jspecify:1.0.0'
+    implementation 'io.github.llamalad7:mixinextras-forge:0.5.3'
+    jarJar 'io.github.llamalad7:mixinextras-forge:0.5.3'
+    compileOnly 'io.github.llamalad7:mixinextras-common:0.5.3'
+    if (needsSrg) {
+        annotationProcessor 'io.github.llamalad7:mixinextras-common:0.5.3'
+        annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+    }
+}
+
+tasks.named('jar', Jar) {
+    archiveClassifier = 'slim'
+    destinationDirectory = layout.buildDirectory.dir('devlibs')
+    inputs.property 'refmapName', needsSrg ? 'railoptimization.refmap.json' : ''
+    manifest.attributes('MixinConfigs': 'railoptimization.mixins.json,railoptimization-forge.mixins.json')
+}
+
+tasks.named('jarJar', Jar) {
+    archiveClassifier = needsSrg ? 'dev' : ''
+    destinationDirectory = layout.buildDirectory.dir(needsSrg ? 'devlibs' : 'libs')
+    inputs.file tasks.named('jar', Jar).flatMap { it.archiveFile }
+}
+
+if (needsSrg) {
+    renamer.enableMixinRefmaps {
+        source(sourceSets.main) { refMap = 'railoptimization.refmap.json' }
+        config 'railoptimization.mixins.json'
+        jar tasks.named('jar', Jar)
+    }
+    renamer.classes(tasks.named('jarJar', Jar)) {
+        archiveClassifier = ''
+        output = layout.buildDirectory.file("libs/${base.archivesName.get()}-${project.version}.jar")
+        mappings renamer.mixin.generatedMappings
+    }
+    renamer.mappings(minecraft.dependency.toSrg)
+}
+
+def metadataFile = file('../fabric/src/main/resources/fabric.mod.json')
+def parser = Class.forName('groovy.json.JsonSlurper').getDeclaredConstructor().newInstance()
+def metadata = parser.parse(metadataFile)
+def properties = [
+        mod_id: metadata.id,
+        mod_name: metadata.name,
+        mod_version: project.mod_version.toString(),
+        mod_description: metadata.description,
+        mod_license: metadata.license,
+        mod_homepage: metadata.contact.homepage,
+        mod_sources: metadata.contact.sources,
+        mod_issues: metadata.contact.issues,
+        mod_icon: metadata.icon,
+        mod_authors: metadata.authors.collect { it instanceof Map ? it.name : it.toString() }.join(', '),
+        mod_author_emails: metadata.authors.collect { it instanceof Map ? it.contact?.email : null }.findAll().join(', '),
+        mod_credits: metadata.contributors.collect {
+            it instanceof Map && it.contact?.sources ? "${it.name} (${it.contact.sources})" : (it instanceof Map ? it.name : it.toString())
+        }.join(', '),
+        minecraft_version_range: "[${metadata.depends.minecraft.substring(2)},)"
+]
+
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    inputs.file metadataFile
+    inputs.properties properties
+    filteringCharset = 'UTF-8'
+    expand properties
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/resources/modMetadata')
+}
+sourceSets.main.resources.srcDir generateModMetadata
+
+tasks.named('processResources', ProcessResources) {
+    inputs.property 'needsSrg', needsSrg
+    if (needsSrg) {
+        doLast {
+            def configFile = new File(destinationDir, 'railoptimization.mixins.json')
+            def config = parser.parse(configFile)
+            config.refmap = 'railoptimization.refmap.json'
+            def jsonOutput = Class.forName('groovy.json.JsonOutput')
+            configFile.setText(jsonOutput.prettyPrint(jsonOutput.toJson(config)) + '\n', 'UTF-8')
+        }
+    }
+}
+
+def releaseJar = tasks.named(needsSrg ? 'renameJarJar' : 'jarJar')
+tasks.register('verifyReleaseJar') {
+    dependsOn releaseJar
+    doLast {
+        def jarFile = needsSrg ? releaseJar.get().output.get().asFile : releaseJar.get().archiveFile.get().asFile
+        new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
+            ['META-INF/mods.toml', 'META-INF/jarjar/metadata.json', 'railoptimization.mixins.json',
+                    'railoptimization-forge.mixins.json', "LICENSE_${project.archives_base_name}"].each { path ->
+                if (zip.getEntry(path) == null) throw new IllegalStateException("Missing ${path} in ${jarFile.name}")
+            }
+            def config = parser.parse(zip.getInputStream(zip.getEntry('railoptimization.mixins.json')))
+            if (needsSrg && (config.refmap != 'railoptimization.refmap.json' || zip.getEntry(config.refmap) == null)) {
+                throw new IllegalStateException("Missing or unconfigured SRG refmap in ${jarFile.name}")
+            }
+            if (!needsSrg && config.refmap) throw new IllegalStateException("Unexpected SRG refmap in ${jarFile.name}")
+            def packaged = zip.getInputStream(zip.getEntry('META-INF/mods.toml')).getText('UTF-8')
+            ["modId=\"${metadata.id}\"", "version=\"${project.mod_version}\"", "displayName=\"${metadata.name}\"",
+                    "license=\"${metadata.license}\"", "description='''${metadata.description}'''",
+                    "authors=\"${properties.mod_authors}\"", "credits=\"${properties.mod_credits}\""].each { expected ->
+                if (!packaged.contains(expected)) throw new IllegalStateException("Forge metadata does not match: ${expected}")
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyReleaseJar') }
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+sourceSets.configureEach { sourceSet ->
+    tasks.named(sourceSet.compileJavaTaskName, JavaCompile) {
+        options.release.set(17)
+    }
+    [sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName].each { name ->
+        configurations.named(name) {
+            attributes.attribute(org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, needsSrg ? 17 : 21)
+        }
+    }
+}
+
+def licenseArchiveName = project.archives_base_name
+['jar', 'sourcesJar'].each { taskName ->
+    tasks.named(taskName, Jar) {
+        from('../LICENSE') { rename { "${it}_${licenseArchiveName}" } }
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifact tasks.named(needsSrg ? 'renameJarJar' : 'jarJar')
+            artifact tasks.named('sourcesJar')
+        }
+    }
+}

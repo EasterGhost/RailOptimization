@@ -1,0 +1,7 @@
+{
+	"pack": {
+		"description": "RailOptimization GameTest fixtures",
+		"pack_format": 18,
+		"supported_formats": { "min_inclusive": 18, "max_inclusive": 41 }
+	}
+}

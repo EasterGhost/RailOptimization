@@ -5,5 +5,18 @@ pluginManagement {
             url = 'https://maven.fabricmc.net/'
         }
         gradlePluginPortal()
+        maven { url = 'https://maven.neoforged.net/releases/' }
     }
 }
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'RailOptimization'
+
+def minecraftVersion = providers.gradleProperty('minecraft_version').get()
+include 'fabric'
+if (minecraftVersion != '1.20.5') include 'forge'
+if (!(minecraftVersion in ['1.20', '1.20.1'])) include 'neoforge'
+if (minecraftVersion in ['1.20.2', '1.20.3', '1.20.5']) project(':neoforge').buildFileName = 'build-legacy.gradle'

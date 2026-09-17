@@ -1,0 +1,269 @@
+def legacyGradle = plugins.hasPlugin('net.neoforged.gradle.userdev')
+
+def minecraftVersion = project.minecraft_version.toString()
+def neoVersion = project.findProperty('neo_version') ?: rootProject.platformVersions.neo
+def legacyMetadata = minecraftVersion in ['1.20.2', '1.20.3', '1.20.4']
+def metadataPath = legacyMetadata ? 'META-INF/mods.toml' : 'META-INF/neoforge.mods.toml'
+def modVersion = project.mod_version.toString()
+def mavenGroup = project.maven_group.toString()
+def archivesBaseName = project.archives_base_name.toString()
+def fabricMetadataFile = file('../fabric/src/main/resources/fabric.mod.json')
+def jsonSlurper = Class.forName('groovy.json.JsonSlurper').getDeclaredConstructor().newInstance()
+def fabricMetadata = jsonSlurper.parse(fabricMetadataFile)
+def fabricMinecraftRequirement = fabricMetadata.depends.minecraft.toString()
+
+if (!fabricMinecraftRequirement.startsWith('>=')) {
+    throw new IllegalArgumentException("Unsupported Fabric Minecraft version requirement: ${fabricMinecraftRequirement}")
+}
+
+def minecraftVersionRange = "[${fabricMinecraftRequirement.substring(2)},)"
+def authorNames = fabricMetadata.authors.collect { author ->
+    author instanceof Map ? author.name : author.toString()
+}.join(', ')
+def authorEmails = fabricMetadata.authors.collect { author ->
+    author instanceof Map ? author.contact?.email : null
+}.findAll().join(', ')
+def contributorCredits = fabricMetadata.contributors.collect { contributor ->
+    def name = contributor instanceof Map ? contributor.name : contributor.toString()
+    def sources = contributor instanceof Map ? contributor.contact?.sources : null
+    sources ? "${name} (${sources})" : name
+}.join(', ')
+
+version = "${modVersion}+mc${minecraftVersion}-neoforge"
+group = mavenGroup
+
+base {
+    archivesName = archivesBaseName.toLowerCase()
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = [file('../common/src/main/java'), file('src/main/java'),
+                    file("../common/src/${minecraftVersion == '1.21.11' ? 'modernPermission' : 'legacyPermission'}/java")]
+        }
+        resources {
+            srcDirs = [file('../common/src/main/resources'), file('src/main/resources')]
+        }
+    }
+    gametest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+apply from: rootProject.file('gradle/gametest-structures.gradle')
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+    compileOnly 'org.jspecify:jspecify:1.0.0'
+    if (legacyGradle) {
+        implementation "net.neoforged:neoforge:${neoVersion}"
+        implementation 'io.github.llamalad7:mixinextras-neoforge:0.5.3'
+        jarJar('io.github.llamalad7:mixinextras-neoforge') {
+            version {
+                strictly '[0.5.3,)'
+                prefer '0.5.3'
+            }
+        }
+    } else {
+        jarJar(implementation('io.github.llamalad7:mixinextras-neoforge:0.5.3'))
+    }
+}
+
+if (legacyGradle) {
+    jarJar.enable()
+    sourceSets.main.runs.modIdentifier = 'railoptimization'
+    sourceSets.gametest.runs.modIdentifier = 'railoptimization_gametest'
+    runs {
+        configureEach { modSource sourceSets.main }
+        client { }
+        server { arguments.add '--nogui' }
+        gameTestServer {
+            modSource sourceSets.gametest
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'railoptimization_gametest'
+        }
+    }
+    tasks.named('jar', Jar) {
+        archiveClassifier = 'slim'
+        destinationDirectory = layout.buildDirectory.dir('devlibs')
+    }
+    tasks.named('jarJar', Jar) { archiveClassifier = '' }
+} else neoForge {
+    version = neoVersion
+    addModdingDependenciesTo(sourceSets.gametest)
+
+    mods {
+        railoptimization {
+            sourceSet(sourceSets.main)
+        }
+        railoptimization_gametest {
+            sourceSet(sourceSets.gametest)
+        }
+    }
+
+    runs {
+        client {
+            client()
+            gameDirectory = project.file('run/client')
+            loadedMods = [mods.railoptimization]
+        }
+        server {
+            server()
+            gameDirectory = project.file('run/server')
+            programArgument '--nogui'
+            loadedMods = [mods.railoptimization]
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = project.file('run/gametest')
+            sourceSet = sourceSets.gametest
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'railoptimization_gametest'
+            if (project.hasProperty('benchmarkOnly')) {
+                systemProperty 'railoptimization.gametest.benchmarkOnly', 'true'
+            }
+            loadedMods = [mods.railoptimization, mods.railoptimization_gametest]
+        }
+    }
+}
+
+def metadataProperties = [
+        minecraft_version_range: minecraftVersionRange,
+        neo_version            : neoVersion,
+        mod_id                 : fabricMetadata.id,
+        mod_name               : fabricMetadata.name,
+        mod_description        : fabricMetadata.description,
+        mod_license            : fabricMetadata.license,
+        mod_version            : modVersion,
+        mod_homepage           : fabricMetadata.contact.homepage,
+        mod_sources            : fabricMetadata.contact.sources,
+        mod_issues             : fabricMetadata.contact.issues,
+        mod_icon               : fabricMetadata.icon,
+        mod_authors            : authorNames,
+        mod_author_emails      : authorEmails,
+        mod_contributor_credits: contributorCredits
+]
+
+def generateModMetadata = tasks.register('generateModMetadata', Sync) {
+    inputs.file fabricMetadataFile
+    inputs.properties metadataProperties
+    inputs.property 'minecraftVersion', minecraftVersion
+    filteringCharset = 'UTF-8'
+    expand metadataProperties
+    from 'src/main/templates'
+    if (legacyMetadata) rename 'neoforge.mods.toml', 'mods.toml'
+    if (minecraftVersion == '1.20.2') filter { line -> line.replace('type="required"', 'mandatory=true') }
+    into 'build/generated/sources/modMetadata'
+}
+
+sourceSets.main.resources.srcDir generateModMetadata
+if (!legacyGradle) neoForge.ideSyncTask generateModMetadata
+
+def releaseJar = tasks.named(legacyGradle ? 'jarJar' : 'jar', Jar)
+def verifyMetadataConsistency = tasks.register('verifyMetadataConsistency') {
+    dependsOn releaseJar
+
+    doLast {
+        def jarFile = releaseJar.get().archiveFile.get().asFile
+        new java.util.zip.ZipFile(jarFile).withCloseable { zipFile ->
+            def metadataEntry = zipFile.getEntry(metadataPath)
+            if (metadataEntry == null) {
+                throw new IllegalStateException("Missing ${metadataPath} in ${jarFile.name}")
+            }
+            def obsoleteMetadata = legacyMetadata ? 'META-INF/neoforge.mods.toml' : 'META-INF/mods.toml'
+            if (zipFile.getEntry(obsoleteMetadata) != null) {
+                throw new IllegalStateException("Stale ${obsoleteMetadata} in ${jarFile.name}")
+            }
+            ["LICENSE_${archivesBaseName}", 'railoptimization.mixins.json', 'railoptimization-neoforge.mixins.json',
+                    'META-INF/jarjar/metadata.json'].each { path ->
+                if (zipFile.getEntry(path) == null) throw new IllegalStateException("Missing ${path} in ${jarFile.name}")
+            }
+
+            def packagedMetadata = zipFile.getInputStream(metadataEntry).getText('UTF-8')
+            def expectedMetadata = [
+                    id: "modId=\"${fabricMetadata.id}\"",
+                    version: "version=\"${modVersion}\"",
+                    name: "displayName=\"${fabricMetadata.name}\"",
+                    description: "description='''${fabricMetadata.description}'''",
+                    license: "license=\"${fabricMetadata.license}\"",
+                    homepage: "displayURL=\"${fabricMetadata.contact.homepage}\"",
+                    sources: "sources=\"${fabricMetadata.contact.sources}\"",
+                    issues: "issueTrackerURL=\"${fabricMetadata.contact.issues}\"",
+                    icon: "logoFile=\"${fabricMetadata.icon}\"",
+                    authors: "authors=\"${authorNames}\"",
+                    authorEmails: "authorEmails=\"${authorEmails}\"",
+                    contributorCredits: "credits=\"${contributorCredits}\"",
+                    minecraftRequirement: "versionRange=\"${minecraftVersionRange}\""
+            ]
+
+            expectedMetadata.each { field, expected ->
+                if (!packagedMetadata.contains(expected)) {
+                    throw new IllegalStateException("NeoForge metadata field '${field}' does not match fabric.mod.json")
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn verifyMetadataConsistency
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+def gameJavaVersion = minecraftVersion in ['1.20.5', '1.20.6'] ? 21 : 17
+sourceSets.configureEach { sourceSet ->
+    tasks.named(sourceSet.compileJavaTaskName, JavaCompile) {
+        options.release.set(17)
+    }
+    [sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName].each { name ->
+        configurations.named(name) {
+            attributes.attribute(org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, gameJavaVersion)
+        }
+    }
+}
+
+def licenseArchiveName = archivesBaseName
+['jar', 'sourcesJar'].each { archiveTaskName ->
+    tasks.named(archiveTaskName, Jar) {
+        from('../LICENSE') {
+            rename { "${it}_${licenseArchiveName}" }
+        }
+    }
+}
+
+tasks.named('jar', Jar) {
+    manifest.attributes('MixinConfigs': 'railoptimization.mixins.json,railoptimization-neoforge.mixins.json')
+}
+
+tasks.named('processGametestResources', ProcessResources) {
+    inputs.property 'minecraftVersion', minecraftVersion
+    if (legacyMetadata) rename 'neoforge.mods.toml', 'mods.toml'
+    filesMatching('META-INF/neoforge.mods.toml') {
+        if (minecraftVersion == '1.20.2') filter { line -> line.replace('type="required"', 'mandatory=true') }
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            if (legacyGradle) {
+                artifact releaseJar
+                artifact tasks.named('sourcesJar')
+            } else {
+                from components.java
+            }
+        }
+    }
+}

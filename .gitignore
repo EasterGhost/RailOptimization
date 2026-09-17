@@ -2,6 +2,13 @@
 bin/
 build/
 .idea/
+.eclipse/
 .gradle/
 docs/
 run/
+runs/
+CLAUDE.md
+*.ps1
+*.log
+*.xml
+.vscode/

@@ -1,0 +1,13 @@
+def versions = [
+        '1.20'  : [fabric: '0.83.0+1.20', forge: '1.20-46.0.14'],
+        '1.20.1': [fabric: '0.92.12+1.20.1', forge: '1.20.1-47.4.23'],
+        '1.20.2': [fabric: '0.91.6+1.20.2', forge: '1.20.2-48.1.0', neo: '20.2.93'],
+        '1.20.3': [fabric: '0.91.1+1.20.3', forge: '1.20.3-49.0.2', neo: '20.3.8-beta'],
+        '1.20.4': [fabric: '0.97.3+1.20.4', forge: '1.20.4-49.2.9', neo: '20.4.251'],
+        '1.20.5': [fabric: '0.97.8+1.20.5', neo: '20.5.21-beta'],
+        '1.20.6': [fabric: '0.100.8+1.20.6', forge: '1.20.6-50.2.10', neo: '20.6.141']
+]
+
+def selected = versions[project.minecraft_version.toString()]
+if (selected == null) throw new IllegalArgumentException("Unsupported Minecraft target: ${project.minecraft_version}")
+ext.platformVersions = selected
