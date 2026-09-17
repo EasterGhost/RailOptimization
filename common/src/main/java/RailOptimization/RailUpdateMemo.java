@@ -1,0 +1,170 @@
+package RailOptimization;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+
+public final class RailUpdateMemo {
+	private static final int CAPACITY = 256;
+	private static final int MASK = CAPACITY - 1;
+	private static final long HASH_MULTIPLIER = 0x9E3779B97F4A7C15L;
+	private static final int HASH_SHIFT = Long.SIZE - Integer.numberOfTrailingZeros(CAPACITY);
+	private static final long EPOCH_MASK = 0x00FFFFFFFFFFFFFFL;
+	private static final int POWER_LIMIT_SHIFT = 56;
+	private static final long POWERED_MASK = 1L << 62;
+	private static final long OCCUPIED_MASK = 1L << 63;
+
+	private static final ThreadLocal<LaneWriteDepth> LANE_WRITE_DEPTH = ThreadLocal.withInitial(LaneWriteDepth::new);
+	private static final ThreadLocal<List<RailUpdateMemo>> MEMOS = ThreadLocal.withInitial(ArrayList::new);
+	private static final ThreadLocal<RailUpdateMemo> TOP = new ThreadLocal<>();
+
+	private static final class LaneWriteDepth {
+		int value;
+	}
+
+	private final long[] keys = new long[CAPACITY];
+	private final long[] meta = new long[CAPACITY];
+	private Level ownerLevel;
+	private AtomicLong ownerEpoch;
+	private int size;
+	private long writeEpoch;
+
+	RailUpdateMemo() {
+	}
+
+	public static void onBlockStateChanged(Level level) {
+		if (LANE_WRITE_DEPTH.get().value != 0) {
+			return;
+		}
+		levelEpoch(level).incrementAndGet();
+	}
+
+	static void beginLaneWrite() {
+		RailSupportCache.beginLaneWrite();
+		LANE_WRITE_DEPTH.get().value++;
+	}
+
+	static void endLaneWrite() {
+		LANE_WRITE_DEPTH.get().value--;
+		RailSupportCache.endLaneWrite();
+	}
+
+	static void trackContext(RailUpdateMemo memo) {
+		List<RailUpdateMemo> memos = MEMOS.get();
+		for (int i = memos.size() - 1; i >= 0; --i) {
+			RailUpdateMemo candidate = memos.get(i);
+			if (candidate == memo || candidate.writeEpoch != candidate.ownerEpoch.get()) {
+				memos.remove(i);
+			}
+		}
+		memos.add(memo);
+		TOP.set(memo);
+	}
+
+	static boolean isConfirmed(Level level, long position, int powerLimit, boolean currentPowered) {
+		RailUpdateMemo top = TOP.get();
+		if (top != null && top.ownerLevel == level) {
+			int result = top.checkEntry(position, powerLimit, currentPowered);
+			if (result != 0) {
+				return result > 0;
+			}
+		}
+		List<RailUpdateMemo> memos = MEMOS.get();
+		for (int i = memos.size() - 1; i >= 0; --i) {
+			RailUpdateMemo memo = memos.get(i);
+			if (memo == top || memo.ownerLevel != level) {
+				continue;
+			}
+			int result = memo.checkEntry(position, powerLimit, currentPowered);
+			if (result != 0) {
+				return result > 0;
+			}
+		}
+		return false;
+	}
+
+	void beginWalk(Level level) {
+		ownerLevel = level;
+		ownerEpoch = levelEpoch(level);
+		Arrays.fill(meta, 0L);
+		size = 0;
+	}
+
+	void bindLevel(Level level) {
+		if (ownerLevel != level) {
+			beginWalk(level);
+		}
+	}
+
+	void confirm(BlockPos pos, boolean powered, int powerLimit) {
+		long position = pos.asLong();
+		long currentEpoch = ownerEpoch.get();
+		long entryMeta = (currentEpoch & EPOCH_MASK)
+				| ((long) (powerLimit - 1) << POWER_LIMIT_SHIFT)
+				| (powered ? POWERED_MASK : 0)
+				| OCCUPIED_MASK;
+		int index = hashIndex(position);
+		for (int probes = CAPACITY; probes > 0; --probes) {
+			if (meta[index] == 0) {
+				if (size < CAPACITY) {
+					keys[index] = position;
+					meta[index] = entryMeta;
+					writeEpoch = currentEpoch;
+					++size;
+				}
+				return;
+			}
+			if (keys[index] == position) {
+				meta[index] = entryMeta;
+				writeEpoch = currentEpoch;
+				return;
+			}
+			index = (index + 1) & MASK;
+		}
+
+		Arrays.fill(meta, 0L);
+		index = hashIndex(position);
+		keys[index] = position;
+		meta[index] = entryMeta;
+		writeEpoch = currentEpoch;
+		size = 1;
+	}
+
+	private int checkEntry(long position, int powerLimit, boolean currentPowered) {
+		int index = hashIndex(position);
+		if (meta[index] == 0) {
+			return 0;
+		}
+		if (keys[index] == position) {
+			return meta[index] == expectedMeta(powerLimit, currentPowered) ? 1 : -1;
+		}
+		for (int probes = CAPACITY - 1; probes > 0; --probes) {
+			index = (index + 1) & MASK;
+			if (meta[index] == 0) {
+				return 0;
+			}
+			if (keys[index] == position) {
+				return meta[index] == expectedMeta(powerLimit, currentPowered) ? 1 : -1;
+			}
+		}
+		return 0;
+	}
+
+	private long expectedMeta(int powerLimit, boolean currentPowered) {
+		return (ownerEpoch.get() & EPOCH_MASK)
+				| ((long) (powerLimit - 1) << POWER_LIMIT_SHIFT)
+				| (currentPowered ? POWERED_MASK : 0)
+				| OCCUPIED_MASK;
+	}
+
+	private static AtomicLong levelEpoch(Level level) {
+		return ((LevelEpochAccess) level).railoptimization$getBlockChangeEpoch();
+	}
+
+	private static int hashIndex(long position) {
+		return (int) ((position * HASH_MULTIPLIER) >>> HASH_SHIFT);
+	}
+}
