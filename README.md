@@ -1,28 +1,25 @@
 <div align="center">
 
-<img src="src/main/resources/assets/icon.png" style="max-width:128px;max-height:128px" alt="RailOptimization Icon"/>
+<img src="common/src/main/resources/assets/icon.png" style="max-width:128px;max-height:128px" alt="RailOptimization Icon"/>
 
 # RailOptimization
 
-[![Mod Environment](https://img.shields.io/badge/Environment-Fabric-blue?style=round)](https://github.com/EasterGhost/RailOptimization)
+[![Mod Environment](https://img.shields.io/badge/Environment-Fabric%20%7C%20NeoForge-blue?style=round)](https://github.com/EasterGhost/RailOptimization)
 [![Hits Of Code](https://hitsofcode.com/github/EasterGhost/RailOptimization?branch=main)](https://github.com/EasterGhost/RailOptimization)
 [![Modrinth Downloads](https://img.shields.io/modrinth/dt/railoptimization?style=round&logo=modrinth)](https://modrinth.com/mod/railoptimization)
 
-A Fabric mod that makes powered rails and activator rails update faster.
+A simple mod that makes powered rails and activator rails update faster.
 
 </div>
 
 ## About
 
-RailOptimization replaces repeated vanilla powered rail signal searches with a cached propagation path. It is intended for builds with long powered rail lines, especially rail systems where many rails are updated by the same redstone change.
-
-This fork maintains the Fabric version with bug fixes, cross-version builds, and extra GameTest coverage.
+RailOptimization replaces repeated vanilla rail searches and recursive updates with short-lived caches and batched propagation. It is intended for builds with long powered rail lines, especially rail systems where many rails are updated by the same redstone change.
 
 ## Features
 
 - Faster powered rail and activator rail on/off updates.
 - Optimized propagation for straight rails and ascending/descending rail chains.
-- Vanilla-compatible fallback boundaries for unsupported rail shapes.
 - Runtime toggle command for debugging or compatibility checks.
 - Configurable powered and activator rail signal range.
 - GameTest coverage for straight rails, slopes, observer updates, BUD-sensitive behavior, and vanilla/optimized comparisons.
@@ -31,15 +28,21 @@ This fork maintains the Fabric version with bug fixes, cross-version builds, and
 
 Use the jar that matches your Minecraft version range:
 
-| Jar | Minecraft versions |
-| --- | --- |
-| `railoptimization-fabric-mc1.20.1-*.jar` | 1.20-1.21.1 |
-| `railoptimization-fabric-mc1.21.2-*.jar` | 1.21.2-1.21.4 |
-| `railoptimization-fabric-mc1.21.5-*.jar` | 1.21.5-1.21.10 |
-| `railoptimization-fabric-mc1.21.11-*.jar` | 1.21.11 |
-| `railoptimization-fabric-mc26.1.2-*.jar` | 26.1-26.2 |
+| Jar | Loaders | Minecraft versions |
+| --- | --- | --- |
+| `railoptimization-<version>+mc1.20.1-fabric.jar` | Fabric | 1.20-1.20.6 |
+| `railoptimization-<version>+mc1.20.1-forge.jar` | Forge | 1.20-1.20.4 |
+| `railoptimization-<version>+mc1.20.1-forge.jar` | NeoForge | 1.20.1 |
+| `railoptimization-<version>+mc1.20.2-neoforge.jar` | NeoForge | 1.20.2-1.20.4 |
+| `railoptimization-<version>+mc1.20.5-neoforge.jar` | NeoForge | 1.20.5-1.20.6 |
+| `railoptimization-<version>+mc1.20.6-forge.jar` | Forge | 1.20.6 |
+| `railoptimization-<version>+mc1.21-<loader>.jar` | Fabric, NeoForge | 1.21-1.21.1 |
+| `railoptimization-<version>+mc1.21.2-<loader>.jar` | Fabric, NeoForge | 1.21.2-1.21.4 |
+| `railoptimization-<version>+mc1.21.5-<loader>.jar` | Fabric, NeoForge | 1.21.5-1.21.10 |
+| `railoptimization-<version>+mc1.21.11-<loader>.jar` | Fabric, NeoForge | 1.21.11 |
+| `railoptimization-<version>+mc26.1.2-<loader>.jar` | Fabric, NeoForge | 26.1-26.2 |
 
-Fabric Loader and Fabric API are required.
+Use the jar for your mod loader. Fabric builds require Fabric Loader and Fabric API. Forge and NeoForge builds require their respective loaders; the legacy NeoForge 1.20.1 loader uses the Forge jar. Forge has no Minecraft 1.20.5 release.
 
 ## Commands
 
@@ -48,15 +51,24 @@ Fabric Loader and Fabric API are required.
 | `/railoptimization` | everyone | Shows the optimization state and current power limit |
 | `/railoptimization on` | admin | Enables the optimized update path |
 | `/railoptimization off` | admin | Disables the optimization and uses vanilla behavior |
-| `/railoptimization powerLimit <value>` | admin | Sets the runtime rail power limit from 1 to 64 (default: 8) |
+| `/railoptimization powerLimit <value>` | admin | Sets the runtime rail power limit; values are clamped to 1-64 (default: 8) |
+| `/railoptimization reload` | admin | Reloads the configuration file |
 
 ## Build
 
 ```bash
-./gradlew build
+./gradlew :fabric:build
+./gradlew :neoforge:build
 ```
 
-The release jar and sources jar are written to `build/libs`.
+Run `./gradlew build` to build both loaders. Fabric artifacts are written to `fabric/build/libs`; NeoForge artifacts are written to `neoforge/build/libs`.
+
+Run the loader-specific GameTests with:
+
+```bash
+./gradlew :fabric:runGameTest
+./gradlew :neoforge:runGameTestServer
+```
 
 ## Notes
 
@@ -69,4 +81,6 @@ The release jar and sources jar are written to `build/libs`.
 - [GitHub](https://github.com/EasterGhost/RailOptimization)
 - [Issues](https://github.com/EasterGhost/RailOptimization/issues)
 
-This project is based on FX's Rail Optimization. Credit to the original author and contributors.
+## Acknowledgements
+
+RailOptimization began as a fork of [FxMorin's RailOptimization](https://github.com/FxMorin/RailOptimization). Thanks to FxMorin and the original contributors for their work. The current implementation has since been extensively rewritten.

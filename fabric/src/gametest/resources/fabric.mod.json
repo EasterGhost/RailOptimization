@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "railoptimization-gametest",
+  "version": "${version}",
+  "name": "RailOptimization Game Tests",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "RailOptimization.gametest.RailOptimizationGameTestMod"
+    ],
+    "fabric-gametest": [
+      "RailOptimization.gametest.RailOptimizationGameTest",
+      "RailOptimization.gametest.RailOptimizationSlopeGameTest",
+      "RailOptimization.gametest.RailOptimizationNeighborUpdateGameTest",
+      "RailOptimization.gametest.RailOptimizationObserverGameTest"
+    ]
+  },
+  "depends": {
+    "fabricloader": "*",
+    "fabric-api": "*",
+    "railoptimization": "*",
+    "minecraft": ">=${minecraft_version}"
+  }
+}
