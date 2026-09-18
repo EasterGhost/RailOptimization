@@ -26,23 +26,25 @@ RailOptimization replaces repeated vanilla rail searches and recursive updates w
 
 ## Compatibility
 
-Use the jar that matches your Minecraft version range:
+For RailOptimization 2.0, use the jar that matches your Minecraft version range:
 
 | Jar | Loaders | Minecraft versions |
 | --- | --- | --- |
-| `railoptimization-<version>+mc1.20.1-fabric.jar` | Fabric | 1.20-1.20.6 |
+| `railoptimization-<version>+mc1.20.1-fabric.jar` | Fabric | 1.20-1.21.1 |
 | `railoptimization-<version>+mc1.20.1-forge.jar` | Forge | 1.20-1.20.4 |
 | `railoptimization-<version>+mc1.20.1-forge.jar` | NeoForge | 1.20.1 |
 | `railoptimization-<version>+mc1.20.2-neoforge.jar` | NeoForge | 1.20.2-1.20.4 |
 | `railoptimization-<version>+mc1.20.5-neoforge.jar` | NeoForge | 1.20.5-1.20.6 |
 | `railoptimization-<version>+mc1.20.6-forge.jar` | Forge | 1.20.6 |
-| `railoptimization-<version>+mc1.21-<loader>.jar` | Fabric, NeoForge | 1.21-1.21.1 |
+| `railoptimization-<version>+mc1.21-neoforge.jar` | NeoForge | 1.21-1.21.1 |
 | `railoptimization-<version>+mc1.21.2-<loader>.jar` | Fabric, NeoForge | 1.21.2-1.21.4 |
 | `railoptimization-<version>+mc1.21.5-<loader>.jar` | Fabric, NeoForge | 1.21.5-1.21.10 |
 | `railoptimization-<version>+mc1.21.11-<loader>.jar` | Fabric, NeoForge | 1.21.11 |
-| `railoptimization-<version>+mc26.1.2-<loader>.jar` | Fabric, NeoForge | 26.1-26.2 |
+| `railoptimization-<version>+mc26.1.2-<loader>.jar` | Fabric, NeoForge | 26.1-26.3 |
 
 Use the jar for your mod loader. Fabric builds require Fabric Loader and Fabric API. Forge and NeoForge builds require their respective loaders; the legacy NeoForge 1.20.1 loader uses the Forge jar. Forge has no Minecraft 1.20.5 release.
+
+The Minecraft version in a filename is the build target, not the only supported version. The same Fabric 1.20.1 jar supports the full 1.20-1.21.1 range; the Fabric and NeoForge 26.1.2 jars also support 26.3. Sources jars are for reference, not installation.
 
 ## Commands
 
@@ -53,6 +55,8 @@ Use the jar for your mod loader. Fabric builds require Fabric Loader and Fabric 
 | `/railoptimization off` | admin | Disables the optimization and uses vanilla behavior |
 | `/railoptimization powerLimit <value>` | admin | Sets the runtime rail power limit; values are clamped to 1-64 (default: 8) |
 | `/railoptimization reload` | admin | Reloads the configuration file |
+
+The optimization toggle and power limit are saved automatically in `railoptimization.json` in the loader's configuration directory. Use `/railoptimization reload` after editing the file manually.
 
 ## Build
 
