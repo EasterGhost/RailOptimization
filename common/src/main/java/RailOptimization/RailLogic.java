@@ -101,6 +101,18 @@ public final class RailLogic {
 			}
 
 			RailShape railShape = RailPath.railShape(state);
+			if (currentlyPowered) {
+				int plan = RailDepowerPlanner.findSupplyOrPlan(self, level, pos, state, context);
+				if (plan == RailDepowerPlanner.KEEP_POWERED) {
+					context.memo.bindLevel(level);
+					context.memo.confirm(pos, true, RailLogic.getRailPowerLimit());
+					return;
+				}
+				if (plan >= 0) {
+					RailLaneUpdater.dePowerLane(self, level, pos, state, railShape, context, plan >>> 8, plan & 255);
+					return;
+				}
+			}
 			boolean shouldBePowered = directlyPowered;
 			if (!shouldBePowered) {
 				shouldBePowered = RailSignalSearcher.findPoweredRailSignalFaster(self, level, pos, state, true, 0, context)

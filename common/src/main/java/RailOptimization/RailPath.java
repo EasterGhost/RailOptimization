@@ -165,7 +165,7 @@ final class RailPath {
 		return !isSameRailWithAxis(self, context.getBlockState(level, context.scratchPos), flatShape);
 	}
 
-	private static boolean isSameRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
+	static boolean isSameRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
 		return state.is(self) && !isMismatchedRailAxis(expectedShape, railShape(state));
 	}
 

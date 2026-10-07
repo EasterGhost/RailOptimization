@@ -44,6 +44,11 @@ final class RailLaneUpdater {
 	}
 
 	static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState, RailShape railShape, RailUpdateContext context) {
+		dePowerLane(self, world, pos, mainState, railShape, context, -1, -1);
+	}
+
+	static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState, RailShape railShape, RailUpdateContext context,
+			int firstPlan, int secondPlan) {
 		if (!RailPath.supportsFastSearch(railShape)) {
 			return;
 		}
@@ -57,8 +62,10 @@ final class RailLaneUpdater {
 		RailUpdateMemo.beginLaneWrite();
 		try {
 			setRailPowerState(world, pos, mainState, false, changedRails, context);
-			firstDirectionCount = setRailPositionsDePower(self, world, pos, mainState, true, context, changedRails);
-			secondDirectionCount = setRailPositionsDePower(self, world, pos, mainState, false, context, changedRails);
+			firstDirectionCount = firstPlan < 0 ? setRailPositionsDePower(self, world, pos, mainState, true, context, changedRails)
+					: setConnectedRailPositionsDePower(world, firstPlan, context, changedRails, 0);
+			secondDirectionCount = secondPlan < 0 ? setRailPositionsDePower(self, world, pos, mainState, false, context, changedRails)
+					: setConnectedRailPositionsDePower(world, secondPlan, context, changedRails, context.railPowerLimit);
 		} finally {
 			RailUpdateMemo.endLaneWrite();
 		}
@@ -179,11 +186,15 @@ final class RailLaneUpdater {
 	}
 
 	private static int setConnectedRailPositionsDePower(Level world, int count, RailUpdateContext context, RailChangeList changedRails) {
+		return setConnectedRailPositionsDePower(world, count, context, changedRails, 0);
+	}
+
+	private static int setConnectedRailPositionsDePower(Level world, int count, RailUpdateContext context, RailChangeList changedRails, int offset) {
 		MutableBlockPos cursor = context.railCursor;
 		for (int index = 0; index < count; ++index) {
-			long position = context.connectedRailPositions[index];
+			long position = context.connectedRailPositions[offset + index];
 			cursor.set(BlockPos.getX(position), BlockPos.getY(position), BlockPos.getZ(position));
-			setRailPowerState(world, cursor, context.straightRailStates[index], false, changedRails, context);
+			setRailPowerState(world, cursor, context.straightRailStates[offset + index], false, changedRails, context);
 		}
 		return count;
 	}

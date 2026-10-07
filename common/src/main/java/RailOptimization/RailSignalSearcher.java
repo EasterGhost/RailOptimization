@@ -76,7 +76,7 @@ final class RailSignalSearcher {
 				if (context.hasNeighborSignal(level, context.scratchPos)) {
 					return Math.max(0, Math.min(powerLimit, index - powerLimit - 1));
 				}
-				if (index - 1 < railStates.length) {
+				if (index <= powerLimit) {
 					railStates[index - 1] = state;
 				}
 				poweredLength = index;

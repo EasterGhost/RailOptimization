@@ -15,6 +15,7 @@ final class RailUpdateContext {
 	final BlockState[] straightRailStates;
 	final long[] connectedRailPositions;
 	final int railPowerLimit;
+	long pendingConnectionChecks;
 	private boolean cachePoweredSearchResults = true;
 	private LevelChunk chunk;
 	private int chunkX;
@@ -24,8 +25,8 @@ final class RailUpdateContext {
 		this.railPowerLimit = railPowerLimit;
 		searchCache = new RailSearchCache(railPowerLimit);
 		changeList = new RailChangeList(railPowerLimit * 2 + 1);
-		straightRailStates = new BlockState[railPowerLimit];
-		connectedRailPositions = new long[railPowerLimit];
+		straightRailStates = new BlockState[railPowerLimit * 2];
+		connectedRailPositions = new long[railPowerLimit * 2];
 	}
 
 	void reset() {
