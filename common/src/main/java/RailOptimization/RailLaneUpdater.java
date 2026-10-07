@@ -105,7 +105,7 @@ final class RailLaneUpdater {
 				directFlatShape = null;
 			}
 			boolean continuesDirectPath = directPath
-					&& (continuesDirectFlatPath || RailPath.connectsBackTo(self, world, cursor, state, previousPos, previousState, context));
+					&& (continuesDirectFlatPath || RailPath.connectsBackTo(self, world, cursor, state, forward, previousPos, previousState, context));
 			if (!continuesDirectPath) {
 				directPath = false;
 			}

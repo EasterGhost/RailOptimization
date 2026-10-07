@@ -31,8 +31,8 @@ final class RailDepowerPlanner {
 		long firstChecks = context.pendingConnectionChecks;
 		int second = scan(self, level, pos, state, false, context, limit, 0, limit);
 		if (second < 0) return second;
-		if (!validateConnections(self, level, pos, state, context, 0, firstChecks)
-				|| !validateConnections(self, level, pos, state, context, limit, context.pendingConnectionChecks)) {
+		if (!validateConnections(self, level, pos, state, true, context, 0, firstChecks)
+				|| !validateConnections(self, level, pos, state, false, context, limit, context.pendingConnectionChecks)) {
 			return NEEDS_GENERAL_QUERY;
 		}
 
@@ -111,7 +111,7 @@ final class RailDepowerPlanner {
 				context.straightRailStates[offset + index - 1] = state;
 				context.connectedRailPositions[offset + index - 1] = cursor.asLong();
 			} else if (needsConnectionCheck
-					&& !RailPath.connectsBackTo(self, level, cursor, state, previousPosition, previousState, context)) {
+					&& !RailPath.connectsBackTo(self, level, cursor, state, forward, previousPosition, previousState, context)) {
 				return NEEDS_GENERAL_QUERY;
 			}
 			poweredLength = index;
@@ -121,7 +121,7 @@ final class RailDepowerPlanner {
 		return Math.min(limit, poweredLength);
 	}
 
-	private static boolean validateConnections(PoweredRailBlock self, Level level, BlockPos origin, BlockState sourceState,
+	private static boolean validateConnections(PoweredRailBlock self, Level level, BlockPos origin, BlockState sourceState, boolean forward,
 			RailUpdateContext context, int offset, long checks) {
 		while (checks != 0) {
 			int index = Long.numberOfTrailingZeros(checks);
@@ -131,7 +131,7 @@ final class RailDepowerPlanner {
 			long previousPosition = index == 0 ? origin.asLong() : context.connectedRailPositions[offset + index - 1];
 			BlockState previousState = index == 0 ? sourceState : context.straightRailStates[offset + index - 1];
 			context.railCursor.set(BlockPos.getX(position), BlockPos.getY(position), BlockPos.getZ(position));
-			if (!RailPath.connectsBackTo(self, level, context.railCursor, state, previousPosition, previousState, context)) return false;
+			if (!RailPath.connectsBackTo(self, level, context.railCursor, state, forward, previousPosition, previousState, context)) return false;
 		}
 		return true;
 	}

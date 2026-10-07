@@ -119,7 +119,7 @@ final class RailSignalSearcher {
 			long position = cursor.asLong();
 			RailShape currentShape = RailPath.railShape(state);
 			if (currentShape != previousShape
-					&& !RailPath.connectsBackTo(self, level, cursor, state, previousPosition, previousState, context)) {
+					&& !RailPath.connectsBackTo(self, level, cursor, state, forward, previousPosition, previousState, context)) {
 				return COMPLEX_PATH;
 			}
 			if (context.hasNeighborSignal(level, cursor)) {

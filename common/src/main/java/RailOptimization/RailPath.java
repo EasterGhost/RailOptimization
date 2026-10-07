@@ -129,15 +129,7 @@ final class RailPath {
 		return null;
 	}
 
-	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, long expectedPreviousPos, BlockState previousState,
-			RailUpdateContext context) {
-		if (directionConnectsBackTo(self, level, railPos, state, true, expectedPreviousPos, previousState, context)) {
-			return true;
-		}
-		return directionConnectsBackTo(self, level, railPos, state, false, expectedPreviousPos, previousState, context);
-	}
-
-	private static boolean directionConnectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward,
+	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward,
 			long expectedPreviousPos, BlockState previousState, RailUpdateContext context) {
 		int x = railPos.getX();
 		int y = railPos.getY();
@@ -147,7 +139,8 @@ final class RailPath {
 			return false;
 		}
 
-		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		// Only the direction opposite this walk can return to the previous rail.
+		int stepIndex = (railShape.ordinal() << 1) | (forward ? 1 : 0);
 		int nextX = x + STEP_X[stepIndex];
 		int nextY = y + STEP_Y[stepIndex];
 		int nextZ = z + STEP_Z[stepIndex];

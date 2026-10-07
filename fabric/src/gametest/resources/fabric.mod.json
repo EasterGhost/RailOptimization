@@ -42,6 +42,7 @@
       "RailOptimization.gametest.RailOptimizationNcEndGameTest",
       "RailOptimization.gametest.RailOptimizationNotificationControlGameTest",
       "RailOptimization.gametest.RailOptimizationFusionGameTest",
+      "RailOptimization.RailDirectionalPathGameTest",
       "RailOptimization.RailSearchCacheGameTest",
       "RailOptimization.RailUpdateMemoGameTest",
       "RailOptimization.RailSupportCacheGameTest"
