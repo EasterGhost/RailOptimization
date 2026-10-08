@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 public class RailDirectionalPathGameTest {
 	@GameTest(environment = "railoptimization-gametest:serial_193", maxTicks = 20)
 	public void knownBackDirectionMatchesTwoDirectionCheck(GameTestHelper helper) {
+		assertAxisClassification(helper);
 		Level level = helper.getLevel();
 		BlockPos previousPos = helper.absolutePos(new BlockPos(4, 4, 4));
 		RailUpdateContext context = new RailUpdateContext(8);
@@ -58,6 +59,20 @@ public class RailDirectionalPathGameTest {
 		}
 		helper.assertValueEqual(1800, cases, "directional geometry cases");
 		helper.succeed();
+	}
+
+	private static void assertAxisClassification(GameTestHelper helper) {
+		int cases = 0;
+		for (RailShape expected : RailShape.values()) {
+			for (RailShape actual : RailShape.values()) {
+				boolean mismatched = expected == RailShape.EAST_WEST
+						? actual == RailShape.NORTH_SOUTH || actual == RailShape.ASCENDING_NORTH || actual == RailShape.ASCENDING_SOUTH
+						: actual == RailShape.EAST_WEST || actual == RailShape.ASCENDING_EAST || actual == RailShape.ASCENDING_WEST;
+				helper.assertValueEqual(mismatched, RailPath.isMismatchedRailAxis(expected, actual), "axis classification: " + expected + " -> " + actual);
+				++cases;
+			}
+		}
+		helper.assertValueEqual(100, cases, "axis classification cases");
 	}
 
 	private static boolean referenceDirection(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, boolean forward,

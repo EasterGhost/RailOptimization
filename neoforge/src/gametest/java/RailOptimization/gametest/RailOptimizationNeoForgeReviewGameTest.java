@@ -54,6 +54,7 @@ final class RailOptimizationNeoForgeReviewGameTest {
 	}
 
 	static void registerTests(RegisterGameTestsEvent event) {
+		register(event, "review_axis_classification", RailOptimizationNeoForgeReviewGameTest::verifyAxisClassification);
 		register(event, "review_weak_power_opt_in_inside_chunk", helper -> verifyWeakPowerHook(helper, true, 5));
 		register(event, "review_weak_power_opt_in_chunk_edge", helper -> verifyWeakPowerHook(helper, true, 0));
 		register(event, "review_weak_power_opt_out_inside_chunk", helper -> verifyWeakPowerHook(helper, false, 5));
@@ -62,6 +63,8 @@ final class RailOptimizationNeoForgeReviewGameTest {
 		register(event, "review_mixed_activator_rail_types", helper -> verifyMixedRailTypes(helper, Blocks.ACTIVATOR_RAIL, ACTIVATOR_VARIANT.get()));
 		register(event, "review_mixed_powered_variant_input", helper -> verifyMixedRailTypes(helper, Blocks.POWERED_RAIL, POWERED_VARIANT.get(), Direction.EAST, 1, true));
 		register(event, "review_mixed_activator_variant_input", helper -> verifyMixedRailTypes(helper, Blocks.ACTIVATOR_RAIL, ACTIVATOR_VARIANT.get(), Direction.EAST, 1, true));
+		register(event, "review_mixed_powered_sloped_variant_input", helper -> verifyMixedRailTypes(helper, Blocks.POWERED_RAIL, POWERED_VARIANT.get(), Direction.EAST, 1, true, true));
+		register(event, "review_mixed_activator_sloped_variant_input", helper -> verifyMixedRailTypes(helper, Blocks.ACTIVATOR_RAIL, ACTIVATOR_VARIANT.get(), Direction.EAST, 1, true, true));
 		register(event, "review_mixed_powered_north_south", helper -> verifyMixedRailTypes(helper, Blocks.POWERED_RAIL, POWERED_VARIANT.get(), Direction.SOUTH, 0, true));
 		register(event, "review_mixed_activator_north_south", helper -> verifyMixedRailTypes(helper, Blocks.ACTIVATOR_RAIL, ACTIVATOR_VARIANT.get(), Direction.SOUTH, 0, true));
 		register(event, "review_powered_rejects_activator", helper -> verifyMixedRailTypes(helper, Blocks.POWERED_RAIL, ACTIVATOR_VARIANT.get(), Direction.EAST, 0, false));
@@ -74,6 +77,27 @@ final class RailOptimizationNeoForgeReviewGameTest {
 		var environment = event.registerEnvironment(Identifier.fromNamespaceAndPath(MOD_ID, name));
 		RailOptimizationNeoForgeGameTest.registerTest(event, environment, name,
 				Identifier.fromNamespaceAndPath(MOD_ID, "review_compat_empty"), 40, body);
+	}
+
+	private static void verifyAxisClassification(GameTestHelper helper) {
+		try {
+			var predicate = Class.forName("RailOptimization.RailPath").getDeclaredMethod("isMismatchedRailAxis", RailShape.class, RailShape.class);
+			predicate.setAccessible(true);
+			int cases = 0;
+			for (RailShape expected : RailShape.values()) {
+				for (RailShape actual : RailShape.values()) {
+					boolean mismatched = expected == RailShape.EAST_WEST
+							? actual == RailShape.NORTH_SOUTH || actual == RailShape.ASCENDING_NORTH || actual == RailShape.ASCENDING_SOUTH
+							: actual == RailShape.EAST_WEST || actual == RailShape.ASCENDING_EAST || actual == RailShape.ASCENDING_WEST;
+					helper.assertValueEqual(mismatched, (boolean) predicate.invoke(null, expected, actual), "NeoForge axis: " + expected + " -> " + actual);
+					++cases;
+				}
+			}
+			helper.assertValueEqual(100, cases, "NeoForge axis classification cases");
+			helper.succeed();
+		} catch (ReflectiveOperationException failure) {
+			throw new IllegalStateException("Cannot inspect the NeoForge rail axis predicate", failure);
+		}
 	}
 
 	private static void verifyWeakPowerHook(GameTestHelper helper, boolean checkWeakPower, int localX) {
@@ -104,25 +128,38 @@ final class RailOptimizationNeoForgeReviewGameTest {
 
 	private static void verifyMixedRailTypes(GameTestHelper helper, Block vanillaType, PoweredRailBlock variant,
 			Direction direction, int sourceIndex, boolean compatible) {
+		verifyMixedRailTypes(helper, vanillaType, variant, direction, sourceIndex, compatible, false);
+	}
+
+	private static void verifyMixedRailTypes(GameTestHelper helper, Block vanillaType, PoweredRailBlock variant,
+			Direction direction, int sourceIndex, boolean compatible, boolean ascending) {
 		RailLogic.setRailPowerLimit(8);
 		BlockPos start = new BlockPos(3, 2, 3);
-		BlockPos[] rails = {start, start.relative(direction), start.relative(direction, 2)};
+		BlockPos[] rails = {start, start.relative(direction).above(ascending ? 1 : 0), start.relative(direction, 2).above(ascending ? 2 : 0)};
 		BlockPos[] vanillaRails = Arrays.stream(rails).map(pos -> pos.above(MIRROR_Y)).toArray(BlockPos[]::new);
 		Direction leverSide = direction.getAxis() == Direction.Axis.X ? Direction.NORTH : Direction.WEST;
 		Direction probeSide = leverSide.getOpposite();
 		RailShape shape = direction.getAxis() == Direction.Axis.X ? RailShape.EAST_WEST : RailShape.NORTH_SOUTH;
+		RailShape slope = direction.getAxis() == Direction.Axis.X ? RailShape.ASCENDING_EAST : RailShape.ASCENDING_SOUTH;
+		RailShape[] shapes = ascending ? new RailShape[]{slope, slope, shape} : new RailShape[]{shape, shape, shape};
 		helper.assertTrue((((PoweredRailBlock) vanillaType).isActivatorRail() == variant.isActivatorRail()) == compatible,
 				Component.literal("fixture category mismatch"));
 		helper.assertTrue(BaseRailBlock.isRail(variant.defaultBlockState()), Component.literal("the registered variant must be in the rails tag"));
 		inMode(false, () -> {
-			placeMixedRailFixture(helper, vanillaRails, vanillaType, variant, shape, sourceIndex, leverSide, compatible);
-			placeMixedRailFixture(helper, rails, vanillaType, variant, shape, sourceIndex, leverSide, compatible);
+			placeMixedRailFixture(helper, vanillaRails, vanillaType, variant, shapes, sourceIndex, leverSide, compatible);
+			placeMixedRailFixture(helper, rails, vanillaType, variant, shapes, sourceIndex, leverSide, compatible);
+			for (int index = 0; index < rails.length; index++) {
+				helper.assertBlockProperty(vanillaRails[index], PoweredRailBlock.SHAPE, shapes[index]);
+				helper.assertBlockProperty(rails[index], PoweredRailBlock.SHAPE, shapes[index]);
+			}
 			return null;
 		});
 
 		PowerTrace vanilla = inMode(false, () -> toggleAndRead(helper, vanillaRails[sourceIndex].relative(leverSide), vanillaRails, compatible ? probeSide : null));
 		PowerTrace optimized = inMode(true, () -> toggleAndRead(helper, rails[sourceIndex].relative(leverSide), rails, compatible ? probeSide : null));
 		for (int index = 0; index < vanillaRails.length; index++) {
+			helper.assertBlockProperty(vanillaRails[index], PoweredRailBlock.SHAPE, shapes[index]);
+			helper.assertBlockProperty(rails[index], PoweredRailBlock.SHAPE, shapes[index]);
 			helper.assertTrue(vanilla.on()[index] == (compatible || index == sourceIndex) && !vanilla.off()[index],
 					Component.literal("NeoForge reference must propagate across the registered variant: " + vanilla));
 			if (compatible) helper.assertTrue(vanilla.onSources()[index] != null && vanilla.offSources()[index] != null,
@@ -147,10 +184,10 @@ final class RailOptimizationNeoForgeReviewGameTest {
 	}
 
 	private static void placeMixedRailFixture(GameTestHelper helper, BlockPos[] rails, Block vanillaType, Block variant,
-			RailShape shape, int sourceIndex, Direction leverSide, boolean probes) {
+			RailShape[] shapes, int sourceIndex, Direction leverSide, boolean probes) {
+		for (BlockPos rail : rails) helper.setBlock(rail.below(), Blocks.GLASS);
 		for (int index = 0; index < rails.length; index++) {
-			helper.setBlock(rails[index].below(), Blocks.GLASS);
-			placeRail(helper, rails[index], index == 1 ? variant : vanillaType, shape);
+			placeRail(helper, rails[index], index == 1 ? variant : vanillaType, shapes[index]);
 			if (probes) helper.setBlock(rails[index].relative(leverSide.getOpposite()), SOURCE_PROBE.get());
 		}
 		helper.setBlock(rails[sourceIndex].relative(leverSide).below(), Blocks.GLASS);
