@@ -130,31 +130,26 @@ final class RailPath {
 	}
 
 	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward,
-			long expectedPreviousPos, BlockState previousState, RailUpdateContext context) {
-		int x = railPos.getX();
-		int y = railPos.getY();
-		int z = railPos.getZ();
+			int previousY, BlockState previousState, RailUpdateContext context) {
 		RailShape railShape = railShape(state);
 		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
 			return false;
 		}
 
-		// Only the direction opposite this walk can return to the previous rail.
+		// Walkers already establish horizontal adjacency; only reverse height and priority remain.
 		int stepIndex = (railShape.ordinal() << 1) | (forward ? 1 : 0);
-		int nextX = x + STEP_X[stepIndex];
-		int nextY = y + STEP_Y[stepIndex];
-		int nextZ = z + STEP_Z[stepIndex];
+		int nextY = railPos.getY() + STEP_Y[stepIndex];
 		RailShape flatShape = STEP_FLAT[stepIndex];
 
-		if (BlockPos.asLong(nextX, nextY, nextZ) == expectedPreviousPos) {
+		if (nextY == previousY) {
 			return isSameRailWithAxis(self, previousState, flatShape);
 		}
-		if (STEP_BELOW[stepIndex] == 0 || BlockPos.asLong(nextX, nextY - 1, nextZ) != expectedPreviousPos
+		if (STEP_BELOW[stepIndex] == 0 || nextY - 1 != previousY
 				|| !isSameRailWithAxis(self, previousState, flatShape)) {
 			return false;
 		}
 
-		context.scratchPos.set(nextX, nextY, nextZ);
+		context.scratchPos.set(railPos.getX() + STEP_X[stepIndex], nextY, railPos.getZ() + STEP_Z[stepIndex]);
 		return !isSameRailWithAxis(self, context.getBlockState(level, context.scratchPos), flatShape);
 	}
 

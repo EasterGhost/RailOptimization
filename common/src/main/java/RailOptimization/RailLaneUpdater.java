@@ -93,7 +93,6 @@ final class RailLaneUpdater {
 		boolean directPath = directlyPowered;
 
 		for (int i = 1; i <= RailLogic.getRailPowerLimit(); ++i) {
-			long previousPos = cursor.asLong();
 			int previousY = cursor.getY();
 			BlockState state = RailPath.findNextRailState(self, world, cursor, previousState, forward, context);
 			if (state == null) {
@@ -105,7 +104,7 @@ final class RailLaneUpdater {
 				directFlatShape = null;
 			}
 			boolean continuesDirectPath = directPath
-					&& (continuesDirectFlatPath || RailPath.connectsBackTo(self, world, cursor, state, forward, previousPos, previousState, context));
+					&& (continuesDirectFlatPath || RailPath.connectsBackTo(self, world, cursor, state, forward, previousY, previousState, context));
 			if (!continuesDirectPath) {
 				directPath = false;
 			}

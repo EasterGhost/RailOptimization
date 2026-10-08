@@ -106,7 +106,7 @@ final class RailSignalSearcher {
 		cursor.set(pos.getX(), pos.getY(), pos.getZ());
 		BlockState previousState = sourceState;
 		RailShape previousShape = RailPath.railShape(sourceState);
-		long previousPosition = pos.asLong();
+		int previousY = pos.getY();
 		int powerLimit = RailLogic.getRailPowerLimit();
 		int poweredLength = 0;
 
@@ -116,10 +116,9 @@ final class RailSignalSearcher {
 				break;
 			}
 
-			long position = cursor.asLong();
 			RailShape currentShape = RailPath.railShape(state);
 			if (currentShape != previousShape
-					&& !RailPath.connectsBackTo(self, level, cursor, state, forward, previousPosition, previousState, context)) {
+					&& !RailPath.connectsBackTo(self, level, cursor, state, forward, previousY, previousState, context)) {
 				return COMPLEX_PATH;
 			}
 			if (context.hasNeighborSignal(level, cursor)) {
@@ -127,12 +126,12 @@ final class RailSignalSearcher {
 			}
 			if (index <= powerLimit) {
 				railStates[index - 1] = state;
-				railPositions[index - 1] = position;
+				railPositions[index - 1] = cursor.asLong();
 			}
 			poweredLength = index;
 			previousState = state;
 			previousShape = currentShape;
-			previousPosition = position;
+			previousY = cursor.getY();
 		}
 
 		return Math.min(powerLimit, poweredLength);

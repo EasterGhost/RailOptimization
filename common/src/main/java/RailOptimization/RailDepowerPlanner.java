@@ -64,7 +64,7 @@ final class RailDepowerPlanner {
 		int limit = context.railPowerLimit;
 		long connectionChecks = 0;
 		for (int index = start + 1; index <= end; ++index) {
-			long previousPosition = cursor.asLong();
+			int previousY = cursor.getY();
 			RailShape previousShape = RailPath.railShape(previousState);
 			int step = (previousShape.ordinal() << 1) | (forward ? 0 : 1);
 			int x = cursor.getX() + RailPath.STEP_X[step];
@@ -111,7 +111,7 @@ final class RailDepowerPlanner {
 				context.straightRailStates[offset + index - 1] = state;
 				context.connectedRailPositions[offset + index - 1] = cursor.asLong();
 			} else if (needsConnectionCheck
-					&& !RailPath.connectsBackTo(self, level, cursor, state, forward, previousPosition, previousState, context)) {
+					&& !RailPath.connectsBackTo(self, level, cursor, state, forward, previousY, previousState, context)) {
 				return NEEDS_GENERAL_QUERY;
 			}
 			poweredLength = index;
@@ -128,10 +128,10 @@ final class RailDepowerPlanner {
 			checks &= checks - 1;
 			long position = context.connectedRailPositions[offset + index];
 			BlockState state = context.straightRailStates[offset + index];
-			long previousPosition = index == 0 ? origin.asLong() : context.connectedRailPositions[offset + index - 1];
+			int previousY = index == 0 ? origin.getY() : BlockPos.getY(context.connectedRailPositions[offset + index - 1]);
 			BlockState previousState = index == 0 ? sourceState : context.straightRailStates[offset + index - 1];
 			context.railCursor.set(BlockPos.getX(position), BlockPos.getY(position), BlockPos.getZ(position));
-			if (!RailPath.connectsBackTo(self, level, context.railCursor, state, forward, previousPosition, previousState, context)) return false;
+			if (!RailPath.connectsBackTo(self, level, context.railCursor, state, forward, previousY, previousState, context)) return false;
 		}
 		return true;
 	}
