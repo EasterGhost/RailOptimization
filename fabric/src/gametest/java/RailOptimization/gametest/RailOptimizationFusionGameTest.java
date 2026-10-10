@@ -77,6 +77,7 @@ public class RailOptimizationFusionGameTest extends RailOptimizationGameTestSupp
 		};
 	}
 
+	@SuppressWarnings("null")
 	private static void placeLeverPair(GameTestHelper helper, BlockPos lever) {
 		for (BlockPos pos : new BlockPos[]{lever, mirrorCopy(lever)}) {
 			helper.setBlock(pos.below(), Blocks.STONE);
@@ -86,11 +87,13 @@ public class RailOptimizationFusionGameTest extends RailOptimizationGameTestSupp
 		}
 	}
 
+	@SuppressWarnings("null")
 	private static void pullLeverPair(GameTestHelper helper, BlockPos lever) {
 		helper.pullLever(mirrorCopy(lever));
 		helper.pullLever(lever);
 	}
 
+	@SuppressWarnings("null")
 	private static void assertState(GameTestHelper helper, BlockPos[] rails, RailShape[] shapes, int sourceIndex, boolean first, boolean second) {
 		assertMatchingRailPower(helper, mirrorCopy(rails), rails);
 		for (int index = 0; index < rails.length; ++index) {
@@ -102,6 +105,7 @@ public class RailOptimizationFusionGameTest extends RailOptimizationGameTestSupp
 		}
 	}
 
+	@SuppressWarnings("null")
 	private static void verifyState(GameTestHelper helper, BlockPos[] rails, RailShape[] shapes, int sourceIndex, boolean first, boolean second) {
 		assertState(helper, rails, shapes, sourceIndex, first, second);
 		var epoch = ((LevelEpochAccess) helper.getLevel()).railoptimization$getBlockChangeEpoch();

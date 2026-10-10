@@ -45,7 +45,9 @@
       "RailOptimization.RailDirectionalPathGameTest",
       "RailOptimization.RailSearchCacheGameTest",
       "RailOptimization.RailUpdateMemoGameTest",
-      "RailOptimization.RailSupportCacheGameTest"
+      "RailOptimization.RailSupportCacheGameTest",
+      "RailOptimization.RailBatchWriteGameTest",
+      "RailOptimization.RailLithiumBatchGameTest"
     ]
   },
   "mixins": [

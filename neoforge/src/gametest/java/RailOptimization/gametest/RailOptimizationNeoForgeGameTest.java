@@ -3,6 +3,8 @@ package RailOptimization.gametest;
 import java.util.function.Consumer;
 
 import RailOptimization.RailLogic;
+import RailOptimization.gametest.batch.RailBatchWriteTestCases;
+import RailOptimization.gametest.batch.RailLithiumBatchTestCases;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.BuiltinTestFunctions;
@@ -48,6 +50,23 @@ public final class RailOptimizationNeoForgeGameTest {
 		registerTest(event, environment, "activator_rail_line", helper -> testRailLine(helper, Blocks.ACTIVATOR_RAIL));
 		RailOptimizationNeoForgeReviewGameTest.registerTests(event);
 		RailOptimizationNeoForgeFollowupGameTest.registerTests(event);
+		Holder<TestEnvironmentDefinition<?>> batchEnvironment = event.registerEnvironment(id("batch_write"));
+		Identifier batchStructure = id("batch_write_empty");
+		registerTest(event, batchEnvironment, "batch_real_lever", batchStructure, 100, RailBatchWriteTestCases::realLeverUsesMultiRailBatchesAndHonorsLimit);
+		registerTest(event, batchEnvironment, "batch_extended_lever", id("batch_line_empty"), 100,
+				RailBatchWriteTestCases::extendedRangeLeverUsesMultiRailBatchesAndHonorsLimit);
+		registerTest(event, batchEnvironment, "batch_grouped_writes", batchStructure, 100,
+				RailBatchWriteTestCases::groupedWritesAreDeferredAndPreserveSectionState);
+		registerTest(event, batchEnvironment, "batch_palette_resize", batchStructure, 100, RailBatchWriteTestCases::paletteBatchHandlesResizesAndGlobalIds);
+		registerTest(event, batchEnvironment, "batch_platform_snapshots", batchStructure, 100,
+				RailBatchWriteTestCases::platformSnapshotCaptureUsesNormalWrites);
+		Holder<TestEnvironmentDefinition<?>> lithiumEnvironment = event.registerEnvironment(id("batch_lithium"));
+		registerTest(event, lithiumEnvironment, "batch_lithium_tracking", batchStructure, 100,
+				RailLithiumBatchTestCases::batchPreservesLithiumTrackingAndCounters);
+		registerTest(event, lithiumEnvironment, "batch_lithium_entity_cache", batchStructure, 100,
+				RailLithiumBatchTestCases::batchInvalidatesActiveLithiumEntityCacheWithoutDisablingIt);
+		registerTest(event, lithiumEnvironment, "batch_lithium_hopper_cache", batchStructure, 100,
+				RailLithiumBatchTestCases::batchInvalidatesAdjacentLithiumHopperCaches);
 	}
 
 	static void registerTest(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment, String name,

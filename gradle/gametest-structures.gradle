@@ -75,11 +75,15 @@ abstract class GenerateGametestStructures extends DefaultTask {
 def structureSizes = [
         fabric: [
                 'railoptimization-gametest:review_tall_empty': [8, 28, 8],
-                'railoptimization-gametest:review_benchmark_empty': [16, 28, 16]
+                'railoptimization-gametest:review_benchmark_empty': [16, 28, 16],
+                'railoptimization-gametest:batch_write_empty': [64, 64, 48],
+                'railoptimization-gametest:batch_line_empty': [160, 32, 32]
         ],
         neoforge: [
                 'railoptimization_gametest:review_compat_empty': [32, 28, 32],
-                'railoptimization_gametest:benchmark_empty': [160, 28, 48]
+                'railoptimization_gametest:benchmark_empty': [160, 28, 48],
+                'railoptimization_gametest:batch_write_empty': [64, 64, 48],
+                'railoptimization_gametest:batch_line_empty': [160, 32, 32]
         ]
 ][project.name]
 

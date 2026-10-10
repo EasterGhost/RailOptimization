@@ -10,6 +10,7 @@ final class RailUpdateContext {
 	final RailSearchCache searchCache;
 	final RailUpdateMemo memo = new RailUpdateMemo();
 	final RailChangeList changeList;
+	final RailBatchWriter batchWriter;
 	final MutableBlockPos railCursor = new MutableBlockPos();
 	final MutableBlockPos scratchPos = new MutableBlockPos();
 	final BlockState[] straightRailStates;
@@ -25,6 +26,7 @@ final class RailUpdateContext {
 		this.railPowerLimit = railPowerLimit;
 		searchCache = new RailSearchCache(railPowerLimit);
 		changeList = new RailChangeList(railPowerLimit * 2 + 1);
+		batchWriter = new RailBatchWriter(changeList);
 		straightRailStates = new BlockState[railPowerLimit * 2];
 		connectedRailPositions = new long[railPowerLimit * 2];
 	}
@@ -32,6 +34,7 @@ final class RailUpdateContext {
 	void reset() {
 		searchCache.clear();
 		changeList.reset();
+		batchWriter.reset();
 		cachePoweredSearchResults = true;
 		chunk = null;
 	}
@@ -68,6 +71,12 @@ final class RailUpdateContext {
 
 	@SuppressWarnings("null")
 	BlockState getBlockState(Level level, BlockPos pos) {
+		if (batchWriter.planning()) {
+			BlockState pending = batchWriter.pendingState(pos.asLong());
+			if (pending != null) {
+				return pending;
+			}
+		}
 		if (!level.isInValidBounds(pos)) {
 			return level.getBlockState(pos);
 		}
@@ -96,11 +105,8 @@ final class RailUpdateContext {
 		}
 	}
 
-	void beginPowering() {
-		cachePoweredSearchResults = true;
-	}
-
 	void beginDepowering() {
+		batchWriter.begin();
 		searchCache.advanceSearchGeneration();
 		cachePoweredSearchResults = false;
 	}

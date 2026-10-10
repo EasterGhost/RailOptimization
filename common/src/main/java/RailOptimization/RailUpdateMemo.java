@@ -29,7 +29,6 @@ public final class RailUpdateMemo {
 	private final long[] meta = new long[CAPACITY];
 	private Level ownerLevel;
 	private AtomicLong ownerEpoch;
-	private int size;
 	private long writeEpoch;
 
 	RailUpdateMemo() {
@@ -90,7 +89,6 @@ public final class RailUpdateMemo {
 		ownerLevel = level;
 		ownerEpoch = levelEpoch(level);
 		Arrays.fill(meta, 0L);
-		size = 0;
 	}
 
 	void bindLevel(Level level) {
@@ -109,12 +107,9 @@ public final class RailUpdateMemo {
 		int index = hashIndex(position);
 		for (int probes = CAPACITY; probes > 0; --probes) {
 			if (meta[index] == 0) {
-				if (size < CAPACITY) {
-					keys[index] = position;
-					meta[index] = entryMeta;
-					writeEpoch = currentEpoch;
-					++size;
-				}
+				keys[index] = position;
+				meta[index] = entryMeta;
+				writeEpoch = currentEpoch;
 				return;
 			}
 			if (keys[index] == position) {
@@ -130,7 +125,6 @@ public final class RailUpdateMemo {
 		keys[index] = position;
 		meta[index] = entryMeta;
 		writeEpoch = currentEpoch;
-		size = 1;
 	}
 
 	private int checkEntry(long position, int powerLimit, boolean currentPowered) {

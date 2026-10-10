@@ -38,6 +38,10 @@ final class RailChangeList {
 		return hasSlope;
 	}
 
+	long[] positions() {
+		return positions;
+	}
+
 	long position(int index) {
 		return positions[index];
 	}

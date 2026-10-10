@@ -1,6 +1,8 @@
 package RailOptimization;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -8,11 +10,97 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailUpdateMemoGameTest {
 	private static final long OLD_EPOCH_PERIOD = 1L << Integer.SIZE;
 	private static final int EPOCH_WORKER_COUNT = 8;
 	private static final int EPOCH_UPDATES_PER_WORKER = 100_000;
+
+	@GameTest(environment = "railoptimization-gametest:serial_194", maxTicks = 20)
+	public void memoEntriesMatchModelAcrossLimitsAndEpochs(GameTestHelper helper) {
+		try {
+			Method check = RailUpdateMemo.class.getDeclaredMethod("checkEntry", long.class, int.class, boolean.class);
+			check.setAccessible(true);
+			AtomicLong epoch = ((LevelEpochAccess) helper.getLevel()).railoptimization$getBlockChangeEpoch();
+			long originalEpoch = epoch.get();
+			try {
+				for (int limit : new int[]{1, 8, 64}) {
+					for (RailShape shape : new RailShape[]{RailShape.EAST_WEST, RailShape.NORTH_SOUTH}) {
+						for (boolean powered : new boolean[]{false, true}) {
+							epoch.set(0x12345678L);
+							BlockPos origin = new BlockPos(-12_345_678, 64, 12_345_678);
+							RailUpdateMemo candidate = new RailUpdateMemo();
+							Map<Long, MemoEntry> reference = new HashMap<>();
+							candidate.beginWalk(helper.getLevel());
+							for (int delta = -limit; delta <= limit; ++delta) {
+								BlockPos pos = memoPathPosition(origin, shape, delta);
+								reference.put(pos.asLong(), new MemoEntry(epoch.get(), powered, limit));
+								candidate.confirm(pos, powered, limit);
+								assertMemoMatches(helper, check, reference, candidate, pos, limit, powered);
+							}
+							for (int delta = -limit; delta <= limit; ++delta) {
+								BlockPos pos = memoPathPosition(origin, shape, delta);
+								assertMemoMatches(helper, check, reference, candidate, pos, limit, powered);
+								assertMemoMatches(helper, check, reference, candidate, pos.above(), limit, powered);
+								assertMemoMatches(helper, check, reference, candidate, pos, limit, !powered);
+								assertMemoMatches(helper, check, reference, candidate, pos, limit == 64 ? 8 : 64, powered);
+							}
+							BlockPos last = memoPathPosition(origin, shape, limit);
+							BlockPos upper = last.above();
+							reference.put(upper.asLong(), new MemoEntry(epoch.get(), !powered, limit));
+							candidate.confirm(upper, !powered, limit);
+							assertMemoMatches(helper, check, reference, candidate, last, limit, powered);
+							assertMemoMatches(helper, check, reference, candidate, upper, limit, !powered);
+							reference.put(origin.asLong(), new MemoEntry(epoch.get(), !powered, limit));
+							candidate.confirm(origin, !powered, limit);
+							assertMemoMatches(helper, check, reference, candidate, origin, limit, !powered);
+							assertMemoMatches(helper, check, reference, candidate, origin, limit, powered);
+							BlockPos otherLine = shape == RailShape.EAST_WEST ? origin.south() : origin.east();
+							reference.put(otherLine.asLong(), new MemoEntry(epoch.get(), powered, limit));
+							candidate.confirm(otherLine, powered, limit);
+							assertMemoMatches(helper, check, reference, candidate, otherLine, limit, powered);
+							int replacementLimit = limit == 64 ? 8 : 64;
+							reference.put(origin.asLong(), new MemoEntry(epoch.get(), powered, replacementLimit));
+							candidate.confirm(origin, powered, replacementLimit);
+							assertMemoMatches(helper, check, reference, candidate, origin, replacementLimit, powered);
+							assertMemoMatches(helper, check, reference, candidate, origin, limit, !powered);
+							epoch.incrementAndGet();
+							assertMemoMatches(helper, check, reference, candidate, last, limit, powered);
+							assertMemoMatches(helper, check, reference, candidate, upper, limit, !powered);
+							assertMemoMatches(helper, check, reference, candidate, origin, limit, !powered);
+							reference.put(origin.asLong(), new MemoEntry(epoch.get(), powered, limit));
+							candidate.confirm(origin, powered, limit);
+							assertMemoMatches(helper, check, reference, candidate, origin, limit, powered);
+							assertMemoMatches(helper, check, reference, candidate, last, limit, powered);
+						}
+					}
+				}
+			} finally {
+				epoch.set(originalEpoch);
+			}
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException("Unable to compare memo entries with the independent model", exception);
+		}
+		helper.succeed();
+	}
+
+	private static BlockPos memoPathPosition(BlockPos origin, RailShape shape, int delta) {
+		return shape == RailShape.EAST_WEST ? origin.offset(delta, Math.floorMod(delta, 3), 0)
+				: origin.offset(0, Math.floorMod(delta, 3), delta);
+	}
+
+	private static void assertMemoMatches(GameTestHelper helper, Method check, Map<Long, MemoEntry> reference, RailUpdateMemo candidate,
+			BlockPos pos, int limit, boolean powered) throws ReflectiveOperationException {
+		MemoEntry entry = reference.get(pos.asLong());
+		long epoch = ((LevelEpochAccess) helper.getLevel()).railoptimization$getBlockChangeEpoch().get();
+		int expected = entry == null ? 0 : entry.epoch == epoch && entry.limit == limit && entry.powered == powered ? 1 : -1;
+		int actual = (int) check.invoke(candidate, pos.asLong(), limit, powered);
+		helper.assertValueEqual(expected, actual, "memo at " + pos + ", limit=" + limit + ", powered=" + powered);
+	}
+
+	private record MemoEntry(long epoch, boolean powered, int limit) {
+	}
 
 	@GameTest(environment = "railoptimization-gametest:serial_110", maxTicks = 1)
 	public void memoDoesNotAliasAfterOldEpochPeriod(GameTestHelper helper) {

@@ -6,6 +6,9 @@ version="1"
 displayName="RailOptimization NeoForge Game Tests"
 description="NeoForge platform smoke tests for RailOptimization."
 
+[[mixins]]
+config="railoptimization-batch-gametest.mixins.json"
+
 [[dependencies.railoptimization_gametest]]
 modId="railoptimization"
 type="required"

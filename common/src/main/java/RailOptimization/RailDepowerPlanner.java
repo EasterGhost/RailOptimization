@@ -1,5 +1,7 @@
 package RailOptimization;
 
+import org.jspecify.annotations.NonNull;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
@@ -48,7 +50,7 @@ final class RailDepowerPlanner {
 		return (first << 8) | second;
 	}
 
-	private static int scan(PoweredRailBlock self, Level level, BlockPos origin, BlockState sourceState, boolean forward,
+	private static int scan(PoweredRailBlock self, Level level, @NonNull BlockPos origin, BlockState sourceState, boolean forward,
 			RailUpdateContext context, int offset, int start, int end) {
 		MutableBlockPos cursor = context.railCursor;
 		BlockState previousState;

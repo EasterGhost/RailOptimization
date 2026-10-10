@@ -7,7 +7,9 @@
     "BaseRailBlockGameTestInvoker",
     "RailSupportCacheGameTestMixin",
     "RailLogicGameTestMixin",
-    "NeighborUpdaterGameTestMixin"
+    "NeighborUpdaterGameTestMixin",
+    "RailBatchWriterGameTestMixin",
+    "RailBatchClientGameTestMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -123,7 +123,7 @@ public final class RailLogic {
 				if (shouldBePowered) {
 					RailLaneUpdater.powerLane(self, level, pos, state, railShape, context, directlyPowered);
 				} else {
-					RailLaneUpdater.dePowerLane(self, level, pos, state, railShape, context);
+					RailLaneUpdater.dePowerLane(self, level, pos, state, railShape, context, -1, -1);
 				}
 			} else {
 				context.memo.bindLevel(level);

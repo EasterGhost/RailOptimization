@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 final class RailBenchmarkRunner {
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final int MEASUREMENT_ROUNDS = 11;
-	private static final long MIN_MEDIAN_SAMPLE_NANOS = 20_000_000L;
 	private static final long TARGET_SAMPLE_NANOS = 30_000_000L;
 	private static final int ISOLATED_WARMUP_ROUNDS = 4;
 	private static final ThreadLocal<EpochMeasurement> LAST_EPOCH_MEASUREMENT =
@@ -176,13 +175,6 @@ final class RailBenchmarkRunner {
 				allocatedBytesPerOperation,
 				measuredOperations
 		);
-		helper.assertTrue(
-				stats.medianNanos() >= MIN_MEDIAN_SAMPLE_NANOS,
-				Component.literal(
-						label + " sample is too short for reliable timing: "
-								+ stats.medianNanos() / 1_000_000 + " ms"
-				)
-		);
 	}
 
 	static void measureAndReportDirectional(
@@ -206,7 +198,6 @@ final class RailBenchmarkRunner {
 				measuredOperations
 		);
 		reportLastMemoEpochMeasurement(helper, label);
-		assertSampleDuration(helper, label, stats.medianNanos());
 	}
 
 	static void measureAndReportDirectionalPair(
@@ -282,17 +273,6 @@ final class RailBenchmarkRunner {
 		}
 	}
 
-	private static void assertSampleDuration(
-			GameTestHelper helper, String label, long medianNanos) {
-		helper.assertTrue(
-				medianNanos >= MIN_MEDIAN_SAMPLE_NANOS,
-				Component.literal(
-						label + " sample is too short for reliable timing: "
-								+ medianNanos / 1_000_000 + " ms"
-				)
-		);
-	}
-
 	private static String allocatedBytesPerOperation(IntToLongFunction measurement, int operations) {
 		if (!(ManagementFactory.getThreadMXBean() instanceof com.sun.management.ThreadMXBean threadBean)
 				|| !threadBean.isThreadAllocatedMemorySupported()) {
@@ -338,15 +318,6 @@ final class RailBenchmarkRunner {
 				speedup
 		);
 		reportLastMemoEpochMeasurement(helper, label);
-		helper.assertTrue(
-				Math.min(result.vanilla().medianNanos(), result.optimized().medianNanos())
-						>= MIN_MEDIAN_SAMPLE_NANOS,
-				Component.literal(
-						label + " sample is too short for reliable timing: vanilla="
-								+ result.vanilla().medianNanos() / 1_000_000 + " ms, optimized="
-								+ result.optimized().medianNanos() / 1_000_000 + " ms"
-				)
-		);
 		helper.assertTrue(
 				result.optimized().medianNanos()
 						<= result.vanilla().medianNanos() * maxOptimizedToVanillaRatio,

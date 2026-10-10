@@ -52,6 +52,8 @@ sourceSets {
         }
     }
     gametest {
+        java.srcDir('../common/src/gametest/java')
+        resources.srcDir('../common/src/gametest/resources')
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }

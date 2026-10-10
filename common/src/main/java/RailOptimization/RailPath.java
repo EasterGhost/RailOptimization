@@ -2,7 +2,6 @@ package RailOptimization;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -12,11 +11,9 @@ final class RailPath {
 	static final byte AXIS_NONE = 0;
 	static final byte AXIS_EAST_WEST = 1;
 	static final byte AXIS_NORTH_SOUTH = 2;
-	static final Direction[] EAST_WEST_DIRECTIONS = new Direction[] { Direction.WEST, Direction.EAST };
-	static final Direction[] NORTH_SOUTH_DIRECTIONS = new Direction[] { Direction.SOUTH, Direction.NORTH };
 	static final RailShape[] RAIL_SHAPES = RailShape.values();
-	static final byte[] RAIL_AXIS = new byte[RailShape.values().length];
-	private static final boolean[] RAIL_ASCENDING = new boolean[RailShape.values().length];
+	static final byte[] RAIL_AXIS = new byte[RAIL_SHAPES.length];
+	private static final boolean[] RAIL_ASCENDING = new boolean[RAIL_SHAPES.length];
 	static final byte[] STEP_X;
 	static final byte[] STEP_Y;
 	static final byte[] STEP_Z;
@@ -36,7 +33,7 @@ final class RailPath {
 		RAIL_ASCENDING[RailShape.ASCENDING_NORTH.ordinal()] = true;
 		RAIL_ASCENDING[RailShape.ASCENDING_SOUTH.ordinal()] = true;
 
-		int stepCount = RailShape.values().length << 1;
+		int stepCount = RAIL_SHAPES.length << 1;
 		RailShape[] flatShapes = new RailShape[stepCount];
 		byte[] stepX = new byte[stepCount];
 		byte[] stepY = new byte[stepCount];

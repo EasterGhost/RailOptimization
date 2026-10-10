@@ -1,5 +1,8 @@
 package RailOptimization;
 
+import java.lang.reflect.Method;
+import java.util.SplittableRandom;
+
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -11,6 +14,106 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailDirectionalPathGameTest {
+	@SuppressWarnings("null")
+	@GameTest(environment = "railoptimization-gametest:serial_195", structure = "railoptimization-gametest:batch_write_empty", maxTicks = 20)
+	public void directionalSearchMatchesVanillaSnapshots(GameTestHelper helper) {
+		Level level = helper.getLevel();
+		BlockPos origin = helper.absolutePos(new BlockPos(10, 12, 10));
+		// Include the two-block redstone query halo around both snapshot planes.
+		helper.assertValueEqual(true, helper.getBounds().contains(origin.offset(-10, -11, -10).getCenter()), "snapshot query lower bound");
+		helper.assertValueEqual(true, helper.getBounds().contains(origin.offset(10, 11, 10).getCenter()), "snapshot query upper bound");
+		int originalLimit = RailLogic.getRailPowerLimit();
+		int queries = 0;
+		try {
+			Method vanillaSearch = PoweredRailBlock.class.getDeclaredMethod("findPoweredRailSignal",
+					Level.class, BlockPos.class, BlockState.class, boolean.class, int.class);
+			vanillaSearch.setAccessible(true);
+			RailLogic.setRailPowerLimit(8);
+			SplittableRandom random = new SplittableRandom(0x5241494C);
+			for (Block block : new Block[]{Blocks.POWERED_RAIL, Blocks.ACTIVATOR_RAIL}) {
+				PoweredRailBlock rail = (PoweredRailBlock) block;
+				Block other = block == Blocks.POWERED_RAIL ? Blocks.ACTIVATOR_RAIL : Blocks.POWERED_RAIL;
+				for (boolean eastWest : new boolean[]{true, false}) {
+					RailShape[] shapes = eastWest
+							? new RailShape[]{RailShape.EAST_WEST, RailShape.ASCENDING_EAST, RailShape.ASCENDING_WEST}
+							: new RailShape[]{RailShape.NORTH_SOUTH, RailShape.ASCENDING_NORTH, RailShape.ASCENDING_SOUTH};
+					for (int board = 0; board < 32; ++board) {
+						// These are frozen query snapshots, not player-placeable circuit or performance fixtures.
+						for (int column = -8; column <= 8; ++column) {
+							for (int height = -9; height <= 9; ++height) {
+								int choice = random.nextInt(20);
+								BlockState cell = choice == 0 ? Blocks.REDSTONE_BLOCK.defaultBlockState()
+										: choice == 1 ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState();
+								if (choice >= 6) {
+									PoweredRailBlock cellRail = (PoweredRailBlock) (choice < 9 ? other : block);
+									RailShape shape = RailShape.values()[random.nextInt(6)];
+									cell = cellRail.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape)
+											.setValue(PoweredRailBlock.POWERED, random.nextInt(10) != 0);
+								}
+								level.setBlock(queryPosition(origin, eastWest, column, height), cell, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+							}
+						}
+						for (RailShape shape : shapes) {
+							BlockState root = rail.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape);
+							level.setBlock(origin, root, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+							for (boolean forward : new boolean[]{true, false}) {
+								for (int distance : new int[]{0, 3, 7}) {
+									boolean expected = (boolean) vanillaSearch.invoke(rail, level, origin, root, forward, distance);
+									RailUpdateContext context = new RailUpdateContext(8);
+									for (int repeat = 0; repeat < 2; ++repeat) {
+										boolean actual = RailSignalSearcher.findPoweredRailSignalFaster(rail, level, origin, root, forward, distance, context);
+										helper.assertValueEqual(expected, actual, block + ": board=" + board + ", root=" + shape
+												+ ", forward=" + forward + ", distance=" + distance + ", repeat=" + repeat);
+										++queries;
+									}
+								}
+							}
+						}
+					}
+					clearQuerySnapshot(level, origin, eastWest);
+					for (int limit : new int[]{1, 8, 64}) {
+						RailLogic.setRailPowerLimit(limit);
+						BlockState root = rail.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shapes[0]);
+						BlockState powered = root.setValue(PoweredRailBlock.POWERED, true);
+						BlockPos primary = queryPosition(origin, eastWest, eastWest ? 1 : -1, 0);
+						level.setBlock(origin, root, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						level.setBlock(primary, powered, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						level.setBlock(primary.below(), powered, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						level.setBlock(primary.below(2), Blocks.REDSTONE_BLOCK.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						helper.assertValueEqual(false, level.hasNeighborSignal(primary), "primary candidate is not directly powered");
+						helper.assertValueEqual(true, level.hasNeighborSignal(primary.below()), "lower candidate is directly powered");
+						helper.assertValueEqual(true, RailSignalSearcher.findPoweredRailSignalFaster(rail, level, origin, root, false,
+								limit - 1, new RailUpdateContext(limit)), "lower candidate at the final search depth, eastWest=" + eastWest + ", limit=" + limit);
+					}
+					clearQuerySnapshot(level, origin, eastWest);
+					RailLogic.setRailPowerLimit(8);
+				}
+			}
+			helper.assertValueEqual(4608, queries, "cold and warm vanilla query comparisons");
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException("Unable to compare vanilla rail search", exception);
+		} finally {
+			clearQuerySnapshot(level, origin, true);
+			clearQuerySnapshot(level, origin, false);
+			RailLogic.setRailPowerLimit(originalLimit);
+		}
+		helper.succeed();
+	}
+
+	private static BlockPos queryPosition(BlockPos origin, boolean eastWest, int column, int height) {
+		return origin.offset(eastWest ? column : 0, height, eastWest ? 0 : column);
+	}
+
+	@SuppressWarnings("null")
+	private static void clearQuerySnapshot(Level level, BlockPos origin, boolean eastWest) {
+		for (int column = -8; column <= 8; ++column) {
+			for (int height = -9; height <= 9; ++height) {
+				level.setBlock(queryPosition(origin, eastWest, column, height), Blocks.AIR.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+			}
+		}
+	}
+
+	@SuppressWarnings("null")
 	@GameTest(environment = "railoptimization-gametest:serial_193", maxTicks = 20)
 	public void knownBackDirectionMatchesTwoDirectionCheck(GameTestHelper helper) {
 		assertAxisClassification(helper);

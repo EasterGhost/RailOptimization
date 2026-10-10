@@ -6,6 +6,10 @@ plugins {
 version = "${project.mod_version}+mc${project.minecraft_version}-fabric"
 group = project.maven_group
 
+loom {
+    accessWidenerPath = file('../common/src/main/resources/railoptimization.accesswidener')
+}
+
 repositories {
     // Add repositories to retrieve artifacts from in here.
     // You should only use this when depending on other mods because
@@ -39,6 +43,8 @@ fabricApi {
 }
 
 apply from: rootProject.file('gradle/gametest-structures.gradle')
+
+sourceSets.gametest.java.srcDir('../common/src/gametest/java')
 
 gradle.projectsEvaluated {
     def gametestFilter = project.findProperty("gametestFilter")

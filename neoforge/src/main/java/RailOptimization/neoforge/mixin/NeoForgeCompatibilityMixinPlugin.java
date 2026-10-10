@@ -5,6 +5,7 @@ import java.util.Set;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -25,6 +26,8 @@ public final class NeoForgeCompatibilityMixinPlugin implements IMixinConfigPlugi
 			case MIXIN_PACKAGE + "RailPathMixin" -> replaceCategoryChecks(targetClass, Set.of("isSameRailWithAxis", "isPoweredRailWithAxis"));
 			case MIXIN_PACKAGE + "RailSignalSearcherMixin" -> replaceCategoryChecks(targetClass, Set.of("findPoweredRailSignalAt"));
 			case MIXIN_PACKAGE + "RailUpdateNotifierMixin" -> replaceNotificationSources(targetClass);
+			case MIXIN_PACKAGE + "RailBatchWriterMixin" -> {
+			}
 			default -> throw new IllegalStateException("Unknown NeoForge compatibility mixin: " + mixinClassName);
 		}
 	}
@@ -71,14 +74,16 @@ public final class NeoForgeCompatibilityMixinPlugin implements IMixinConfigPlugi
 	private static void replaceNotificationSources(ClassNode targetClass) {
 		int replacements = 0;
 		for (MethodNode method : targetClass.methods) {
-			if (!method.name.equals("notifyMain") && !method.name.equals("notifySupport") && !method.name.equals("notifyOuter")) continue;
-			if ((method.access & Opcodes.ACC_STATIC) == 0 || !method.desc.startsWith(
-					"(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/block/Block;LRailOptimization/RailChangeList;I")) {
+			boolean westEndpoint = method.name.equals("notifyWestEndpoint");
+			if (!westEndpoint && !method.name.equals("notifyMain") && !method.name.equals("notifySupport")) continue;
+			String descriptor = "(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/block/Block;LRailOptimization/RailChangeList;"
+					+ (westEndpoint ? "" : "I") + "Lnet/minecraft/core/BlockPos$MutableBlockPos;)V";
+			if ((method.access & Opcodes.ACC_STATIC) == 0 || !method.desc.equals(descriptor)) {
 				throw new IllegalStateException("Unexpected notification signature: " + method.name + method.desc);
 			}
 			InsnList source = new InsnList();
 			source.add(new VarInsnNode(Opcodes.ALOAD, 2));
-			source.add(new VarInsnNode(Opcodes.ILOAD, 3));
+			source.add(westEndpoint ? new InsnNode(Opcodes.ICONST_0) : new VarInsnNode(Opcodes.ILOAD, 3));
 			source.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "RailOptimization/RailChangeList", "state", "(I)L" + BLOCK_STATE + ";", false));
 			source.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, BLOCK_STATE, "getBlock", "()Lnet/minecraft/world/level/block/Block;", false));
 			source.add(new VarInsnNode(Opcodes.ASTORE, 1));
