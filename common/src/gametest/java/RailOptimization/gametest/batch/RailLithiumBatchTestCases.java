@@ -241,6 +241,8 @@ public final class RailLithiumBatchTestCases {
 					context.batchWriter.begin();
 					context.batchWriter.queue(rail, previous, powered);
 					write(helper, context);
+					// Rail propagation sends NC after the batch write, invalidating Lithium's hopper caches.
+					helper.getLevel().updateNeighborsAt(rail, previous.getBlock());
 					int index = 0;
 					for (Direction direction : Direction.values()) {
 						HopperBlockEntity hopper = hoppers.get(index++);
@@ -251,7 +253,7 @@ public final class RailLithiumBatchTestCases {
 					previous = previous.setValue(PoweredRailBlock.POWERED, powered);
 				}
 			}
-			LoggerFactory.getLogger(RailLithiumBatchTestCases.class).info("Lithium hopper cache audit: {} invalidations, six directions, loaded chunk edges",
+			LoggerFactory.getLogger(RailLithiumBatchTestCases.class).info("Lithium hopper cache audit: {} invalidations after NC, six directions, loaded chunk edges",
 					checks);
 		} catch (ReflectiveOperationException failure) {
 			throw new IllegalStateException(failure);

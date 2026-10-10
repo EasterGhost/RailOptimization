@@ -147,8 +147,6 @@ final class RailBatchWriter {
 				if (clientUpdates[group]) {
 					level.sendBlockUpdated(cursor, previous, target, FLAGS);
 				}
-				RailLithiumCompatibility.invalidateAdjacentHoppers(level, chunks[group], cursor, context.scratchPos);
-				level.updatePOIOnBlockStateChange(cursor, previous, target);
 				context.memo.confirm(cursor, RailPath.isPowered(target), context.railPowerLimit);
 			}
 		} finally {
