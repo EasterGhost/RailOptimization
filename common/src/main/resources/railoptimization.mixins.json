@@ -9,7 +9,8 @@
     "PoweredRailBlockMixin",
     "LevelChunkMixin",
     "BaseRailBlockMixin",
-    "PalettedContainerMixin"
+    "PalettedContainerMixin",
+    "RailCollectingNeighborUpdaterMixin"
   ],
   "client": [
   ],

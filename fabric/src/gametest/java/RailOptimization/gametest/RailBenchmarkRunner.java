@@ -18,7 +18,7 @@ final class RailBenchmarkRunner {
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final int MEASUREMENT_ROUNDS = 11;
 	private static final long TARGET_SAMPLE_NANOS = 30_000_000L;
-	private static final int ISOLATED_WARMUP_ROUNDS = 4;
+	private static final int ISOLATED_WARMUP_ROUNDS = 6;
 	private static final ThreadLocal<EpochMeasurement> LAST_EPOCH_MEASUREMENT =
 			ThreadLocal.withInitial(EpochMeasurement::new);
 
@@ -204,6 +204,8 @@ final class RailBenchmarkRunner {
 			GameTestHelper helper, String label, int initialOperations,
 			double maxOptimizedToVanillaRatio,
 			IntToLongFunction vanillaMeasurement, IntToLongFunction optimizedMeasurement) {
+		long warmupStart = System.nanoTime();
+		long compilationBefore = ManagementFactory.getCompilationMXBean().getTotalCompilationTime();
 		warmUpPair(initialOperations, vanillaMeasurement, optimizedMeasurement);
 		IntToLongFunction shorterMeasurement = operations -> Math.min(
 				vanillaMeasurement.applyAsLong(operations),
@@ -211,10 +213,16 @@ final class RailBenchmarkRunner {
 		int operations = calibrateOperations(initialOperations, shorterMeasurement);
 		warmUpPair(operations, vanillaMeasurement, optimizedMeasurement);
 		int measuredOperations = calibrateOperations(operations, shorterMeasurement);
+		long compilationAfterWarmup = ManagementFactory.getCompilationMXBean().getTotalCompilationTime();
+		LOGGER.info("RailOptimization warmup [{}]: {} rounds/pass, {} ms wall, JIT compiler time {} -> {} ms",
+				label, ISOLATED_WARMUP_ROUNDS, (System.nanoTime() - warmupStart) / 1_000_000L,
+				compilationBefore, compilationAfterWarmup);
 
 		BenchmarkResult result = benchmarkAlternating(
 				() -> vanillaMeasurement.applyAsLong(measuredOperations),
 				() -> optimizedMeasurement.applyAsLong(measuredOperations));
+		LOGGER.info("RailOptimization sampling JIT [{}]: compiler time {} -> {} ms",
+				label, compilationAfterWarmup, ManagementFactory.getCompilationMXBean().getTotalCompilationTime());
 		reportAndAssert(
 				helper, label, measuredOperations,
 				maxOptimizedToVanillaRatio, result);

@@ -9,7 +9,8 @@
     "RailPathMixin",
     "RailSignalSearcherMixin",
     "RailUpdateNotifierMixin",
-    "RailBatchWriterMixin"
+    "RailBatchWriterMixin",
+    "RailNotificationBatchMixin"
   ],
   "injectors": {
     "defaultRequire": 1

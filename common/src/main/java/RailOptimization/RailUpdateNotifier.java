@@ -21,6 +21,9 @@ final class RailUpdateNotifier {
 
 	static void updateRails(Level world, Block sourceBlock, RailShape sourceShape, int firstDirectionCount, int secondDirectionCount,
 			RailChangeList changedRails, MutableBlockPos scratchPos) {
+		if (RailNotificationBatch.tryNotify(world, sourceShape, firstDirectionCount, secondDirectionCount, changedRails)) {
+			return;
+		}
 		boolean flatPath = !changedRails.hasSlope();
 		if (RailPath.RAIL_AXIS[sourceShape.ordinal()] == RailPath.AXIS_EAST_WEST) {
 			updateEastWestRails(world, sourceBlock, firstDirectionCount, secondDirectionCount, changedRails, flatPath, scratchPos);

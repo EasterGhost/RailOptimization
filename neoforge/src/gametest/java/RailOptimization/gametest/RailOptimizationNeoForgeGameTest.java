@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import RailOptimization.RailLogic;
 import RailOptimization.gametest.batch.RailBatchWriteTestCases;
 import RailOptimization.gametest.batch.RailLithiumBatchTestCases;
+import RailOptimization.gametest.batch.RailNotificationBatchTestCases;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.BuiltinTestFunctions;
@@ -58,6 +59,12 @@ public final class RailOptimizationNeoForgeGameTest {
 		registerTest(event, batchEnvironment, "batch_grouped_writes", batchStructure, 100,
 				RailBatchWriteTestCases::groupedWritesAreDeferredAndPreserveSectionState);
 		registerTest(event, batchEnvironment, "batch_palette_resize", batchStructure, 100, RailBatchWriteTestCases::paletteBatchHandlesResizesAndGlobalIds);
+		registerTest(event, batchEnvironment, "batch_pending_states", batchStructure, 100,
+				RailOptimization.gametest.batch.RailPendingStateTestCases::pendingStatesSurviveReuseAndCoordinateCollisions);
+		registerTest(event, batchEnvironment, "batch_notification_plans", batchStructure, 100,
+				RailNotificationBatchTestCases::bitmapPlansMatchHashAndSurviveReuse);
+		registerTest(event, batchEnvironment, "batch_notification_queue", batchStructure, 100,
+				RailNotificationBatchTestCases::nativeQueueHonorsBudgetAndDebugFallback);
 		registerTest(event, batchEnvironment, "batch_platform_snapshots", batchStructure, 100,
 				RailBatchWriteTestCases::platformSnapshotCaptureUsesNormalWrites);
 		Holder<TestEnvironmentDefinition<?>> lithiumEnvironment = event.registerEnvironment(id("batch_lithium"));
