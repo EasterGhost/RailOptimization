@@ -81,11 +81,8 @@ final class RailPath {
 		return RAIL_ASCENDING[railShape.ordinal()];
 	}
 
-	static boolean isMismatchedRailAxis(RailShape expected, RailShape actual) {
-		if (expected == RailShape.EAST_WEST) {
-			return actual == RailShape.NORTH_SOUTH || actual == RailShape.ASCENDING_NORTH || actual == RailShape.ASCENDING_SOUTH;
-		}
-		return actual == RailShape.EAST_WEST || actual == RailShape.ASCENDING_EAST || actual == RailShape.ASCENDING_WEST;
+	static boolean isMismatchedRailAxis(RailShape expected, int actual) {
+		return RAIL_AXIS[actual] == (expected == RailShape.EAST_WEST ? AXIS_NORTH_SOUTH : AXIS_EAST_WEST);
 	}
 
 	static BlockState findNextRailState(PoweredRailBlock self, Level level, MutableBlockPos railPos, BlockState state, boolean forward,
@@ -151,7 +148,7 @@ final class RailPath {
 	}
 
 	static boolean isSameRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
-		return state.is(self) && !isMismatchedRailAxis(expectedShape, railShape(state));
+		return state.is(self) && !isMismatchedRailAxis(expectedShape, railData(state) & RailStateAccess.SHAPE_MASK);
 	}
 
 	static boolean isPoweredRailWithAxis(PoweredRailBlock self, BlockState state, RailShape expectedShape) {
@@ -159,7 +156,7 @@ final class RailPath {
 			return false;
 		}
 		int railData = railData(state);
-		return !isMismatchedRailAxis(expectedShape, RAIL_SHAPES[railData & RailStateAccess.SHAPE_MASK]) && (railData & RailStateAccess.POWERED_MASK) != 0;
+		return !isMismatchedRailAxis(expectedShape, railData & RailStateAccess.SHAPE_MASK) && (railData & RailStateAccess.POWERED_MASK) != 0;
 	}
 
 	static RailShape railShape(BlockState state) {

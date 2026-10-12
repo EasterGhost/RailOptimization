@@ -54,21 +54,6 @@ final class RailUpdateContext {
 		return powered;
 	}
 
-	BlockState belowStateWhenNoNeighborSignal(Level level, BlockPos pos, BlockState unknownBelowState) {
-		long position = pos.asLong();
-		int entry = searchCache.directSignalEntry(position);
-		byte cached = searchCache.entryState(entry);
-		if (cached != RailLogic.CHECKED_UNKNOWN) {
-			return cached == RailLogic.CHECKED_POWERED ? null : unknownBelowState;
-		}
-
-		int posChunkX = pos.getX() >> 4;
-		int posChunkZ = pos.getZ() >> 4;
-		BlockState belowState = RailNeighborSignalChecker.belowStateWhenNoNeighborSignal(level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
-		searchCache.putDirectSignal(position, entry, belowState == null ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
-		return belowState;
-	}
-
 	@SuppressWarnings("null")
 	BlockState getBlockState(Level level, BlockPos pos) {
 		if (batchWriter.planning()) {

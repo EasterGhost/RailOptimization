@@ -19,7 +19,7 @@ public class RailDirectionalPathGameTest {
 	public void directionalSearchMatchesVanillaSnapshots(GameTestHelper helper) {
 		Level level = helper.getLevel();
 		BlockPos origin = helper.absolutePos(new BlockPos(10, 12, 10));
-		// Include the two-block redstone query halo around both snapshot planes.
+		// Include the two-block redstone query halo around the snapshot grid.
 		helper.assertValueEqual(true, helper.getBounds().contains(origin.offset(-10, -11, -10).getCenter()), "snapshot query lower bound");
 		helper.assertValueEqual(true, helper.getBounds().contains(origin.offset(10, 11, 10).getCenter()), "snapshot query upper bound");
 		int originalLimit = RailLogic.getRailPowerLimit();
@@ -38,21 +38,27 @@ public class RailDirectionalPathGameTest {
 							? new RailShape[]{RailShape.EAST_WEST, RailShape.ASCENDING_EAST, RailShape.ASCENDING_WEST}
 							: new RailShape[]{RailShape.NORTH_SOUTH, RailShape.ASCENDING_NORTH, RailShape.ASCENDING_SOUTH};
 					for (int board = 0; board < 32; ++board) {
-						// These are frozen query snapshots, not player-placeable circuit or performance fixtures.
+						// Frozen query snapshots exclude vertically stacked rails.
 						for (int column = -8; column <= 8; ++column) {
+							boolean railBelow = false;
 							for (int height = -9; height <= 9; ++height) {
 								int choice = random.nextInt(20);
 								BlockState cell = choice == 0 ? Blocks.REDSTONE_BLOCK.defaultBlockState()
 										: choice == 1 ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState();
-								if (choice >= 6) {
+								if (choice >= 6 && !railBelow) {
 									PoweredRailBlock cellRail = (PoweredRailBlock) (choice < 9 ? other : block);
 									RailShape shape = RailShape.values()[random.nextInt(6)];
 									cell = cellRail.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape)
 											.setValue(PoweredRailBlock.POWERED, random.nextInt(10) != 0);
 								}
-								level.setBlock(queryPosition(origin, eastWest, column, height), cell, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+								railBelow = cell.getBlock() instanceof PoweredRailBlock;
+								BlockPos cellPos = queryPosition(origin, eastWest, column, height);
+								if (railBelow) level.setBlock(cellPos.below(), Blocks.STONE.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+								level.setBlock(cellPos, cell, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
 							}
 						}
+						level.setBlock(origin.below(), Blocks.STONE.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						level.setBlock(origin.above(), Blocks.AIR.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
 						for (RailShape shape : shapes) {
 							BlockState root = rail.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape);
 							level.setBlock(origin, root, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
@@ -74,10 +80,11 @@ public class RailDirectionalPathGameTest {
 					for (int limit : new int[]{1, 8, 64}) {
 						RailLogic.setRailPowerLimit(limit);
 						BlockState root = rail.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shapes[0]);
-						BlockState powered = root.setValue(PoweredRailBlock.POWERED, true);
+						BlockState powered = root.setValue(PoweredRailBlock.SHAPE, shapes[2]).setValue(PoweredRailBlock.POWERED, true);
 						BlockPos primary = queryPosition(origin, eastWest, eastWest ? 1 : -1, 0);
 						level.setBlock(origin, root, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
-						level.setBlock(primary, powered, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						level.setBlock(origin.below(), Blocks.STONE.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						level.setBlock(primary, Blocks.AIR.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
 						level.setBlock(primary.below(), powered, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
 						level.setBlock(primary.below(2), Blocks.REDSTONE_BLOCK.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
 						helper.assertValueEqual(false, level.hasNeighborSignal(primary), "primary candidate is not directly powered");
@@ -171,7 +178,7 @@ public class RailDirectionalPathGameTest {
 				boolean mismatched = expected == RailShape.EAST_WEST
 						? actual == RailShape.NORTH_SOUTH || actual == RailShape.ASCENDING_NORTH || actual == RailShape.ASCENDING_SOUTH
 						: actual == RailShape.EAST_WEST || actual == RailShape.ASCENDING_EAST || actual == RailShape.ASCENDING_WEST;
-				helper.assertValueEqual(mismatched, RailPath.isMismatchedRailAxis(expected, actual), "axis classification: " + expected + " -> " + actual);
+				helper.assertValueEqual(mismatched, RailPath.isMismatchedRailAxis(expected, actual.ordinal()), "axis classification: " + expected + " -> " + actual);
 				++cases;
 			}
 		}

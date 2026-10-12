@@ -81,7 +81,7 @@ final class RailOptimizationNeoForgeReviewGameTest {
 
 	private static void verifyAxisClassification(GameTestHelper helper) {
 		try {
-			var predicate = Class.forName("RailOptimization.RailPath").getDeclaredMethod("isMismatchedRailAxis", RailShape.class, RailShape.class);
+			var predicate = Class.forName("RailOptimization.RailPath").getDeclaredMethod("isMismatchedRailAxis", RailShape.class, int.class);
 			predicate.setAccessible(true);
 			int cases = 0;
 			for (RailShape expected : RailShape.values()) {
@@ -89,7 +89,7 @@ final class RailOptimizationNeoForgeReviewGameTest {
 					boolean mismatched = expected == RailShape.EAST_WEST
 							? actual == RailShape.NORTH_SOUTH || actual == RailShape.ASCENDING_NORTH || actual == RailShape.ASCENDING_SOUTH
 							: actual == RailShape.EAST_WEST || actual == RailShape.ASCENDING_EAST || actual == RailShape.ASCENDING_WEST;
-					helper.assertValueEqual(mismatched, (boolean) predicate.invoke(null, expected, actual), "NeoForge axis: " + expected + " -> " + actual);
+					helper.assertValueEqual(mismatched, (boolean) predicate.invoke(null, expected, actual.ordinal()), "NeoForge axis: " + expected + " -> " + actual);
 					++cases;
 				}
 			}

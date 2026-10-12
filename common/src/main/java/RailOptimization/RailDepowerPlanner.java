@@ -20,13 +20,6 @@ final class RailDepowerPlanner {
 		if (!RailPath.supportsFastSearch(RailPath.railShape(state))) {
 			return NEEDS_GENERAL_QUERY;
 		}
-		context.scratchPos.set(pos.getX(), pos.getY() - 1, pos.getZ());
-		RailShape flatShape = RailPath.RAIL_AXIS[RailPath.railShape(state).ordinal()] == RailPath.AXIS_EAST_WEST
-				? RailShape.EAST_WEST : RailShape.NORTH_SOUTH;
-		if (RailPath.isPoweredRailWithAxis(self, context.getBlockState(level, context.scratchPos), flatShape)) {
-			return NEEDS_GENERAL_QUERY;
-		}
-
 		int limit = context.railPowerLimit;
 		int first = scan(self, level, pos, state, true, context, 0, 0, limit);
 		if (first < 0) return first;
@@ -84,26 +77,12 @@ final class RailDepowerPlanner {
 				if (!RailPath.isSameRailWithAxis(self, state, axisShape)) break;
 			}
 			if (!RailPath.isPowered(state)) {
-				if (primary && checkBelow) {
-					context.scratchPos.set(x, y - 1, z);
-					if (RailPath.isPoweredRailWithAxis(self, context.getBlockState(level, context.scratchPos), axisShape)) {
-						return NEEDS_GENERAL_QUERY;
-					}
-				}
 				break;
 			}
 
 			cursor.set(x, y, z);
-			BlockState below = context.belowStateWhenNoNeighborSignal(level, cursor, state);
-			if (below == null) {
+			if (context.hasNeighborSignal(level, cursor)) {
 				return index <= limit ? KEEP_POWERED : Math.max(0, index - limit - 1);
-			}
-			if (primary && checkBelow) {
-				if (below == state) {
-					context.scratchPos.set(x, y - 1, z);
-					below = context.getBlockState(level, context.scratchPos);
-				}
-				if (RailPath.isPoweredRailWithAxis(self, below, axisShape)) return NEEDS_GENERAL_QUERY;
 			}
 			RailShape shape = RailPath.railShape(state);
 			boolean needsConnectionCheck = shape != previousShape || RailPath.isAscending(shape) || !primary;

@@ -24,7 +24,7 @@ public final class NeoForgeCompatibilityMixinPlugin implements IMixinConfigPlugi
 		switch (mixinClassName) {
 			case MIXIN_PACKAGE + "RailNeighborSignalCheckerMixin" -> replaceWeakPowerChecks(targetClass);
 			case MIXIN_PACKAGE + "RailPathMixin" -> replaceCategoryChecks(targetClass, Set.of("isSameRailWithAxis", "isPoweredRailWithAxis"));
-			case MIXIN_PACKAGE + "RailSignalSearcherMixin" -> replaceCategoryChecks(targetClass, Set.of("findPoweredRailSignalAt"));
+			case MIXIN_PACKAGE + "RailSignalSearcherMixin" -> replaceCategoryChecks(targetClass, Set.of("findPoweredRailSignalFaster"));
 			case MIXIN_PACKAGE + "RailUpdateNotifierMixin" -> replaceNotificationSources(targetClass);
 			case MIXIN_PACKAGE + "RailBatchWriterMixin", MIXIN_PACKAGE + "RailNotificationBatchMixin" -> {
 			}
