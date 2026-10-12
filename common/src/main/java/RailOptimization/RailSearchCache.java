@@ -3,7 +3,6 @@ package RailOptimization;
 import java.util.Arrays;
 
 final class RailSearchCache {
-	static final byte LANE = 0;
 	static final byte SEARCH = 1;
 	static final byte SEARCH_FORWARD = 1 << 1;
 	static final byte SEARCH_NORTH_SOUTH = 1 << 2;
@@ -34,23 +33,6 @@ final class RailSearchCache {
 		meta = new int[capacity];
 		mask = capacity - 1;
 		hashShift = Long.SIZE - Integer.numberOfTrailingZeros(capacity);
-	}
-
-	byte get(long position) {
-		return get(position, LANE);
-	}
-
-	byte get(long position, byte entryFlags) {
-		int index = findOrEmpty(position, entryFlags);
-		return index >= 0 ? (byte) (meta[index] >>> META_STATE_SHIFT) : RailLogic.CHECKED_UNKNOWN;
-	}
-
-	void put(long position, byte state) {
-		put(position, LANE, state);
-	}
-
-	void put(long position, byte entryFlags, byte state) {
-		putAt(position, entryFlags, state, findOrEmpty(position, entryFlags));
 	}
 
 	int directSignalEntry(long position) {

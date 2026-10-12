@@ -17,9 +17,6 @@ final class RailDepowerPlanner {
 	}
 
 	static int findSupplyOrPlan(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, RailUpdateContext context) {
-		if (!RailPath.supportsFastSearch(RailPath.railShape(state))) {
-			return NEEDS_GENERAL_QUERY;
-		}
 		int limit = context.railPowerLimit;
 		int first = scan(self, level, pos, state, true, context, 0, 0, limit);
 		if (first < 0) return first;

@@ -14,21 +14,15 @@ final class RailLaneUpdater {
 
 	static void powerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState, RailShape railShape, RailUpdateContext context,
 			boolean directlyPowered) {
-		if (!RailPath.supportsFastSearch(railShape)) {
-			return;
-		}
-
 		context.memo.beginWalk(world);
 		RailUpdateMemo.trackContext(context.memo);
 		context.batchWriter.begin();
-		RailSearchCache checkedPos = context.searchCache;
 		RailChangeList changedRails = context.changeList;
 		int firstDirectionCount;
 		int secondDirectionCount;
 		RailUpdateMemo.beginLaneWrite();
 		try {
 			context.batchWriter.queue(pos, mainState, true);
-			checkedPos.put(pos.asLong(), RailLogic.CHECKED_POWERED);
 			firstDirectionCount = setRailPositionsPower(self, world, pos, mainState, context, true, directlyPowered);
 			secondDirectionCount = setRailPositionsPower(self, world, pos, mainState, context, false, directlyPowered);
 			context.batchWriter.write(world, context);
@@ -41,10 +35,6 @@ final class RailLaneUpdater {
 
 	static void dePowerLane(PoweredRailBlock self, Level world, BlockPos pos, BlockState mainState, RailShape railShape, RailUpdateContext context,
 			int firstPlan, int secondPlan) {
-		if (!RailPath.supportsFastSearch(railShape)) {
-			return;
-		}
-
 		context.memo.beginWalk(world);
 		RailUpdateMemo.trackContext(context.memo);
 		context.beginDepowering();
@@ -69,7 +59,6 @@ final class RailLaneUpdater {
 	private static int setRailPositionsPower(PoweredRailBlock self, Level world, BlockPos pos, BlockState sourceState, RailUpdateContext context,
 			boolean forward, boolean directlyPowered) {
 		int count = 0;
-		RailSearchCache checkedPos = context.searchCache;
 		MutableBlockPos cursor = context.railCursor;
 		cursor.set(pos.getX(), pos.getY(), pos.getZ());
 		BlockState previousState = sourceState;
@@ -94,26 +83,12 @@ final class RailLaneUpdater {
 				directPath = false;
 			}
 
-			long posKey = cursor.asLong();
-			byte checked = checkedPos.get(posKey);
-
-			if (checked != RailLogic.CHECKED_UNKNOWN) {
-				if (checked == RailLogic.CHECKED_BLOCKED) {
-					break;
-				}
-				previousState = state;
-				count++;
-				continue;
-			}
-
 			if (RailPath.isPowered(state) || (!continuesDirectPath && !(context.hasNeighborSignal(world, cursor) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)))) {
-				checkedPos.put(posKey, RailLogic.CHECKED_BLOCKED);
 				break;
 			}
 
-			checkedPos.put(posKey, RailLogic.CHECKED_POWERED);
 			context.batchWriter.queue(cursor, state, true);
 			previousState = state;
 			count++;
@@ -135,7 +110,6 @@ final class RailLaneUpdater {
 		}
 
 		int count = 0;
-		RailSearchCache checkedPos = context.searchCache;
 		MutableBlockPos cursor = context.railCursor;
 		cursor.set(pos.getX(), pos.getY(), pos.getZ());
 		BlockState previousState = sourceState;
@@ -146,22 +120,13 @@ final class RailLaneUpdater {
 				break;
 			}
 
-			long posKey = cursor.asLong();
-			byte checked = checkedPos.get(posKey);
-
-			if (checked == RailLogic.CHECKED_BLOCKED) {
-				break;
-			}
-
 			if (!RailPath.isPowered(state) || context.hasNeighborSignal(world, cursor) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)) {
-				checkedPos.put(posKey, RailLogic.CHECKED_BLOCKED);
 				break;
 			}
 
 			context.batchWriter.queue(cursor, state, false);
-			checkedPos.put(posKey, RailLogic.CHECKED_BLOCKED);
 			previousState = state;
 			count++;
 		}

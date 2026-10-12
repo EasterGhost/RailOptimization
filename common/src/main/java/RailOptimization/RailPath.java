@@ -8,7 +8,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 final class RailPath {
-	static final byte AXIS_NONE = 0;
 	static final byte AXIS_EAST_WEST = 1;
 	static final byte AXIS_NORTH_SOUTH = 2;
 	static final RailShape[] RAIL_SHAPES = RailShape.values();
@@ -73,10 +72,6 @@ final class RailPath {
 		stepBelow[index] = (byte) (below ? 1 : 0);
 	}
 
-	static boolean supportsFastSearch(RailShape railShape) {
-		return RAIL_AXIS[railShape.ordinal()] != AXIS_NONE;
-	}
-
 	static boolean isAscending(RailShape railShape) {
 		return RAIL_ASCENDING[railShape.ordinal()];
 	}
@@ -92,10 +87,6 @@ final class RailPath {
 		int y = railPos.getY();
 		int z = railPos.getZ();
 		RailShape railShape = railShape(state);
-		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
-			return null;
-		}
-
 		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
 		int nextX = x + STEP_X[stepIndex];
 		int nextY = y + STEP_Y[stepIndex];
@@ -126,10 +117,6 @@ final class RailPath {
 	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward,
 			int previousY, BlockState previousState, RailUpdateContext context) {
 		RailShape railShape = railShape(state);
-		if (RAIL_AXIS[railShape.ordinal()] == AXIS_NONE) {
-			return false;
-		}
-
 		// Walkers already establish horizontal adjacency; only reverse height and priority remain.
 		int stepIndex = (railShape.ordinal() << 1) | (forward ? 1 : 0);
 		int nextY = railPos.getY() + STEP_Y[stepIndex];

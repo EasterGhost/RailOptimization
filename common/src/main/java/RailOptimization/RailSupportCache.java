@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
@@ -68,8 +67,7 @@ public final class RailSupportCache {
 		BlockState state = level.getBlockState(pos);
 		if (!state.isFaceSturdy(level, pos, Direction.UP, SupportType.RIGID))
 			return 0;
-		return allowReuse && !state.getBlock().hasDynamicShape() && !state.hasBlockEntity()
-				&& !(state.getBlock() instanceof PoweredRailBlock) ? REUSABLE : SUPPORTED;
+		return allowReuse && !state.getBlock().hasDynamicShape() && !state.hasBlockEntity() ? REUSABLE : SUPPORTED;
 	}
 
 	private static void refresh(Cache cache, Level level) {

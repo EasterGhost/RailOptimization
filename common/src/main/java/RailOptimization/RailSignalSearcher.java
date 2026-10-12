@@ -18,7 +18,7 @@ final class RailSignalSearcher {
 		int shape = RailPath.railData(state) & RailStateAccess.SHAPE_MASK;
 		int limit = context.railPowerLimit;
 		byte axis = RailPath.RAIL_AXIS[shape];
-		if (distance >= limit || axis == RailPath.AXIS_NONE) {
+		if (distance >= limit) {
 			return false;
 		}
 		int direction = forward ? 0 : 1;
@@ -55,7 +55,7 @@ final class RailSignalSearcher {
 					context.cachePoweredSearchCost(position, flags, 0);
 					cost = 0;
 				} else {
-					if (depth + 1 >= limit || railAxis == RailPath.AXIS_NONE) return false;
+					if (depth + 1 >= limit) return false;
 					step = (shape << 1) | direction;
 					x += stepX;
 					y += RailPath.STEP_Y[step];
@@ -73,9 +73,6 @@ final class RailSignalSearcher {
 
 	static int countStraightRailsToDepower(PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape, boolean forward, RailUpdateContext context) {
 		byte axis = RailPath.RAIL_AXIS[railShape.ordinal()];
-		if (axis == RailPath.AXIS_NONE) {
-			return COMPLEX_PATH;
-		}
 		BlockState[] railStates = context.straightRailStates;
 
 		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
@@ -123,9 +120,6 @@ final class RailSignalSearcher {
 
 	static int countConnectedRailsToDepower(PoweredRailBlock self, Level level, BlockPos pos, BlockState sourceState, boolean forward,
 			RailUpdateContext context) {
-		if (!RailPath.supportsFastSearch(RailPath.railShape(sourceState))) {
-			return COMPLEX_PATH;
-		}
 		BlockState[] railStates = context.straightRailStates;
 		long[] railPositions = context.connectedRailPositions;
 

@@ -144,7 +144,7 @@ public final class RailHotPathBenchmarkAccess {
 			for (int index = 0; index < ENTRY_COUNT; index++) {
 				hits[index] = BlockPos.asLong(index, 64, index * 3);
 				misses[index] = BlockPos.asLong(index + 128, 65, index * 3 + 1);
-				cache.put(hits[index], RailSearchCache.DIRECT_SIGNAL, RailLogic.CHECKED_BLOCKED);
+				cache.putDirectSignal(hits[index], cache.directSignalEntry(hits[index]), RailLogic.CHECKED_BLOCKED);
 			}
 		}
 
@@ -160,7 +160,7 @@ public final class RailHotPathBenchmarkAccess {
 			int result = 0;
 			long startNanos = System.nanoTime();
 			for (int operation = 0; operation < operations; operation++) {
-				result += cache.get(positions[operation & (ENTRY_COUNT - 1)], RailSearchCache.DIRECT_SIGNAL);
+				result += cache.entryState(cache.directSignalEntry(positions[operation & (ENTRY_COUNT - 1)]));
 			}
 			long elapsedNanos = System.nanoTime() - startNanos;
 			int expected = positions == hits ? operations * RailLogic.CHECKED_BLOCKED : 0;
@@ -185,7 +185,8 @@ public final class RailHotPathBenchmarkAccess {
 			while (remaining > 0) {
 				int count = Math.min(remaining, contexts.length);
 				for (int index = 0; index < count; index++) {
-					contexts[index].searchCache.put(index, RailSearchCache.DIRECT_SIGNAL, RailLogic.CHECKED_BLOCKED);
+					RailSearchCache cache = contexts[index].searchCache;
+					cache.putDirectSignal(index, cache.directSignalEntry(index), RailLogic.CHECKED_BLOCKED);
 				}
 				long startNanos = System.nanoTime();
 				for (int index = 0; index < count; index++) {
@@ -194,7 +195,7 @@ public final class RailHotPathBenchmarkAccess {
 				elapsedNanos += System.nanoTime() - startNanos;
 				remaining -= count;
 			}
-			require(contexts[0].searchCache.get(0, RailSearchCache.DIRECT_SIGNAL)
+			require(contexts[0].searchCache.entryState(contexts[0].searchCache.directSignalEntry(0))
 					== RailLogic.CHECKED_UNKNOWN, "context reset left a search-cache entry behind");
 			return elapsedNanos;
 		}

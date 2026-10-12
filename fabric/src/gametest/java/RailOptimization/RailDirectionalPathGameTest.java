@@ -131,8 +131,7 @@ public class RailDirectionalPathGameTest {
 		for (Block block : new Block[]{Blocks.POWERED_RAIL, Blocks.ACTIVATOR_RAIL}) {
 			PoweredRailBlock rail = (PoweredRailBlock) block;
 			Block otherRail = block == Blocks.POWERED_RAIL ? Blocks.ACTIVATOR_RAIL : Blocks.POWERED_RAIL;
-			for (RailShape previousShape : RailPath.RAIL_SHAPES) {
-				if (!RailPath.supportsFastSearch(previousShape)) continue;
+			for (RailShape previousShape : PoweredRailBlock.SHAPE.getPossibleValues()) {
 				BlockState previous = rail.defaultBlockState().setValue(PoweredRailBlock.SHAPE, previousShape);
 				for (boolean forward : new boolean[]{true, false}) {
 					int step = (previousShape.ordinal() << 1) | (forward ? 0 : 1);
@@ -188,7 +187,6 @@ public class RailDirectionalPathGameTest {
 	private static boolean referenceDirection(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, boolean forward,
 			long previousPos, BlockState previousState, RailUpdateContext context) {
 		RailShape shape = RailPath.railShape(state);
-		if (!RailPath.supportsFastSearch(shape)) return false;
 		int step = (shape.ordinal() << 1) | (forward ? 0 : 1);
 		int x = pos.getX() + RailPath.STEP_X[step];
 		int y = pos.getY() + RailPath.STEP_Y[step];
