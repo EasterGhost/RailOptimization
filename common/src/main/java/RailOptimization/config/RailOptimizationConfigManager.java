@@ -48,6 +48,10 @@ public final class RailOptimizationConfigManager {
 	private RailOptimizationConfigManager() {
 	}
 
+	public static RailOptimizationConfig current() {
+		return currentConfig;
+	}
+
 	public static void initialize(Path configDirectory) {
 		configPath = Objects.requireNonNull(configDirectory, "configDirectory").resolve(CONFIG_FILE_NAME).toAbsolutePath().normalize();
 		Path configPath = getConfigPath();

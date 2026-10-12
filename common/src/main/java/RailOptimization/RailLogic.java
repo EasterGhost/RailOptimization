@@ -58,10 +58,6 @@ public final class RailLogic {
 		railPowerLimit = RailOptimizationConfig.normalizePowerLimit(powerLimit);
 	}
 
-	static int getRailPowerLimit() {
-		return railPowerLimit;
-	}
-
 	public static boolean isOptimizationEnabled() {
 		return optimizationEnabled;
 	}

@@ -12,7 +12,13 @@ final class RailBatchTestAccess {
 	private static final Class<?> LOGIC = type("RailOptimization.RailLogic");
 
 	static int powerLimit() {
-		return (int) invoke(LOGIC, "getRailPowerLimit", new Class<?>[0]);
+		try {
+			var field = LOGIC.getDeclaredField("railPowerLimit");
+			field.setAccessible(true);
+			return field.getInt(null);
+		} catch (ReflectiveOperationException failure) {
+			throw new IllegalStateException(failure);
+		}
 	}
 
 	static void beginLaneWrite() {

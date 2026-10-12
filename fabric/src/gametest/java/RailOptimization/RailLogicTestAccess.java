@@ -1,6 +1,7 @@
 package RailOptimization;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import java.lang.reflect.Field;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
@@ -13,7 +14,17 @@ public final class RailLogicTestAccess {
 	public static final int MODE_VANILLA = -1;
 
 	private static final Long2IntOpenHashMap POSITION_MODES = new Long2IntOpenHashMap();
+	private static final Field POWER_LIMIT;
 	private static boolean positionBasedTestMode;
+
+	static {
+		try {
+			POWER_LIMIT = RailLogic.class.getDeclaredField("railPowerLimit");
+			POWER_LIMIT.setAccessible(true);
+		} catch (ReflectiveOperationException failure) {
+			throw new IllegalStateException(failure);
+		}
+	}
 
 	private RailLogicTestAccess() {
 	}
@@ -59,7 +70,11 @@ public final class RailLogicTestAccess {
 	}
 
 	public static int currentPowerLimit() {
-		return RailLogic.getRailPowerLimit();
+		try {
+			return POWER_LIMIT.getInt(null);
+		} catch (IllegalAccessException failure) {
+			throw new IllegalStateException(failure);
+		}
 	}
 
 	public static boolean isMemoConfirmed(Level level, BlockPos pos, int powerLimit, boolean powered) {

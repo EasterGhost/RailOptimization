@@ -65,10 +65,10 @@ public final class RailOptimizationCommands {
 	}
 
 	private static int sendStatus(CommandSourceStack source) {
-		source.sendSuccess(
-				() -> Component
-						.literal("RailOptimization is " + (RailLogic.isOptimizationEnabled() ? "on" : "off") + "; powerLimit=" + RailLogic.getRailPowerLimit()),
-				false);
+		source.sendSuccess(() -> {
+			var config = RailOptimizationConfigManager.current();
+			return Component.literal("RailOptimization is " + (config.enabled() ? "on" : "off") + "; powerLimit=" + config.powerLimit());
+		}, false);
 		return 1;
 	}
 }

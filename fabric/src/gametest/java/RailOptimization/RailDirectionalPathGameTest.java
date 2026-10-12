@@ -22,7 +22,7 @@ public class RailDirectionalPathGameTest {
 		// Include the two-block redstone query halo around the snapshot grid.
 		helper.assertValueEqual(true, helper.getBounds().contains(origin.offset(-10, -11, -10).getCenter()), "snapshot query lower bound");
 		helper.assertValueEqual(true, helper.getBounds().contains(origin.offset(10, 11, 10).getCenter()), "snapshot query upper bound");
-		int originalLimit = RailLogic.getRailPowerLimit();
+		int originalLimit = RailLogicTestAccess.currentPowerLimit();
 		int queries = 0;
 		try {
 			Method vanillaSearch = PoweredRailBlock.class.getDeclaredMethod("findPoweredRailSignal",
