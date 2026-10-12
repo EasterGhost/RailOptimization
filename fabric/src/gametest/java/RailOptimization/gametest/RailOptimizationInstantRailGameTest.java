@@ -339,13 +339,13 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 	@SuppressWarnings("null")
 	@GameTest(environment = "railoptimization-gametest:serial_94", maxTicks = 160, padding = 40)
 	public void instantRailLineBeatsRedstoneRepeater(GameTestHelper helper) {
-		BlockPos start = new BlockPos(1, RAIL_Y, 2);
+		BlockPos start = new BlockPos(1, RAIL_Y, 5);
 		BlockPos farRail = start.relative(Direction.EAST, 4);
 		BlockPos leverStone = start.north();
 		BlockPos lever = leverStone.above();
-		BlockPos dust = leverStone.east();
-		BlockPos repeater = dust.east();
-		BlockPos lamp = repeater.east();
+		BlockPos dust = leverStone.north();
+		BlockPos repeater = dust.north();
+		BlockPos lamp = repeater.north();
 
 		placeRailLinePair(helper, start, Direction.EAST, 5, RailShape.EAST_WEST);
 		helper.setBlock(leverStone, Blocks.STONE);
@@ -356,11 +356,13 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 		helper.setBlock(mirrorCopy(dust).below(), Blocks.STONE);
 		helper.setBlock(dust, Blocks.REDSTONE_WIRE.defaultBlockState());
 		helper.setBlock(mirrorCopy(dust), Blocks.REDSTONE_WIRE.defaultBlockState());
+		helper.setBlock(repeater.below(), Blocks.GLASS);
+		helper.setBlock(mirrorCopy(repeater).below(), Blocks.GLASS);
 		helper.setBlock(repeater, Blocks.REPEATER.defaultBlockState()
-				.setValue(RepeaterBlock.FACING, Direction.EAST)
+				.setValue(RepeaterBlock.FACING, Direction.SOUTH)
 				.setValue(RepeaterBlock.DELAY, 1));
 		helper.setBlock(mirrorCopy(repeater), Blocks.REPEATER.defaultBlockState()
-				.setValue(RepeaterBlock.FACING, Direction.EAST)
+				.setValue(RepeaterBlock.FACING, Direction.SOUTH)
 				.setValue(RepeaterBlock.DELAY, 1));
 		helper.setBlock(lamp, Blocks.REDSTONE_LAMP.defaultBlockState());
 		helper.setBlock(mirrorCopy(lamp), Blocks.REDSTONE_LAMP.defaultBlockState());
@@ -377,13 +379,10 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 					helper.assertBlockProperty(farRail, PoweredRailBlock.POWERED, true);
 					helper.assertBlockProperty(lamp, RedstoneLampBlock.LIT, false);
 				})
-				.thenIdle(6)
+				.thenIdle(8)
 				.thenExecute(() -> {
-					boolean vanillaLit = helper.getBlockState(mirrorCopy(lamp)).getValue(RedstoneLampBlock.LIT);
-					boolean optimizedLit = helper.getBlockState(lamp).getValue(RedstoneLampBlock.LIT);
-					helper.assertTrue(vanillaLit == optimizedLit,
-							Component.literal("lamp state mismatch: vanilla="
-									+ vanillaLit + ", optimized=" + optimizedLit));
+					helper.assertBlockProperty(mirrorCopy(lamp), RedstoneLampBlock.LIT, true);
+					helper.assertBlockProperty(lamp, RedstoneLampBlock.LIT, true);
 				})
 				.thenExecute(() -> {
 					helper.pullLever(mirrorCopy(lever));
@@ -393,13 +392,10 @@ public class RailOptimizationInstantRailGameTest extends RailOptimizationGameTes
 					helper.pullLever(lever);
 					helper.assertBlockProperty(farRail, PoweredRailBlock.POWERED, false);
 				})
-				.thenIdle(6)
+				.thenIdle(8)
 				.thenExecute(() -> {
-					boolean vanillaLit = helper.getBlockState(mirrorCopy(lamp)).getValue(RedstoneLampBlock.LIT);
-					boolean optimizedLit = helper.getBlockState(lamp).getValue(RedstoneLampBlock.LIT);
-					helper.assertTrue(vanillaLit == optimizedLit,
-							Component.literal("lamp state mismatch: vanilla="
-									+ vanillaLit + ", optimized=" + optimizedLit));
+					helper.assertBlockProperty(mirrorCopy(lamp), RedstoneLampBlock.LIT, false);
+					helper.assertBlockProperty(lamp, RedstoneLampBlock.LIT, false);
 				})
 				.thenSucceed();
 	}

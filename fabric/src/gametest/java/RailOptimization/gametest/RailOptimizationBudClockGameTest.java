@@ -7,6 +7,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DropperBlock;
 import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
@@ -25,9 +26,18 @@ public class RailOptimizationBudClockGameTest extends RailOptimizationGameTestSu
 	private static final int[] DROPPER_STACK_COUNTS = {61, 61, 59, 59, 57, 61, 59, 58, 57};
 	private static final int INITIAL_DROPPER_ITEM_COUNT = 532;
 
-	@SuppressWarnings("null")
 	@GameTest(environment = "railoptimization-gametest:serial_86", maxTicks = 180, padding = 40)
 	public void railStateChangesRunAndThenStopQuasiPoweredDropper(GameTestHelper helper) {
+		runClock(helper, Blocks.ACTIVATOR_RAIL);
+	}
+
+	@GameTest(environment = "railoptimization-gametest:serial_196", maxTicks = 180, padding = 40)
+	public void poweredRailClockResumesAndLocksAgain(GameTestHelper helper) {
+		runClock(helper, Blocks.POWERED_RAIL);
+	}
+
+	@SuppressWarnings("null")
+	private static void runClock(GameTestHelper helper, Block railBlock) {
 		BlockPos firstRail = new BlockPos(3, RAIL_Y, 3);
 		BlockPos mirrorFirstRail = mirrorCopy(firstRail);
 		BlockPos upperLever = firstRail.above(3);
@@ -35,8 +45,8 @@ public class RailOptimizationBudClockGameTest extends RailOptimizationGameTestSu
 		BlockPos dropper = firstRail.east(RAIL_COUNT);
 		int[] lockedItemCounts = new int[2];
 
-		placeFixture(helper, firstRail);
-		placeFixture(helper, mirrorFirstRail);
+		placeFixture(helper, firstRail, railBlock);
+		placeFixture(helper, mirrorFirstRail, railBlock);
 
 		helper.startSequence()
 				.thenIdle(8)
@@ -92,16 +102,56 @@ public class RailOptimizationBudClockGameTest extends RailOptimizationGameTestSu
 							PistonBaseBlock.EXTENDED,
 							true);
 				})
+				.thenExecute(() -> {
+					helper.pullLever(mirrorCopy(lowerLever));
+					helper.pullLever(lowerLever);
+				})
+				.thenIdle(19)
+				.thenExecute(() -> {
+					int vanillaItems = dropperItemCount(helper, mirrorCopy(dropper));
+					int optimizedItems = dropperItemCount(helper, dropper);
+					helper.assertTrue(vanillaItems < lockedItemCounts[0],
+							Component.literal("vanilla dropper did not resume after unlocking"));
+					helper.assertTrue(optimizedItems < lockedItemCounts[1],
+							Component.literal("optimized dropper did not resume after unlocking"));
+					assertMatchingItemCounts(helper, vanillaItems, optimizedItems, "resumed observer clock");
+				})
+				.thenExecute(() -> {
+					helper.pullLever(mirrorCopy(lowerLever));
+					helper.pullLever(lowerLever);
+				})
+				.thenIdle(2)
+				.thenExecute(() -> {
+					assertFixtureRailsPowered(helper, firstRail, true);
+					assertFixtureRailsPowered(helper, mirrorFirstRail, true);
+					lockedItemCounts[0] = dropperItemCount(helper, mirrorCopy(dropper));
+					lockedItemCounts[1] = dropperItemCount(helper, dropper);
+					assertMatchingItemCounts(helper, lockedItemCounts[0], lockedItemCounts[1], "second lock");
+				})
+				.thenIdle(2)
+				.thenExecute(() -> {
+					// A dropper tick already scheduled before locking can still dispense after 2 gt.
+					lockedItemCounts[0] = dropperItemCount(helper, mirrorCopy(dropper));
+					lockedItemCounts[1] = dropperItemCount(helper, dropper);
+					assertMatchingItemCounts(helper, lockedItemCounts[0], lockedItemCounts[1], "second lock settled");
+				})
+				.thenIdle(27)
+				.thenExecute(() -> {
+					assertDropperItemCount(helper, mirrorCopy(dropper), lockedItemCounts[0], "vanilla second lock");
+					assertDropperItemCount(helper, dropper, lockedItemCounts[1], "optimized second lock");
+					assertFixtureRailsPowered(helper, firstRail, true);
+					assertFixtureRailsPowered(helper, mirrorFirstRail, true);
+				})
 				.thenSucceed();
 	}
 
 	@SuppressWarnings("null")
-	private static void placeFixture(GameTestHelper helper, BlockPos firstRail) {
+	private static void placeFixture(GameTestHelper helper, BlockPos firstRail, Block railBlock) {
 		for (int offset = 0; offset < RAIL_COUNT; offset++) {
 			BlockPos rail = firstRail.east(offset);
 			markVanillaForMirrorRail(helper, rail);
 			helper.setBlock(rail.below(), Blocks.GLASS);
-			helper.setBlock(rail, Blocks.ACTIVATOR_RAIL.defaultBlockState()
+			helper.setBlock(rail, railBlock.defaultBlockState()
 					.setValue(PoweredRailBlock.SHAPE, RailShape.EAST_WEST));
 		}
 
