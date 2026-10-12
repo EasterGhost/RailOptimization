@@ -97,6 +97,7 @@ final class RailBatchWriter {
 		}
 		int groupCount = 0;
 		try {
+			int previousGroup = 0;
 			LevelChunk previousChunk = null;
 			int previousChunkX = 0;
 			int previousChunkZ = 0;
@@ -108,9 +109,12 @@ final class RailBatchWriter {
 					return;
 				}
 				long key = SectionPos.asLong(cursor.getX() >> 4, cursor.getY() >> 4, cursor.getZ() >> 4);
-				int group = 0;
-				while (group < groupCount && groupKeys[group] != key) {
-					++group;
+				int group = previousGroup;
+				if (group >= groupCount || groupKeys[group] != key) {
+					group = 0;
+					while (group < groupCount && groupKeys[group] != key) {
+						++group;
+					}
 				}
 				if (group == groupCount) {
 					int chunkX = cursor.getX() >> 4;
@@ -129,6 +133,7 @@ final class RailBatchWriter {
 					++groupCount;
 				}
 				groups[index] = group;
+				previousGroup = group;
 				next[index] = first[group];
 				first[group] = index;
 			}
