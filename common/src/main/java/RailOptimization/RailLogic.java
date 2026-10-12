@@ -108,7 +108,7 @@ public final class RailLogic {
 				int plan = RailDepowerPlanner.findSupplyOrPlan(self, level, pos, state, context);
 				if (plan == RailDepowerPlanner.KEEP_POWERED) {
 					context.memo.bindLevel(level);
-					context.memo.confirm(pos, true, RailLogic.getRailPowerLimit());
+					context.memo.confirm(pos, true, context.railPowerLimit);
 					return;
 				}
 				if (plan >= 0) {
@@ -130,7 +130,7 @@ public final class RailLogic {
 				}
 			} else {
 				context.memo.bindLevel(level);
-				context.memo.confirm(pos, currentlyPowered, RailLogic.getRailPowerLimit());
+				context.memo.confirm(pos, currentlyPowered, context.railPowerLimit);
 			}
 		} finally {
 			releaseUpdateContext(context);

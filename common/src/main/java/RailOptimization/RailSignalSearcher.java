@@ -84,7 +84,7 @@ final class RailSignalSearcher {
 		int x = pos.getX();
 		int y = pos.getY();
 		int z = pos.getZ();
-		int powerLimit = RailLogic.getRailPowerLimit();
+		int powerLimit = context.railPowerLimit;
 		int poweredLength = 0;
 
 		for (int index = 1; index <= powerLimit * 2; ++index) {
@@ -128,7 +128,7 @@ final class RailSignalSearcher {
 		BlockState previousState = sourceState;
 		RailShape previousShape = RailPath.railShape(sourceState);
 		int previousY = pos.getY();
-		int powerLimit = RailLogic.getRailPowerLimit();
+		int powerLimit = context.railPowerLimit;
 		int poweredLength = 0;
 
 		for (int index = 1; index <= powerLimit * 2; ++index) {

@@ -66,7 +66,7 @@ final class RailLaneUpdater {
 		RailShape directFlatShape = directlyPowered && (sourceShape == RailShape.EAST_WEST || sourceShape == RailShape.NORTH_SOUTH) ? sourceShape : null;
 		boolean directPath = directlyPowered;
 
-		for (int i = 1; i <= RailLogic.getRailPowerLimit(); ++i) {
+		for (int i = 1; i <= context.railPowerLimit; ++i) {
 			int previousY = cursor.getY();
 			BlockState state = RailPath.findNextRailState(self, world, cursor, previousState, forward, context);
 			if (state == null || RailPath.isPowered(state)) {
@@ -114,7 +114,7 @@ final class RailLaneUpdater {
 		cursor.set(pos.getX(), pos.getY(), pos.getZ());
 		BlockState previousState = sourceState;
 
-		for (int i = 1; i <= RailLogic.getRailPowerLimit(); ++i) {
+		for (int i = 1; i <= context.railPowerLimit; ++i) {
 			BlockState state = RailPath.findNextRailState(self, world, cursor, previousState, forward, context);
 			if (state == null) {
 				break;
