@@ -69,7 +69,7 @@ final class RailLaneUpdater {
 		for (int i = 1; i <= RailLogic.getRailPowerLimit(); ++i) {
 			int previousY = cursor.getY();
 			BlockState state = RailPath.findNextRailState(self, world, cursor, previousState, forward, context);
-			if (state == null) {
+			if (state == null || RailPath.isPowered(state)) {
 				break;
 			}
 
@@ -83,9 +83,9 @@ final class RailLaneUpdater {
 				directPath = false;
 			}
 
-			if (RailPath.isPowered(state) || (!continuesDirectPath && !(context.hasNeighborSignal(world, cursor) ||
+			if (!continuesDirectPath && !(context.hasNeighborSignal(world, cursor) ||
 					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, true, 0, context) ||
-					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context)))) {
+					RailSignalSearcher.findPoweredRailSignalFaster(self, world, cursor, state, false, 0, context))) {
 				break;
 			}
 
