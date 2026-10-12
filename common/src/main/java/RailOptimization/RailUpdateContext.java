@@ -69,7 +69,7 @@ final class RailUpdateContext {
 		return getChunk(level, pos).getBlockState(pos);
 	}
 
-	private LevelChunk getChunk(Level level, BlockPos pos) {
+	LevelChunk getChunk(Level level, BlockPos pos) {
 		int nextChunkX = pos.getX() >> 4;
 		int nextChunkZ = pos.getZ() >> 4;
 		if (chunk == null || nextChunkX != chunkX || nextChunkZ != chunkZ) {
