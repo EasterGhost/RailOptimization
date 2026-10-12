@@ -23,11 +23,10 @@ public abstract class PalettedContainerMixin<T> implements RailPaletteAccess<T>,
 	public void railoptimization$setBatch(long[] positions, T[] targets, int[] next, int first, int[] paletteIds) {
 		acquire();
 		try {
-			// Resizing can discard IDs not yet used by storage. Retry until one whole
-			// resolution pass uses the same palette, including local-to-global changes.
 			PalettedContainer.Data<T> initial;
 			do {
 				initial = data;
+				@SuppressWarnings("null")
 				T previousTarget = null;
 				int id = 0;
 				for (int index = first; index >= 0; index = next[index]) {

@@ -33,7 +33,6 @@ public abstract class RailCollectingNeighborUpdaterMixin implements RailNeighbor
 
 	@Override
 	public void railoptimization$enqueueBatch(RailNotificationBatch batch) {
-		// Reserve the original queue cost even though the batch occupies one task.
 		count += batch.taskCost() - 1;
 		addAndRun(batch.firstPosition(), batch);
 	}

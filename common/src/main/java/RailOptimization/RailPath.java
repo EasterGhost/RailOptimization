@@ -114,10 +114,9 @@ final class RailPath {
 		return null;
 	}
 
-	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward,
-			int previousY, BlockState previousState, RailUpdateContext context) {
+	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward, int previousY,
+			BlockState previousState, RailUpdateContext context) {
 		RailShape railShape = railShape(state);
-		// Walkers already establish horizontal adjacency; only reverse height and priority remain.
 		int stepIndex = (railShape.ordinal() << 1) | (forward ? 1 : 0);
 		int nextY = railPos.getY() + STEP_Y[stepIndex];
 		RailShape flatShape = STEP_FLAT[stepIndex];

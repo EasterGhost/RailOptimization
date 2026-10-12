@@ -97,6 +97,7 @@ public final class RailNotificationBatchTestCases {
 				RailNeighborBatchAccess access = (RailNeighborBatchAccess) updater;
 				helper.assertTrue(!access.railoptimization$canBatch(1), Component.literal("Idle queue must use the original notifier"));
 				enqueue.invoke(updater, pos, new CollectingNeighborUpdater.NeighborUpdates() {
+					@SuppressWarnings("null")
 					@Override
 					public boolean runNext(Level level) {
 						helper.assertTrue(access.railoptimization$canBatch(limit < 0 ? Integer.MAX_VALUE : limit - 1), Component.literal("Available budget rejected"));
@@ -118,6 +119,7 @@ public final class RailNotificationBatchTestCases {
 						return false;
 					}
 
+					@SuppressWarnings("null")
 					@Override
 					public void forEachUpdatedPos(Consumer<BlockPos> output) {
 						output.accept(pos);
@@ -131,6 +133,7 @@ public final class RailNotificationBatchTestCases {
 		helper.succeed();
 	}
 
+	@SuppressWarnings("null")
 	private static RailNotificationBatch singleRailPlan(Level level, BlockPos pos) {
 		try {
 			Class<?> changesType = Class.forName("RailOptimization.RailChangeList");
@@ -217,6 +220,7 @@ public final class RailNotificationBatchTestCases {
 			if (states[index].getValue(PoweredRailBlock.SHAPE).isSlope()) neighbors(positions[index].above(), null);
 		}
 
+		@SuppressWarnings("null")
 		private void neighbors(BlockPos pos, Direction skipped) {
 			++cost;
 			int mask = 0;

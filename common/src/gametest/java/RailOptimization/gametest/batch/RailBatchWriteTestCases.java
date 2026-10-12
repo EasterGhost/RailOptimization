@@ -35,7 +35,6 @@ public final class RailBatchWriteTestCases {
 	private static final Heightmap.Types[] HEIGHTMAPS = { Heightmap.Types.MOTION_BLOCKING, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 			Heightmap.Types.OCEAN_FLOOR, Heightmap.Types.WORLD_SURFACE };
 
-	@SuppressWarnings("null")
 	public static void realLeverUsesMultiRailBatchesAndHonorsLimit(GameTestHelper helper) {
 		realLeverBatch(helper, 8);
 	}
@@ -198,7 +197,7 @@ public final class RailBatchWriteTestCases {
 		helper.succeed();
 	}
 
-	@SuppressWarnings({ "null", "unchecked" })
+	@SuppressWarnings("unchecked")
 	public static void paletteBatchHandlesResizesAndGlobalIds(GameTestHelper helper) {
 		List<BlockState> fillers = new ArrayList<>();
 		for (Block block : BuiltInRegistries.BLOCK) {
@@ -273,7 +272,7 @@ public final class RailBatchWriteTestCases {
 		return result;
 	}
 
-	@SuppressWarnings({ "null", "unchecked" })
+	@SuppressWarnings("unchecked")
 	public static void platformSnapshotCaptureUsesNormalWrites(GameTestHelper helper) {
 		try {
 			Field capturing = net.minecraft.world.level.Level.class.getField("captureBlockSnapshots");

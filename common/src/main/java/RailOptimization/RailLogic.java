@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
+import org.jspecify.annotations.NonNull;
+
 import RailOptimization.config.RailOptimizationConfig;
 
 public final class RailLogic {
@@ -92,7 +94,8 @@ public final class RailLogic {
 		return RailUpdateMemo.isConfirmed(level, position, powerLimit, currentPowered);
 	}
 
-	private static void customUpdateStateWithCurrentPowerLimit(PoweredRailBlock self, BlockState state, Level level, BlockPos pos, boolean currentlyPowered) {
+	private static void customUpdateStateWithCurrentPowerLimit(PoweredRailBlock self, BlockState state, Level level, @NonNull BlockPos pos,
+			boolean currentlyPowered) {
 		RailUpdateContext context = newUpdateContext();
 		try {
 			boolean directlyPowered = context.hasNeighborSignal(level, pos);

@@ -29,7 +29,6 @@ public final class RailLithiumBatchTestCases {
 	private record SectionSnapshot(Object data, Object listener, short[] counts, byte[] randomTicks) {
 	}
 
-	@SuppressWarnings("null")
 	public static void batchPreservesLithiumTrackingAndCounters(GameTestHelper helper) {
 		Class<?> dataAccess = optionalClass("net.caffeinemc.mods.lithium.common.world.section.LithiumSectionData");
 		Class<?> counting = optionalClass("net.caffeinemc.mods.lithium.common.block.BlockCountingSection");
@@ -133,7 +132,6 @@ public final class RailLithiumBatchTestCases {
 		helper.succeed();
 	}
 
-	@SuppressWarnings("null")
 	public static void batchInvalidatesActiveLithiumEntityCacheWithoutDisablingIt(GameTestHelper helper) {
 		Class<?> provider = optionalClass("net.caffeinemc.mods.lithium.common.tracking.VicinityCacheProvider");
 		if (provider == null || !provider.isAssignableFrom(Entity.class)) {
