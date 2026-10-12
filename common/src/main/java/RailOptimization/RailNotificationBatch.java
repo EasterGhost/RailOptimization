@@ -25,6 +25,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private final BlockState[] shapes;
 	private final byte[] kinds;
 	private final byte[] directionMasks;
+	private final int[] neighborOffsets = new int[NeighborUpdater.UPDATE_ORDER.length];
 	private long[] seenBits;
 	private Block source;
 	private int size;
@@ -113,12 +114,11 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private void appendNeighbors(Level level, long position, @Nullable Direction skipped) {
 		++cost;
 		int mask = 0;
+		int originIndex = bitIndex(position);
 		for (int index = 0; index < NeighborUpdater.UPDATE_ORDER.length; ++index) {
 			Direction direction = NeighborUpdater.UPDATE_ORDER[index];
 			if (direction == skipped) continue;
-			long target = BlockPos.asLong(BlockPos.getX(position) + direction.getStepX(), BlockPos.getY(position) + direction.getStepY(),
-					BlockPos.getZ(position) + direction.getStepZ());
-			if (!duplicate(target)) mask |= 1 << index;
+			if (!duplicate(originIndex + neighborOffsets[index])) mask |= 1 << index;
 		}
 		if (mask == 0) return;
 		positions[size] = position;
@@ -136,7 +136,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private void single(long position, Direction direction) {
 		++cost;
 		long target = BlockPos.asLong(BlockPos.getX(position) + direction.getStepX(), BlockPos.getY(position), BlockPos.getZ(position) + direction.getStepZ());
-		if (duplicate(target)) return;
+		if (duplicate(bitIndex(target))) return;
 		positions[size] = target;
 		kinds[size++] = SINGLE_NC;
 	}
@@ -181,10 +181,13 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		return more;
 	}
 
-	private boolean duplicate(long position) {
+	private int bitIndex(long position) {
 		int column = (eastWest ? BlockPos.getX(position) : BlockPos.getZ(position)) - minColumn;
 		int lateral = (eastWest ? BlockPos.getZ(position) : BlockPos.getX(position)) - perpendicular + 1;
-		int bitIndex = column * columnStride + (BlockPos.getY(position) - minY) * 3 + lateral;
+		return column * columnStride + (BlockPos.getY(position) - minY) * 3 + lateral;
+	}
+
+	private boolean duplicate(int bitIndex) {
 		int word = bitIndex >>> 6;
 		long bit = 1L << bitIndex;
 		long previous = seenBits[word];
@@ -213,6 +216,12 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		// Axis-aligned walkers keep one lateral coordinate; NC spans rail/support origins plus one neighbor.
 		columnStride = (maxY - minY + 5) * 3;
 		minY -= 2;
+		int xStride = eastWest ? columnStride : 1;
+		int zStride = eastWest ? 1 : columnStride;
+		for (int index = 0; index < neighborOffsets.length; ++index) {
+			Direction direction = NeighborUpdater.UPDATE_ORDER[index];
+			neighborOffsets[index] = direction.getStepX() * xStride + direction.getStepY() * 3 + direction.getStepZ() * zStride;
+		}
 		int words = (columns * columnStride + 63) >>> 6;
 		if (seenBits.length < words) seenBits = new long[words];
 		else Arrays.fill(seenBits, 0, words, 0L);
