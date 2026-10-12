@@ -12,8 +12,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PoweredRailBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.RailShape;
+import net.minecraft.world.level.block.state.properties.SlabType;
 
 public class RailSupportCacheGameTest {
 	private static final String STRUCTURE = "railoptimization-gametest:review_tall_empty";
@@ -42,6 +46,27 @@ public class RailSupportCacheGameTest {
 				put(level, side, Blocks.AIR);
 				assertSupport(helper, pos, level, shapes[index], true);
 				assertSupport(helper, pos, level, RailShape.EAST_WEST, false);
+			}
+			BlockState[] supports = {
+					Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP),
+					Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.BOTTOM),
+					Blocks.OAK_TRAPDOOR.defaultBlockState().setValue(TrapDoorBlock.HALF, Half.TOP),
+					Blocks.OAK_TRAPDOOR.defaultBlockState().setValue(TrapDoorBlock.HALF, Half.TOP).setValue(TrapDoorBlock.OPEN, true)
+			};
+			BlockPos.MutableBlockPos cursor = pos.mutable();
+			for (int index = 0; index < supports.length; ++index) {
+				boolean removed = (index & 1) != 0;
+				level.setBlock(pos.below(), supports[index], Block.UPDATE_NONE);
+				assertSupport(helper, cursor, level, RailShape.EAST_WEST, removed);
+				assertSupport(helper, cursor, level, RailShape.NORTH_SOUTH, removed);
+				put(level, pos.below(), Blocks.STONE);
+				for (int slope = 0; slope < shapes.length; ++slope) {
+					BlockPos side = pos.relative(directions[slope]);
+					level.setBlock(side, supports[index], Block.UPDATE_NONE);
+					assertSupport(helper, cursor, level, shapes[slope], removed);
+					put(level, side, Blocks.AIR);
+				}
+				helper.assertValueEqual(pos, cursor, "support checks must not mutate the caller's position");
 			}
 		});
 	}

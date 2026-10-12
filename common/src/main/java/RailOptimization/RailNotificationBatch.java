@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.Level;
@@ -13,6 +14,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.level.redstone.CollectingNeighborUpdater;
 import net.minecraft.world.level.redstone.NeighborUpdater;
+
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class RailNotificationBatch implements CollectingNeighborUpdater.NeighborUpdates {
@@ -26,6 +29,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private final byte[] kinds;
 	private final byte[] directionMasks;
 	private final int[] neighborOffsets = new int[NeighborUpdater.UPDATE_ORDER.length];
+	private final MutableBlockPos scratchPos = new MutableBlockPos();
 	private long[] seenBits;
 	private Block source;
 	private int size;
@@ -56,10 +60,12 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		}
 		for (int index = 0; index < count; ++index) {
 			Block block = changes.state(index).getBlock();
-			if (block != Blocks.POWERED_RAIL && block != Blocks.ACTIVATOR_RAIL) return false;
+			if (block != Blocks.POWERED_RAIL && block != Blocks.ACTIVATOR_RAIL)
+				return false;
 		}
 		RailNotificationBatch batch = POOL.get().pollFirst();
-		if (batch == null || batch.positions.length < count * 4 + 2) batch = new RailNotificationBatch(count);
+		if (batch == null || batch.positions.length < count * 4 + 2)
+			batch = new RailNotificationBatch(count);
 		batch.size = batch.cost = batch.current = batch.directionIndex = 0;
 		batch.origin = null;
 		batch.prepareColumns(shape, changes);
@@ -75,14 +81,18 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		source = changes.state(0).getBlock();
 		long sourcePosition = changes.position(0);
 		if (RailPath.RAIL_AXIS[shape.ordinal()] == RailPath.AXIS_EAST_WEST) {
-			for (int index = firstCount; index >= 1; --index) rail(level, changes, index);
-			if (endpoint) single(sourcePosition, Direction.WEST);
-			for (int index = secondEnd; index >= secondStart; --index) rail(level, changes, index);
+			for (int index = firstCount; index >= 1; --index)
+				rail(level, changes, index);
+			if (endpoint)
+				single(sourcePosition, Direction.WEST);
+			for (int index = secondEnd; index >= secondStart; --index)
+				rail(level, changes, index);
 			appendNeighbors(level, sourcePosition, endpoint ? Direction.WEST : null);
 		} else {
 			appendNeighbors(level, sourcePosition, endpoint ? Direction.SOUTH : null);
 			branch(level, changes, secondStart, secondEnd);
-			if (endpoint) single(sourcePosition, Direction.SOUTH);
+			if (endpoint)
+				single(sourcePosition, Direction.SOUTH);
 			branch(level, changes, 1, firstCount);
 		}
 		shape(level, sourcePosition);
@@ -90,7 +100,8 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	}
 
 	private void branch(Level level, RailChangeList changes, int start, int end) {
-		for (int index = start; index <= end; ++index) appendNeighbors(level, changes.position(index), null);
+		for (int index = start; index <= end; ++index)
+			appendNeighbors(level, changes.position(index), null);
 		for (int index = end; index >= start; --index) {
 			shape(level, changes.position(index));
 			support(level, changes, index);
@@ -117,18 +128,23 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		int originIndex = bitIndex(position);
 		for (int index = 0; index < NeighborUpdater.UPDATE_ORDER.length; ++index) {
 			Direction direction = NeighborUpdater.UPDATE_ORDER[index];
-			if (direction == skipped) continue;
-			if (!duplicate(originIndex + neighborOffsets[index])) mask |= 1 << index;
+			if (direction == skipped)
+				continue;
+			if (!duplicate(originIndex + neighborOffsets[index]))
+				mask |= 1 << index;
 		}
-		if (mask == 0) return;
+		if (mask == 0)
+			return;
 		positions[size] = position;
 		kinds[size] = NC;
 		directionMasks[size++] = (byte) mask;
 	}
 
+	@SuppressWarnings("null")
 	private void shape(Level level, long position) {
 		positions[size] = position;
-		shapes[size] = level.getBlockState(BlockPos.of(position));
+		scratchPos.set(BlockPos.getX(position), BlockPos.getY(position), BlockPos.getZ(position));
+		shapes[size] = level.getBlockState(scratchPos);
 		kinds[size++] = PP;
 		cost += SHAPE_ORDER.length;
 	}
@@ -136,7 +152,8 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private void single(long position, Direction direction) {
 		++cost;
 		long target = BlockPos.asLong(BlockPos.getX(position) + direction.getStepX(), BlockPos.getY(position), BlockPos.getZ(position) + direction.getStepZ());
-		if (duplicate(bitIndex(target))) return;
+		if (duplicate(bitIndex(target)))
+			return;
 		positions[size] = target;
 		kinds[size++] = SINGLE_NC;
 	}
@@ -149,9 +166,11 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		return BlockPos.of(positions[0]);
 	}
 
+	@SuppressWarnings("null")
 	@Override
-	public boolean runNext(Level level) {
-		if (origin == null) origin = BlockPos.of(positions[current]);
+	public boolean runNext(@NonNull Level level) {
+		if (origin == null)
+			origin = BlockPos.of(positions[current]);
 		byte kind = kinds[current];
 		if (kind == PP) {
 			Direction direction = SHAPE_ORDER[directionIndex++];
@@ -177,7 +196,8 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 			origin = null;
 		}
 		boolean more = current < size;
-		if (!more) release();
+		if (!more)
+			release();
 		return more;
 	}
 
@@ -213,7 +233,6 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		}
 		int columns = maximum - minimum + 3;
 		minColumn = minimum - 1;
-		// Axis-aligned walkers keep one lateral coordinate; NC spans rail/support origins plus one neighbor.
 		columnStride = (maxY - minY + 5) * 3;
 		minY -= 2;
 		int xStride = eastWest ? columnStride : 1;
@@ -223,23 +242,28 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 			neighborOffsets[index] = direction.getStepX() * xStride + direction.getStepY() * 3 + direction.getStepZ() * zStride;
 		}
 		int words = (columns * columnStride + 63) >>> 6;
-		if (seenBits.length < words) seenBits = new long[words];
-		else Arrays.fill(seenBits, 0, words, 0L);
+		if (seenBits.length < words)
+			seenBits = new long[words];
+		else
+			Arrays.fill(seenBits, 0, words, 0L);
 	}
 
 	private void release() {
 		Arrays.fill(shapes, 0, size, null);
 		ArrayDeque<RailNotificationBatch> pool = POOL.get();
-		if (pool.size() < 4) pool.addFirst(this);
+		if (pool.size() < 4)
+			pool.addFirst(this);
 	}
 
+	@SuppressWarnings("null")
 	@Override
-	public void forEachUpdatedPos(Consumer<BlockPos> output) {
+	public void forEachUpdatedPos(@NonNull Consumer<BlockPos> output) {
 		BlockPos source = BlockPos.of(positions[current]);
 		if (kinds[current] == SINGLE_NC) {
 			output.accept(source);
 		} else if (kinds[current] == PP) {
-			for (int index = directionIndex; index < SHAPE_ORDER.length; ++index) output.accept(source.relative(SHAPE_ORDER[index]));
+			for (int index = directionIndex; index < SHAPE_ORDER.length; ++index)
+				output.accept(source.relative(SHAPE_ORDER[index]));
 		} else {
 			for (int mask = directionMasks[current]; mask != 0; mask &= mask - 1) {
 				output.accept(source.relative(NeighborUpdater.UPDATE_ORDER[Integer.numberOfTrailingZeros(mask)]));

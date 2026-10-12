@@ -3,6 +3,7 @@ package RailOptimization;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SupportType;
@@ -24,7 +25,7 @@ public final class RailSupportCache {
 	public static boolean shouldBeRemoved(BlockPos pos, Level level, RailShape shape) {
 		Cache cache = CACHE.get();
 		if (cache.writeDepth != 0)
-			return (supportFlags(pos, level, shape, false) & SUPPORTED) == 0;
+			return (supportFlags(pos, level, shape, false, cache.scratchPos) & SUPPORTED) == 0;
 		if (cache.level != level || cache.observedEpoch != cache.epoch.get())
 			refresh(cache, level);
 		long position = pos.asLong();
@@ -38,7 +39,7 @@ public final class RailSupportCache {
 	private static boolean checkAndRecord(Cache cache, BlockPos pos, Level level, RailShape shape, long position, int index) {
 		int generation = cache.generation;
 		long epoch = cache.observedEpoch;
-		int flags = supportFlags(pos, level, shape, true);
+		int flags = supportFlags(pos, level, shape, true, cache.scratchPos);
 		if (flags == REUSABLE && cache.level == level && cache.writeDepth == 0 && cache.generation == generation
 				&& cache.epoch.get() == epoch) {
 			cache.positions[index] = position;
@@ -48,18 +49,23 @@ public final class RailSupportCache {
 		return (flags & SUPPORTED) == 0;
 	}
 
-	private static int supportFlags(BlockPos pos, Level level, RailShape shape, boolean allowReuse) {
-		int below = supportFlags(level, pos.below(), allowReuse);
+	private static int supportFlags(BlockPos pos, Level level, RailShape shape, boolean allowReuse, MutableBlockPos scratchPos) {
+		int x = pos.getX();
+		int y = pos.getY();
+		int z = pos.getZ();
+		int below = supportFlags(level, scratchPos.set(x, y - 1, z), allowReuse);
 		if (below == 0)
 			return 0;
-		BlockPos risingSupport = switch (shape) {
-			case ASCENDING_EAST -> pos.east();
-			case ASCENDING_WEST -> pos.west();
-			case ASCENDING_NORTH -> pos.north();
-			case ASCENDING_SOUTH -> pos.south();
-			default -> null;
-		};
-		return risingSupport == null ? below : below & supportFlags(level, risingSupport, allowReuse);
+		switch (shape) {
+			case ASCENDING_EAST -> scratchPos.set(x + 1, y, z);
+			case ASCENDING_WEST -> scratchPos.set(x - 1, y, z);
+			case ASCENDING_NORTH -> scratchPos.set(x, y, z - 1);
+			case ASCENDING_SOUTH -> scratchPos.set(x, y, z + 1);
+			default -> {
+				return below;
+			}
+		}
+		return below & supportFlags(level, scratchPos, allowReuse);
 	}
 
 	@SuppressWarnings("null")
@@ -90,6 +96,7 @@ public final class RailSupportCache {
 	}
 
 	private static final class Cache {
+		final MutableBlockPos scratchPos = new MutableBlockPos();
 		final long[] positions = new long[CAPACITY];
 		final int[] generations = new int[CAPACITY];
 		final byte[] shapes = new byte[CAPACITY];
