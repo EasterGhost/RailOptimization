@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 
@@ -112,8 +113,8 @@ final class RailNeighborSignalChecker {
 	}
 
 	private static BlockState getBlockState(Level level, LevelChunk chunk, int chunkX, int chunkZ, BlockPos pos) {
-		if ((pos.getX() >> 4) == chunkX && (pos.getZ() >> 4) == chunkZ && level.isInValidBounds(pos)) {
-			return chunk.getBlockState(pos);
+		if ((pos.getX() >> 4) == chunkX && (pos.getZ() >> 4) == chunkZ) {
+			return level.isInsideBuildHeight(pos) ? chunk.getBlockState(pos) : Blocks.VOID_AIR.defaultBlockState();
 		}
 		return level.getBlockState(pos);
 	}

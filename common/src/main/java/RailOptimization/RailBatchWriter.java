@@ -89,6 +89,7 @@ final class RailBatchWriter {
 		changes.add(pos, previous);
 	}
 
+	@SuppressWarnings("null")
 	void write(Level level, RailUpdateContext context) {
 		planning = false;
 		if (level.isDebug() || !RailLithiumCompatibility.supportsBatchWrites()) {
@@ -104,7 +105,7 @@ final class RailBatchWriter {
 			for (int index = 0; index < changes.size(); ++index) {
 				cursor.set(BlockPos.getX(positions[index]), BlockPos.getY(positions[index]), BlockPos.getZ(positions[index]));
 				BlockState previous = changes.state(index);
-				if (!level.isInValidBounds(cursor) || (previous.getBlock() != Blocks.POWERED_RAIL && previous.getBlock() != Blocks.ACTIVATOR_RAIL)) {
+				if (previous.getBlock() != Blocks.POWERED_RAIL && previous.getBlock() != Blocks.ACTIVATOR_RAIL) {
 					writeFallback(level, context);
 					return;
 				}
@@ -142,7 +143,6 @@ final class RailBatchWriter {
 				writeSection(sections[group], first[group]);
 				chunks[group].markUnsaved();
 			}
-			// Client and compatibility notifications retain the walk's original order.
 			for (int index = 0; index < changes.size(); ++index) {
 				cursor.set(BlockPos.getX(positions[index]), BlockPos.getY(positions[index]), BlockPos.getZ(positions[index]));
 				BlockState previous = changes.state(index);
@@ -165,6 +165,7 @@ final class RailBatchWriter {
 		((RailPaletteAccess<BlockState>) (Object) section.getStates()).railoptimization$setBatch(positions, targets, next, firstIndex, paletteIds);
 	}
 
+	@SuppressWarnings("null")
 	private void writeFallback(Level level, RailUpdateContext context) {
 		for (int index = 0; index < changes.size(); ++index) {
 			cursor.set(BlockPos.getX(positions[index]), BlockPos.getY(positions[index]), BlockPos.getZ(positions[index]));

@@ -14,6 +14,16 @@ import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.RailShape;
 
 public class RailOptimizationSignalGameTest extends RailOptimizationGameTestSupport {
+	@GameTest(environment = "railoptimization-gametest:serial_signal_boundary_reads", maxTicks = 40)
+	public void heightBoundaryReadsMatchVanilla(GameTestHelper helper) {
+		RailSignalBoundaryTestCases.heightBoundaryReadsMatchVanilla(helper);
+	}
+
+	@GameTest(environment = "railoptimization-gametest:serial_signal_boundary_signals", maxTicks = 40)
+	public void heightEdgeSignalsMatchVanilla(GameTestHelper helper) {
+		RailSignalBoundaryTestCases.heightEdgeSignalsMatchVanilla(helper);
+	}
+
 	@GameTest(environment = "railoptimization-gametest:serial_63", maxTicks = 200, padding = 50)
 	public void indirectlyPoweredThroughSolidBlockMatchesVanilla(GameTestHelper helper) {
 		BlockPos rail = new BlockPos(4, RAIL_Y, 4);
