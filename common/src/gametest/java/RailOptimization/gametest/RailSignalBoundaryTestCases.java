@@ -47,13 +47,18 @@ public final class RailSignalBoundaryTestCases {
 			}
 		}
 		int distantChunkX = chunkX + 256;
-		helper.assertTrue(!level.getChunkSource().hasChunk(distantChunkX, chunkZ), Component.literal("Boundary probe chunk must start unloaded"));
+		int vanillaChunkX = distantChunkX + 2;
+		helper.assertTrue(!level.getChunkSource().hasChunk(distantChunkX, chunkZ) && !level.getChunkSource().hasChunk(vanillaChunkX, chunkZ),
+				Component.literal("Boundary probe chunks must start unloaded"));
 		for (int y : new int[] { level.getMinY() - 3, level.getMaxY() + 3 }) {
 			BlockPos pos = new BlockPos((distantChunkX << 4) + 8, y, z);
-			helper.assertTrue(!(boolean) invoke(SIGNAL, level, pos, new MutableBlockPos(), chunk, distantChunkX, chunkZ),
-					Component.literal("Out-of-height signal query must not find power"));
+			BlockPos vanillaPos = new BlockPos((vanillaChunkX << 4) + 8, y, z);
+			boolean expected = level.hasNeighborSignal(vanillaPos);
+			boolean actual = (boolean) invoke(SIGNAL, level, pos, new MutableBlockPos(), chunk, distantChunkX, chunkZ);
+			helper.assertTrue(!expected && actual == expected, Component.literal("Out-of-height signal differs from vanilla"));
+			helper.assertTrue(level.getChunkSource().hasChunk(distantChunkX, chunkZ) == level.getChunkSource().hasChunk(vanillaChunkX, chunkZ),
+					Component.literal("Out-of-height chunk loading differs from vanilla"));
 		}
-		helper.assertTrue(!level.getChunkSource().hasChunk(distantChunkX, chunkZ), Component.literal("Out-of-height signal queries must not load a chunk"));
 		helper.succeed();
 	}
 
