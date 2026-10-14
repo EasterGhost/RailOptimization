@@ -18,6 +18,12 @@
       "contact": {
         "sources": "https://github.com/FxMorin/RailOptimization"
       }
+    },
+    {
+      "name": "Lithium contributors (JellySquid, 2No2Name and others; source-code reference and optimization inspiration)",
+      "contact": {
+        "sources": "https://github.com/CaffeineMC/lithium"
+      }
     }
   ],
   "contact": {

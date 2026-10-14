@@ -90,3 +90,5 @@ Run the loader-specific GameTests with:
 ## Acknowledgements
 
 RailOptimization began as a fork of [FxMorin's RailOptimization](https://github.com/FxMorin/RailOptimization). Thanks to FxMorin and the original contributors for their work. The current implementation has since been extensively rewritten.
+
+Special thanks to JellySquid, 2No2Name, and the other [Lithium contributors](https://github.com/CaffeineMC/lithium). RailOptimization's rail-specific batch-write design was developed by studying and drawing on Lithium's source code and its existing palette and chunk-storage optimizations. When Lithium is installed, RailOptimization uses its optimized palette and bit-storage implementations and integrates with its block-change tracking. Lithium remains optional.
