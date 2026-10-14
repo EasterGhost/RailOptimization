@@ -32,7 +32,7 @@ public final class RailNotificationBatchTestCases {
 			Constructor<?> constructor = type.getDeclaredConstructor(int.class);
 			constructor.setAccessible(true);
 			Method add = method(changesType, "add", BlockPos.class, BlockState.class);
-			Method plan = method(type, "plan", Level.class, RailShape.class, int.class, int.class, changesType);
+			Method plan = method(type, "plan", Level.class, int.class, int.class, changesType);
 			Method prepare = method(type, "prepareColumns", RailShape.class, changesType);
 			Object indexed = constructor.newInstance(129);
 			int cases = 0;
@@ -59,7 +59,7 @@ public final class RailNotificationBatchTestCases {
 								field(type, "size").setInt(indexed, 0);
 								field(type, "cost").setInt(indexed, 0);
 								prepare.invoke(indexed, shape, changes);
-								plan.invoke(indexed, helper.getLevel(), shape, first, limit, changes);
+								plan.invoke(indexed, helper.getLevel(), first, limit, changes);
 								int size = reference.notifications.size();
 								helper.assertTrue(size == field(type, "size").getInt(indexed) && reference.cost == field(type, "cost").getInt(indexed),
 										Component.literal("Planner size/cost mismatch"));
@@ -95,6 +95,7 @@ public final class RailNotificationBatchTestCases {
 			for (int limit : new int[] { 2, 20, -1 }) {
 				CollectingNeighborUpdater updater = new CollectingNeighborUpdater(helper.getLevel(), limit);
 				RailNeighborBatchAccess access = (RailNeighborBatchAccess) updater;
+				List<RailNotificationBatch> batches = new ArrayList<>();
 				helper.assertTrue(!access.railoptimization$canBatch(1), Component.literal("Idle queue must use the original notifier"));
 				enqueue.invoke(updater, pos, new CollectingNeighborUpdater.NeighborUpdates() {
 					@SuppressWarnings("null")
@@ -107,6 +108,7 @@ public final class RailNotificationBatchTestCases {
 						updater.setDebugListener(null);
 						if (limit != 2) {
 							RailNotificationBatch batch = singleRailPlan(level, pos);
+							batches.add(batch);
 							int cost = batch.taskCost();
 							access.railoptimization$enqueueBatch(batch);
 							try {
@@ -126,6 +128,11 @@ public final class RailNotificationBatchTestCases {
 					}
 				});
 				helper.assertTrue(field(CollectingNeighborUpdater.class, "count").getInt(updater) == 0, Component.literal("Native queue did not finish"));
+				for (RailNotificationBatch batch : batches) {
+					helper.assertTrue(field(RailNotificationBatch.class, "origin").get(batch) == null
+							&& field(RailNotificationBatch.class, "readChunk").get(batch) == null,
+							Component.literal("Completed batch retained dispatch position or chunk"));
+				}
 			}
 		} catch (ReflectiveOperationException failure) {
 			throw new IllegalStateException(failure);
@@ -145,8 +152,8 @@ public final class RailNotificationBatchTestCases {
 			constructor.setAccessible(true);
 			RailNotificationBatch batch = constructor.newInstance(1);
 			method(RailNotificationBatch.class, "prepareColumns", RailShape.class, changesType).invoke(batch, RailShape.NORTH_SOUTH, changes);
-			method(RailNotificationBatch.class, "plan", Level.class, RailShape.class, int.class, int.class, changesType)
-					.invoke(batch, level, RailShape.NORTH_SOUTH, 0, 0, changes);
+			method(RailNotificationBatch.class, "plan", Level.class, int.class, int.class, changesType)
+					.invoke(batch, level, 0, 0, changes);
 			return batch;
 		} catch (ReflectiveOperationException failure) {
 			throw new IllegalStateException(failure);

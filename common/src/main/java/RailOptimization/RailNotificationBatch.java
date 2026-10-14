@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.redstone.CollectingNeighborUpdater;
 import net.minecraft.world.level.redstone.NeighborUpdater;
 
@@ -37,6 +38,9 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private int current;
 	private int directionIndex;
 	private @Nullable BlockPos origin;
+	private @Nullable LevelChunk readChunk;
+	private int readChunkX;
+	private int readChunkZ;
 	private boolean eastWest;
 	private int minColumn;
 	private int columnStride;
@@ -67,20 +71,19 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		if (batch == null || batch.positions.length < count * 4 + 2)
 			batch = new RailNotificationBatch(count);
 		batch.size = batch.cost = batch.current = batch.directionIndex = 0;
-		batch.origin = null;
 		batch.prepareColumns(shape, changes);
-		batch.plan(level, shape, firstCount, secondCount, changes);
+		batch.plan(level, firstCount, secondCount, changes);
 		updater.railoptimization$enqueueBatch(batch);
 		return true;
 	}
 
-	private void plan(Level level, RailShape shape, int firstCount, int secondCount, RailChangeList changes) {
+	private void plan(Level level, int firstCount, int secondCount, RailChangeList changes) {
 		int secondStart = firstCount + 1;
 		int secondEnd = firstCount + secondCount;
 		boolean endpoint = !changes.hasSlope() && firstCount == 0 && secondCount > 0;
 		source = changes.state(0).getBlock();
 		long sourcePosition = changes.position(0);
-		if (RailPath.RAIL_AXIS[shape.ordinal()] == RailPath.AXIS_EAST_WEST) {
+		if (eastWest) {
 			for (int index = firstCount; index >= 1; --index)
 				rail(level, changes, index);
 			if (endpoint)
@@ -188,7 +191,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 				target = origin.relative(direction);
 				directionIndex = directionMasks[current] == 0 ? NeighborUpdater.UPDATE_ORDER.length : 0;
 			}
-			NeighborUpdater.executeUpdate(level, level.getBlockState(target), target, source, null, false);
+			NeighborUpdater.executeUpdate(level, neighborState(level, target), target, source, null, false);
 		}
 		if (directionIndex == NeighborUpdater.UPDATE_ORDER.length) {
 			++current;
@@ -199,6 +202,21 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		if (!more)
 			release();
 		return more;
+	}
+
+	private BlockState neighborState(Level level, BlockPos pos) {
+		if (!level.isInValidBounds(pos)) {
+			return level.getBlockState(pos);
+		}
+		int chunkX = pos.getX() >> 4;
+		int chunkZ = pos.getZ() >> 4;
+		LevelChunk chunk = readChunk;
+		if (chunk == null || chunkX != readChunkX || chunkZ != readChunkZ) {
+			readChunk = chunk = level.getChunk(chunkX, chunkZ);
+			readChunkX = chunkX;
+			readChunkZ = chunkZ;
+		}
+		return chunk.getBlockState(pos);
 	}
 
 	private int bitIndex(long position) {
@@ -249,6 +267,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	}
 
 	private void release() {
+		readChunk = null;
 		Arrays.fill(shapes, 0, size, null);
 		ArrayDeque<RailNotificationBatch> pool = POOL.get();
 		if (pool.size() < 4)
