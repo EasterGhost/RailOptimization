@@ -35,7 +35,7 @@ public final class NeoForgeCompatibilityMixinPlugin implements IMixinConfigPlugi
 	private static void replaceWeakPowerChecks(ClassNode targetClass) {
 		int replacements = 0;
 		for (MethodNode method : targetClass.methods) {
-			if (!method.name.equals("belowStateWhenNoNeighborSignal") && !method.name.equals("belowStateWhenNoNeighborSignalInChunk")) continue;
+			if (!method.name.equals("hasNeighborSignalInChunk") && !method.name.equals("hasNeighborSignalInWindow")) continue;
 			for (var instruction : method.instructions.toArray()) {
 				if (!(instruction instanceof MethodInsnNode call) || !call.owner.equals(BLOCK_STATE)
 						|| !call.name.equals("isRedstoneConductor") || !call.desc.equals(CONDUCTOR_DESCRIPTOR)) continue;

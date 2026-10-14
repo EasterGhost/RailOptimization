@@ -52,8 +52,10 @@ public final class RailOptimizationNeoForgeGameTest {
 		RailOptimizationNeoForgeReviewGameTest.registerTests(event);
 		RailOptimizationNeoForgeFollowupGameTest.registerTests(event);
 		Holder<TestEnvironmentDefinition<?>> signalEnvironment = event.registerEnvironment(id("signal_boundaries"));
-		registerTest(event, signalEnvironment, "signal_height_boundary_reads", RailSignalBoundaryTestCases::heightBoundaryReadsMatchVanilla);
+		registerTest(event, signalEnvironment, "signal_height_boundary_signals", RailSignalBoundaryTestCases::heightBoundarySignalsMatchVanilla);
 		registerTest(event, signalEnvironment, "signal_height_edge_switches", RailSignalBoundaryTestCases::heightEdgeSignalsMatchVanilla);
+		Holder<TestEnvironmentDefinition<?>> chunkEdgesEnvironment = event.registerEnvironment(id("signal_chunk_edges"));
+		registerTest(event, chunkEdgesEnvironment, "signal_chunk_edge_switches", RailSignalBoundaryTestCases::chunkEdgesAndCornersMatchVanilla);
 		Holder<TestEnvironmentDefinition<?>> batchEnvironment = event.registerEnvironment(id("batch_write"));
 		Identifier batchStructure = id("batch_write_empty");
 		registerTest(event, batchEnvironment, "batch_real_lever", batchStructure, 100, RailBatchWriteTestCases::realLeverUsesMultiRailBatchesAndHonorsLimit);

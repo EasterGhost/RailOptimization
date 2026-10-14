@@ -23,14 +23,13 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 public final class RailSignalBoundaryTestCases {
-	private static final Method READ = method("getBlockState", Level.class, LevelChunk.class, int.class, int.class, BlockPos.class);
 	private static final Method SIGNAL = method("hasNeighborSignalFast", Level.class, BlockPos.class, MutableBlockPos.class, LevelChunk.class,
 			int.class, int.class);
 
 	private RailSignalBoundaryTestCases() {
 	}
 
-	public static void heightBoundaryReadsMatchVanilla(GameTestHelper helper) {
+	public static void heightBoundarySignalsMatchVanilla(GameTestHelper helper) {
 		Level level = helper.getLevel();
 		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
 		int chunkX = origin.getX() >> 4;
@@ -42,21 +41,19 @@ public final class RailSignalBoundaryTestCases {
 				level.getMaxY() - 1, level.getMaxY(), level.getMaxY() + 1 }) {
 			for (int offset : new int[] { 0, 16 }) {
 				BlockPos pos = new BlockPos(x + offset, y, z);
-				BlockState actual = (BlockState) invoke(READ, level, chunk, chunkX, chunkZ, pos);
-				helper.assertTrue(actual == level.getBlockState(pos), Component.literal("Boundary read differs from vanilla at " + pos));
-				if (!level.isInsideBuildHeight(pos)) {
-					helper.assertTrue(actual.is(Blocks.VOID_AIR), Component.literal("Expected VOID_AIR at " + pos));
-				}
+				int posChunkX = pos.getX() >> 4;
+				boolean actual = (boolean) invoke(SIGNAL, level, pos, new MutableBlockPos(), level.getChunk(posChunkX, chunkZ), posChunkX, chunkZ);
+				helper.assertTrue(actual == level.hasNeighborSignal(pos), Component.literal("Boundary signal differs from vanilla at " + pos));
 			}
 		}
 		int distantChunkX = chunkX + 256;
 		helper.assertTrue(!level.getChunkSource().hasChunk(distantChunkX, chunkZ), Component.literal("Boundary probe chunk must start unloaded"));
-		for (int y : new int[] { level.getMinY() - 1, level.getMaxY() + 1 }) {
+		for (int y : new int[] { level.getMinY() - 3, level.getMaxY() + 3 }) {
 			BlockPos pos = new BlockPos((distantChunkX << 4) + 8, y, z);
-			helper.assertTrue(((BlockState) invoke(READ, level, chunk, chunkX, chunkZ, pos)).is(Blocks.VOID_AIR),
-					Component.literal("Cross-chunk out-of-height read must return VOID_AIR"));
+			helper.assertTrue(!(boolean) invoke(SIGNAL, level, pos, new MutableBlockPos(), chunk, distantChunkX, chunkZ),
+					Component.literal("Out-of-height signal query must not find power"));
 		}
-		helper.assertTrue(!level.getChunkSource().hasChunk(distantChunkX, chunkZ), Component.literal("Out-of-height reads must not load a chunk"));
+		helper.assertTrue(!level.getChunkSource().hasChunk(distantChunkX, chunkZ), Component.literal("Out-of-height signal queries must not load a chunk"));
 		helper.succeed();
 	}
 
@@ -120,6 +117,64 @@ public final class RailSignalBoundaryTestCases {
 		helper.assertTrue(actual == expected, Component.literal("Optimized signal differs from vanilla at " + rail));
 		helper.assertTrue(level.getBlockState(rail).getValue(PoweredRailBlock.POWERED) == expected,
 				Component.literal("Rail failed to switch at " + rail));
+	}
+
+	@SuppressWarnings("null")
+	public static void chunkEdgesAndCornersMatchVanilla(GameTestHelper helper) {
+		Level level = helper.getLevel();
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		int baseX = (origin.getX() >> 4) << 4;
+		int baseZ = (origin.getZ() >> 4) << 4;
+		boolean enabled = RailLogic.isOptimizationEnabled();
+		RailLogic.setOptimizationEnabled(true);
+		try {
+			for (int localX : new int[] { 0, 1, 8, 14, 15 }) {
+				for (int localZ : new int[] { 0, 1, 8, 14, 15 }) {
+					BlockPos rail = new BlockPos(baseX + localX, origin.getY() + 3, baseZ + localZ);
+					Map<BlockPos, BlockState> saved = new LinkedHashMap<>();
+					try {
+						for (int dx = -2; dx <= 2; ++dx) {
+							for (int dy = -2; dy <= 2; ++dy) {
+								for (int dz = -2; dz <= 2; ++dz) {
+									BlockPos pos = rail.offset(dx, dy, dz);
+									saved.put(pos, level.getBlockState(pos));
+									level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+								}
+							}
+						}
+						level.setBlock(rail.below(), Blocks.GLASS.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						for (Direction conductorSide : new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST }) {
+							BlockPos conductor = rail.relative(conductorSide);
+							level.setBlock(conductor, Blocks.SMOOTH_STONE.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+							Direction[] leverSides = conductorSide.getAxis() == Direction.Axis.X
+									? new Direction[] { Direction.NORTH, Direction.SOUTH } : new Direction[] { Direction.WEST, Direction.EAST };
+							for (Direction leverSide : leverSides) {
+								BlockPos lever = conductor.relative(leverSide);
+								level.setBlock(lever, Blocks.LEVER.defaultBlockState().setValue(FaceAttachedHorizontalDirectionalBlock.FACE, AttachFace.WALL)
+										.setValue(HorizontalDirectionalBlock.FACING, leverSide), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+								for (Block block : new Block[] { Blocks.POWERED_RAIL, Blocks.ACTIVATOR_RAIL }) {
+									for (RailShape shape : new RailShape[] { RailShape.EAST_WEST, RailShape.NORTH_SOUTH }) {
+										level.setBlock(rail, block.defaultBlockState().setValue(PoweredRailBlock.SHAPE, shape), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+										assertSignal(helper, level, rail, false);
+										((LeverBlock) Blocks.LEVER).pull(level.getBlockState(lever), level, lever, null);
+										assertSignal(helper, level, rail, true);
+										((LeverBlock) Blocks.LEVER).pull(level.getBlockState(lever), level, lever, null);
+										assertSignal(helper, level, rail, false);
+									}
+								}
+								level.setBlock(lever, Blocks.AIR.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+							}
+							level.setBlock(conductor, Blocks.AIR.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+						}
+					} finally {
+						saved.forEach((pos, state) -> level.setBlock(pos, state, Block.UPDATE_SKIP_ALL_SIDEEFFECTS));
+					}
+				}
+			}
+		} finally {
+			RailLogic.setOptimizationEnabled(enabled);
+		}
+		helper.succeed();
 	}
 
 	private static Method method(String name, Class<?>... parameters) {
