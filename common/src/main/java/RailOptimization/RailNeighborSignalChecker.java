@@ -35,7 +35,6 @@ final class RailNeighborSignalChecker {
 	@SuppressWarnings("null")
 	private static boolean hasNeighborSignalInWindow(Level level, LevelChunk chunk, int chunkX, int chunkZ, int x, int y, int z,
 			MutableBlockPos scratchPos) {
-		// A radius-two probe reaches at most two chunks per axis; their parity identifies all four slots.
 		int origin = (chunkX & 1) | ((chunkZ & 1) << 1);
 		LevelChunk chunk00 = origin == 0 ? chunk : null;
 		LevelChunk chunk10 = origin == 1 ? chunk : null;
