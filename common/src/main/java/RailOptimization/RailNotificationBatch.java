@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.redstone.CollectingNeighborUpdater;
 import net.minecraft.world.level.redstone.NeighborUpdater;
 
@@ -41,6 +42,8 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private @Nullable LevelChunk readChunk;
 	private int readChunkX;
 	private int readChunkZ;
+	private @Nullable LevelChunkSection readSection;
+	private int readSectionY;
 	private boolean eastWest;
 	private int minColumn;
 	private int columnStride;
@@ -209,15 +212,28 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		if (!level.isInValidBounds(pos)) {
 			return level.getBlockState(pos);
 		}
-		int chunkX = pos.getX() >> 4;
-		int chunkZ = pos.getZ() >> 4;
+		int x = pos.getX();
+		int y = pos.getY();
+		int z = pos.getZ();
+		int chunkX = x >> 4;
+		int chunkZ = z >> 4;
 		LevelChunk chunk = readChunk;
 		if (chunk == null || chunkX != readChunkX || chunkZ != readChunkZ) {
 			readChunk = chunk = level.getChunk(chunkX, chunkZ);
 			readChunkX = chunkX;
 			readChunkZ = chunkZ;
+			readSection = null;
 		}
-		return chunk.getBlockState(pos);
+		if (level.isDebug()) {
+			return chunk.getBlockState(pos);
+		}
+		int sectionY = y >> 4;
+		LevelChunkSection section = readSection;
+		if (section == null || sectionY != readSectionY) {
+			readSection = section = chunk.getSection(chunk.getSectionIndex(y));
+			readSectionY = sectionY;
+		}
+		return section.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : section.getBlockState(x & 15, y & 15, z & 15);
 	}
 
 	private int bitIndex(long position) {
@@ -269,6 +285,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 
 	private void release() {
 		readChunk = null;
+		readSection = null;
 		Arrays.fill(shapes, 0, size, null);
 		ArrayDeque<RailNotificationBatch> pool = POOL.get();
 		if (pool.size() < 4)

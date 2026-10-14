@@ -15,6 +15,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PoweredRailBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -130,14 +131,49 @@ public final class RailNotificationBatchTestCases {
 				helper.assertTrue(field(CollectingNeighborUpdater.class, "count").getInt(updater) == 0, Component.literal("Native queue did not finish"));
 				for (RailNotificationBatch batch : batches) {
 					helper.assertTrue(field(RailNotificationBatch.class, "origin").get(batch) == null
-							&& field(RailNotificationBatch.class, "readChunk").get(batch) == null,
+							&& field(RailNotificationBatch.class, "readChunk").get(batch) == null
+							&& field(RailNotificationBatch.class, "readSection").get(batch) == null,
 							Component.literal("Completed batch retained dispatch position or chunk"));
 				}
 			}
+			sectionReadsMatchChunkAfterWrites(helper);
 		} catch (ReflectiveOperationException failure) {
 			throw new IllegalStateException(failure);
 		}
 		helper.succeed();
+	}
+
+	@SuppressWarnings("null")
+	private static void sectionReadsMatchChunkAfterWrites(GameTestHelper helper) throws ReflectiveOperationException {
+		Level level = helper.getLevel();
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		BlockPos pos = new BlockPos((origin.getX() & ~15) + 15, (level.getMaxY() & ~15) - 1, (origin.getZ() & ~15) + 8);
+		BlockPos[] probes = { pos, pos.above(), pos.east(), pos.east().above() };
+		BlockState[] saved = new BlockState[probes.length];
+		for (int index = 0; index < probes.length; ++index) {
+			saved[index] = level.getBlockState(probes[index]);
+		}
+		RailNotificationBatch batch = singleRailPlan(level, pos);
+		Method read = method(RailNotificationBatch.class, "neighborState", Level.class, BlockPos.class);
+		try {
+			var chunk = level.getChunkAt(pos);
+			helper.assertTrue(chunk.getSection(chunk.getSectionIndex(pos.getY())).hasOnlyAir(), Component.literal("Read probe requires an empty sky section"));
+			level.setBlock(pos, Blocks.CAVE_AIR.defaultBlockState(), Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+			helper.assertTrue(read.invoke(batch, level, pos) == Blocks.AIR.defaultBlockState(), Component.literal("Empty section must normalize cave air"));
+			for (BlockState state : new BlockState[] { Blocks.SMOOTH_STONE.defaultBlockState(), Blocks.AIR.defaultBlockState() }) {
+				for (BlockPos probe : probes) {
+					level.setBlock(probe, state, Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+					BlockState expected = level.getChunkAt(probe).getBlockState(probe);
+					helper.assertTrue(read.invoke(batch, level, probe) == expected, Component.literal("NC read differs after section/chunk transition"));
+				}
+				BlockState expected = level.getChunkAt(pos).getBlockState(pos);
+				helper.assertTrue(read.invoke(batch, level, pos) == expected, Component.literal("NC read retained a stale section or state"));
+			}
+		} finally {
+			for (int index = 0; index < probes.length; ++index) {
+				level.setBlock(probes[index], saved[index], Block.UPDATE_SKIP_ALL_SIDEEFFECTS);
+			}
+		}
 	}
 
 	@SuppressWarnings("null")
@@ -177,7 +213,6 @@ public final class RailNotificationBatchTestCases {
 	private record Notification(long position, byte kind, BlockState shape, byte mask) {
 	}
 
-	// Independent hash-set oracle; production contains only the axis-local bitmap.
 	private static final class ReferencePlan {
 		private final Level level;
 		private final Set<Long> seen = new HashSet<>();
