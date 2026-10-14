@@ -93,6 +93,7 @@ final class RailNeighborSignalChecker {
 		return false;
 	}
 
+	@SuppressWarnings("null")
 	private static boolean hasNeighborSignalInChunk(Level level, LevelChunk chunk, int x, int y, int z, MutableBlockPos scratchPos) {
 		for (Direction direction : SGN_DIR) {
 			int neighborX = x + direction.getStepX();

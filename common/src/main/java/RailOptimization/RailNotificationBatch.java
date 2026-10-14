@@ -204,6 +204,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		return more;
 	}
 
+	@SuppressWarnings("null")
 	private BlockState neighborState(Level level, BlockPos pos) {
 		if (!level.isInValidBounds(pos)) {
 			return level.getBlockState(pos);
