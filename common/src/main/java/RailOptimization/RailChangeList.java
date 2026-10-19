@@ -22,7 +22,7 @@ final class RailChangeList {
 		positions[size] = pos.asLong();
 		states[size] = state;
 		targets[size] = target;
-		boolean isAscending = RailPath.isAscending(RailPath.railShape(state));
+		boolean isAscending = RailPath.isAscending(state);
 		ascending[size] = isAscending;
 		hasSlope |= isAscending;
 		size++;
