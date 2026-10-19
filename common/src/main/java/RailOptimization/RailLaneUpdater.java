@@ -62,8 +62,9 @@ final class RailLaneUpdater {
 		MutableBlockPos cursor = context.railCursor;
 		cursor.set(pos.getX(), pos.getY(), pos.getZ());
 		BlockState previousState = sourceState;
-		RailShape sourceShape = RailPath.railShape(sourceState);
-		RailShape directFlatShape = directlyPowered && (sourceShape == RailShape.EAST_WEST || sourceShape == RailShape.NORTH_SOUTH) ? sourceShape : null;
+		int sourceShape = RailPath.railData(sourceState) & RailStateAccess.SHAPE_MASK;
+		int directFlatOrdinal = directlyPowered && (sourceShape == RailShape.EAST_WEST.ordinal() || sourceShape == RailShape.NORTH_SOUTH.ordinal())
+				? sourceShape : -1;
 		boolean directPath = directlyPowered;
 
 		for (int i = 1; i <= context.railPowerLimit; ++i) {
@@ -73,9 +74,10 @@ final class RailLaneUpdater {
 				break;
 			}
 
-			boolean continuesDirectFlatPath = directFlatShape != null && cursor.getY() == previousY && RailPath.railShape(state) == directFlatShape;
+			boolean continuesDirectFlatPath = directFlatOrdinal >= 0 && cursor.getY() == previousY
+					&& (RailPath.railData(state) & RailStateAccess.SHAPE_MASK) == directFlatOrdinal;
 			if (!continuesDirectFlatPath) {
-				directFlatShape = null;
+				directFlatOrdinal = -1;
 			}
 			boolean continuesDirectPath = directPath
 					&& (continuesDirectFlatPath || RailPath.connectsBackTo(self, world, cursor, state, forward, previousY, previousState, context));

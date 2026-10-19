@@ -80,6 +80,10 @@ final class RailPath {
 		return RAIL_ASCENDING[railData(state) & RailStateAccess.SHAPE_MASK];
 	}
 
+	static boolean isAscending(int shapeOrdinal) {
+		return RAIL_ASCENDING[shapeOrdinal];
+	}
+
 	static boolean isMismatchedRailAxis(RailShape expected, int actual) {
 		return RAIL_AXIS[actual] == (expected == RailShape.EAST_WEST ? AXIS_NORTH_SOUTH : AXIS_EAST_WEST);
 	}

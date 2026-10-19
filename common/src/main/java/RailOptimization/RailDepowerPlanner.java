@@ -57,6 +57,7 @@ final class RailDepowerPlanner {
 			cursor.set(BlockPos.getX(position), BlockPos.getY(position), BlockPos.getZ(position));
 			previousState = context.straightRailStates[offset + start - 1];
 		}
+		int previousShape = RailPath.railData(previousState) & RailStateAccess.SHAPE_MASK;
 		int poweredLength = start;
 		int limit = context.railPowerLimit;
 		long connectionChecks = 0;
@@ -65,8 +66,7 @@ final class RailDepowerPlanner {
 		int chunkZ = cursor.getZ() >> 4;
 		walk: for (int index = start + 1; index <= end; ++index) {
 			int previousY = cursor.getY();
-			RailShape previousShape = RailPath.railShape(previousState);
-			int step = (previousShape.ordinal() << 1) | (forward ? 0 : 1);
+			int step = (previousShape << 1) | (forward ? 0 : 1);
 			int x = cursor.getX() + RailPath.STEP_X[step];
 			int y = cursor.getY() + RailPath.STEP_Y[step];
 			int z = cursor.getZ() + RailPath.STEP_Z[step];
@@ -103,7 +103,7 @@ final class RailDepowerPlanner {
 			if (context.hasNeighborSignal(level, cursor)) {
 				return index <= limit ? KEEP_POWERED : Math.max(0, index - limit - 1);
 			}
-			RailShape shape = RailPath.railShape(state);
+			int shape = RailPath.railData(state) & RailStateAccess.SHAPE_MASK;
 			boolean needsConnectionCheck = shape != previousShape || RailPath.isAscending(shape) || !primary;
 			if (index <= limit) {
 				if (needsConnectionCheck)
@@ -116,6 +116,7 @@ final class RailDepowerPlanner {
 			}
 			poweredLength = index;
 			previousState = state;
+			previousShape = shape;
 		}
 		context.pendingConnectionChecks = connectionChecks;
 		return Math.min(limit, poweredLength);

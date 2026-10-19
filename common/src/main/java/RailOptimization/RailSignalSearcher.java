@@ -72,10 +72,11 @@ final class RailSignalSearcher {
 	}
 
 	static int countStraightRailsToDepower(PoweredRailBlock self, Level level, BlockPos pos, RailShape railShape, boolean forward, RailUpdateContext context) {
-		byte axis = RailPath.RAIL_AXIS[railShape.ordinal()];
+		int expectedOrdinal = railShape.ordinal();
+		byte axis = RailPath.RAIL_AXIS[expectedOrdinal];
 		BlockState[] railStates = context.straightRailStates;
 
-		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		int stepIndex = (expectedOrdinal << 1) | (forward ? 0 : 1);
 		int stepX = RailPath.STEP_X[stepIndex];
 		int stepY = RailPath.STEP_Y[stepIndex];
 		int stepZ = RailPath.STEP_Z[stepIndex];
@@ -94,7 +95,7 @@ final class RailSignalSearcher {
 			context.scratchPos.set(x, y, z);
 			BlockState state = context.getBlockState(level, context.scratchPos);
 			if (RailPath.isPoweredRailWithAxis(self, state, flatShape)) {
-				if (RailPath.railShape(state) != railShape) {
+				if ((RailPath.railData(state) & RailStateAccess.SHAPE_MASK) != expectedOrdinal) {
 					return COMPLEX_PATH;
 				}
 				if (context.hasNeighborSignal(level, context.scratchPos)) {
@@ -126,7 +127,7 @@ final class RailSignalSearcher {
 		MutableBlockPos cursor = context.railCursor;
 		cursor.set(pos.getX(), pos.getY(), pos.getZ());
 		BlockState previousState = sourceState;
-		RailShape previousShape = RailPath.railShape(sourceState);
+		int previousShape = RailPath.railData(sourceState) & RailStateAccess.SHAPE_MASK;
 		int previousY = pos.getY();
 		int powerLimit = context.railPowerLimit;
 		int poweredLength = 0;
@@ -137,7 +138,7 @@ final class RailSignalSearcher {
 				break;
 			}
 
-			RailShape currentShape = RailPath.railShape(state);
+			int currentShape = RailPath.railData(state) & RailStateAccess.SHAPE_MASK;
 			if (currentShape != previousShape
 					&& !RailPath.connectsBackTo(self, level, cursor, state, forward, previousY, previousState, context)) {
 				return COMPLEX_PATH;
