@@ -98,7 +98,10 @@ public final class RailUpdateMemo {
 	}
 
 	void confirm(BlockPos pos, boolean powered, int powerLimit) {
-		long position = pos.asLong();
+		confirm(pos.asLong(), powered, powerLimit);
+	}
+
+	void confirm(long position, boolean powered, int powerLimit) {
 		long currentEpoch = ownerEpoch.get();
 		long entryMeta = (currentEpoch & EPOCH_MASK)
 				| ((long) (powerLimit - 1) << POWER_LIMIT_SHIFT)

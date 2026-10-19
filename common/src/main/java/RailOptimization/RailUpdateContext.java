@@ -49,7 +49,7 @@ final class RailUpdateContext {
 
 		int posChunkX = pos.getX() >> 4;
 		int posChunkZ = pos.getZ() >> 4;
-		boolean powered = RailNeighborSignalChecker.hasNeighborSignalFast(level, pos, scratchPos, getChunk(level, pos), posChunkX, posChunkZ);
+		boolean powered = RailNeighborSignalChecker.hasNeighborSignalFast(level, pos, scratchPos, getChunk(level, posChunkX, posChunkZ), posChunkX, posChunkZ);
 		searchCache.putDirectSignal(position, entry, powered ? RailLogic.CHECKED_POWERED : RailLogic.CHECKED_BLOCKED);
 		return powered;
 	}
@@ -57,7 +57,7 @@ final class RailUpdateContext {
 	@SuppressWarnings("null")
 	BlockState getBlockState(Level level, BlockPos pos) {
 		if (batchWriter.planning()) {
-			BlockState pending = batchWriter.pendingState(pos.asLong());
+			BlockState pending = batchWriter.pendingState(pos);
 			if (pending != null) {
 				return pending;
 			}
@@ -70,8 +70,10 @@ final class RailUpdateContext {
 	}
 
 	LevelChunk getChunk(Level level, BlockPos pos) {
-		int nextChunkX = pos.getX() >> 4;
-		int nextChunkZ = pos.getZ() >> 4;
+		return getChunk(level, pos.getX() >> 4, pos.getZ() >> 4);
+	}
+
+	private LevelChunk getChunk(Level level, int nextChunkX, int nextChunkZ) {
 		if (chunk == null || nextChunkX != chunkX || nextChunkZ != chunkZ) {
 			chunk = level.getChunk(nextChunkX, nextChunkZ);
 			chunkX = nextChunkX;

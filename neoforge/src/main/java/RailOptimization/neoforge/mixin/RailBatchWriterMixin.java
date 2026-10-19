@@ -23,7 +23,7 @@ public abstract class RailBatchWriterMixin {
 		return supported && !level.captureBlockSnapshots;
 	}
 
-	@Inject(method = "write", at = @At(value = "INVOKE", target = "LRailOptimization/RailUpdateMemo;confirm(Lnet/minecraft/core/BlockPos;ZI)V"))
+	@Inject(method = "write", at = @At(value = "INVOKE", target = "LRailOptimization/RailUpdateMemo;confirm(JZI)V"))
 	private void railoptimization$notifyStateChange(CallbackInfo ci, @Local(argsOnly = true) Level level,
 			@Local(name = "previous") BlockState previous, @Local(name = "target") BlockState target) {
 		target.onBlockStateChange(level, cursor.immutable(), previous);

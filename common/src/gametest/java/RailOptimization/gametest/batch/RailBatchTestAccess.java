@@ -101,7 +101,7 @@ final class RailBatchTestAccess {
 		}
 
 		BlockState pendingState(BlockPos pos) {
-			return (BlockState) invoke(delegate, "pendingState", new Class<?>[] { long.class }, pos.asLong());
+			return (BlockState) invoke(delegate, "pendingState", new Class<?>[] { BlockPos.class }, pos);
 		}
 
 		void write(Level level, Context context) {

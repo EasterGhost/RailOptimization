@@ -60,12 +60,13 @@ final class RailBatchWriter {
 		return planning;
 	}
 
-	BlockState pendingState(long position) {
-		int x = BlockPos.getX(position);
-		int z = BlockPos.getZ(position);
+	BlockState pendingState(BlockPos pos) {
+		int x = pos.getX();
+		int z = pos.getZ();
 		if (x < minX || x > maxX || z < minZ || z > maxZ) {
 			return null;
 		}
+		long position = pos.asLong();
 		for (int index = changes.size() - 1; index >= 0; --index) {
 			if (positions[index] == position) {
 				return targets[index];
@@ -151,7 +152,7 @@ final class RailBatchWriter {
 				if (clientUpdates[group]) {
 					level.sendBlockUpdated(cursor, previous, target, FLAGS);
 				}
-				context.memo.confirm(cursor, RailPath.isPowered(target), context.railPowerLimit);
+				context.memo.confirm(positions[index], RailPath.isPowered(target), context.railPowerLimit);
 			}
 		} finally {
 			Arrays.fill(chunks, 0, groupCount, null);
@@ -169,7 +170,7 @@ final class RailBatchWriter {
 		for (int index = 0; index < changes.size(); ++index) {
 			cursor.set(BlockPos.getX(positions[index]), BlockPos.getY(positions[index]), BlockPos.getZ(positions[index]));
 			level.setBlock(cursor, targets[index], FLAGS);
-			context.memo.confirm(cursor, RailPath.isPowered(targets[index]), context.railPowerLimit);
+			context.memo.confirm(positions[index], RailPath.isPowered(targets[index]), context.railPowerLimit);
 		}
 	}
 }
