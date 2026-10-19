@@ -32,7 +32,7 @@ public final class RailNotificationBatchTestCases {
 			changesConstructor.setAccessible(true);
 			Constructor<?> constructor = type.getDeclaredConstructor(int.class);
 			constructor.setAccessible(true);
-			Method add = method(changesType, "add", BlockPos.class, BlockState.class);
+			Method add = method(changesType, "add", BlockPos.class, BlockState.class, BlockState.class);
 			Method plan = method(type, "plan", Level.class, int.class, int.class, changesType);
 			Method prepare = method(type, "prepareColumns", RailShape.class, changesType);
 			Object indexed = constructor.newInstance(129);
@@ -47,16 +47,19 @@ public final class RailNotificationBatchTestCases {
 								int first = center ? limit : 0;
 								BlockPos[] positions = new BlockPos[first + limit + 1];
 								BlockState[] states = new BlockState[positions.length];
+								BlockState[] targets = new BlockState[positions.length];
 								for (int index = 0; index < positions.length; ++index) {
 									int distance = index <= first ? -index : index - first;
 									int up = height(distance, geometry);
 									positions[index] = new BlockPos(eastWest ? 15 + distance : 15, -56 + up, eastWest ? 15 : 15 + distance);
 									RailShape railShape = height(distance + 1, geometry) > up ? (eastWest ? RailShape.ASCENDING_EAST : RailShape.ASCENDING_SOUTH)
 											: height(distance - 1, geometry) > up ? (eastWest ? RailShape.ASCENDING_WEST : RailShape.ASCENDING_NORTH) : shape;
-									states[index] = (activator ? Blocks.ACTIVATOR_RAIL : Blocks.POWERED_RAIL).defaultBlockState().setValue(PoweredRailBlock.SHAPE, railShape);
-									add.invoke(changes, positions[index], states[index]);
+									states[index] = (activator ? Blocks.ACTIVATOR_RAIL : Blocks.POWERED_RAIL).defaultBlockState()
+											.setValue(PoweredRailBlock.SHAPE, railShape).setValue(PoweredRailBlock.POWERED, (geometry & 1) != 0);
+									targets[index] = states[index].cycle(PoweredRailBlock.POWERED);
+									add.invoke(changes, positions[index], states[index], targets[index]);
 								}
-								ReferencePlan reference = new ReferencePlan(helper.getLevel(), eastWest, first, limit, positions, states);
+								ReferencePlan reference = new ReferencePlan(eastWest, first, limit, positions, states, targets);
 								field(type, "size").setInt(indexed, 0);
 								field(type, "cost").setInt(indexed, 0);
 								prepare.invoke(indexed, shape, changes);
@@ -183,7 +186,9 @@ public final class RailNotificationBatchTestCases {
 			Constructor<?> changesConstructor = changesType.getDeclaredConstructor(int.class);
 			changesConstructor.setAccessible(true);
 			Object changes = changesConstructor.newInstance(1);
-			method(changesType, "add", BlockPos.class, BlockState.class).invoke(changes, pos, Blocks.POWERED_RAIL.defaultBlockState());
+			BlockState previous = Blocks.POWERED_RAIL.defaultBlockState();
+			method(changesType, "add", BlockPos.class, BlockState.class, BlockState.class)
+					.invoke(changes, pos, previous, previous.setValue(PoweredRailBlock.POWERED, true));
 			Constructor<RailNotificationBatch> constructor = RailNotificationBatch.class.getDeclaredConstructor(int.class);
 			constructor.setAccessible(true);
 			RailNotificationBatch batch = constructor.newInstance(1);
@@ -214,17 +219,17 @@ public final class RailNotificationBatchTestCases {
 	}
 
 	private static final class ReferencePlan {
-		private final Level level;
 		private final Set<Long> seen = new HashSet<>();
 		private final List<Notification> notifications = new ArrayList<>();
 		private final BlockPos[] positions;
 		private final BlockState[] states;
+		private final BlockState[] targets;
 		private int cost;
 
-		ReferencePlan(Level level, boolean eastWest, int first, int second, BlockPos[] positions, BlockState[] states) {
-			this.level = level;
+		ReferencePlan(boolean eastWest, int first, int second, BlockPos[] positions, BlockState[] states, BlockState[] targets) {
 			this.positions = positions;
 			this.states = states;
+			this.targets = targets;
 			boolean slope = false;
 			for (BlockState state : states) slope |= state.getValue(PoweredRailBlock.SHAPE).isSlope();
 			boolean endpoint = !slope && first == 0 && second > 0;
@@ -275,7 +280,7 @@ public final class RailNotificationBatchTestCases {
 
 		private void shape(int index) {
 			BlockPos pos = positions[index];
-			notifications.add(new Notification(pos.asLong(), (byte) 1, level.getBlockState(pos), (byte) 0));
+			notifications.add(new Notification(pos.asLong(), (byte) 1, targets[index], (byte) 0));
 			cost += 6;
 		}
 

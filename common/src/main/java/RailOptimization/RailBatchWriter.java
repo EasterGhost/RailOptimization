@@ -37,7 +37,7 @@ final class RailBatchWriter {
 		this.changes = changes;
 		positions = changes.positions();
 		int capacity = positions.length;
-		targets = new BlockState[capacity];
+		targets = changes.targets();
 		groupKeys = new long[capacity];
 		groups = new int[capacity];
 		first = new int[capacity];
@@ -85,8 +85,7 @@ final class RailBatchWriter {
 			minZ = Math.min(minZ, pos.getZ());
 			maxZ = Math.max(maxZ, pos.getZ());
 		}
-		targets[index] = previous.setValue(PoweredRailBlock.POWERED, powered);
-		changes.add(pos, previous);
+		changes.add(pos, previous, previous.setValue(PoweredRailBlock.POWERED, powered));
 	}
 
 	@SuppressWarnings("null")

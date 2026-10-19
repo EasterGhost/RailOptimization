@@ -4,7 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.Level;
@@ -31,7 +30,6 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 	private final byte[] kinds;
 	private final byte[] directionMasks;
 	private final int[] neighborOffsets = new int[NeighborUpdater.UPDATE_ORDER.length];
-	private final MutableBlockPos scratchPos = new MutableBlockPos();
 	private long[] seenBits;
 	private Block source;
 	private int size;
@@ -101,7 +99,7 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 				single(sourcePosition, Direction.SOUTH);
 			branch(level, changes, 1, firstCount);
 		}
-		shape(level, sourcePosition);
+		shape(changes, 0);
 		support(level, changes, 0);
 	}
 
@@ -109,14 +107,14 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		for (int index = start; index <= end; ++index)
 			appendNeighbors(level, changes.position(index), null);
 		for (int index = end; index >= start; --index) {
-			shape(level, changes.position(index));
+			shape(changes, index);
 			support(level, changes, index);
 		}
 	}
 
 	private void rail(Level level, RailChangeList changes, int index) {
 		appendNeighbors(level, changes.position(index), null);
-		shape(level, changes.position(index));
+		shape(changes, index);
 		support(level, changes, index);
 	}
 
@@ -146,11 +144,9 @@ public final class RailNotificationBatch implements CollectingNeighborUpdater.Ne
 		directionMasks[size++] = (byte) mask;
 	}
 
-	@SuppressWarnings("null")
-	private void shape(Level level, long position) {
-		positions[size] = position;
-		scratchPos.set(BlockPos.getX(position), BlockPos.getY(position), BlockPos.getZ(position));
-		shapes[size] = level.getBlockState(scratchPos);
+	private void shape(RailChangeList changes, int index) {
+		positions[size] = changes.position(index);
+		shapes[size] = changes.target(index);
 		kinds[size++] = PP;
 		cost += SHAPE_ORDER.length;
 	}

@@ -126,7 +126,7 @@ final class RailUpdateNotifier {
 	private static void notifyShape(Level world, RailChangeList changedRails, int index, MutableBlockPos scratchPos) {
 		setPosition(scratchPos, changedRails.position(index), 0);
 		BlockState oldState = changedRails.state(index);
-		BlockState newState = world.getBlockState(scratchPos);
+		BlockState newState = changedRails.target(index);
 		oldState.updateIndirectNeighbourShapes(world, scratchPos, SHAPE_UPDATE_FLAGS, SHAPE_UPDATE_LIMIT);
 		newState.updateNeighbourShapes(world, scratchPos.immutable(), SHAPE_UPDATE_FLAGS, SHAPE_UPDATE_LIMIT);
 		newState.updateIndirectNeighbourShapes(world, scratchPos, SHAPE_UPDATE_FLAGS, SHAPE_UPDATE_LIMIT);
