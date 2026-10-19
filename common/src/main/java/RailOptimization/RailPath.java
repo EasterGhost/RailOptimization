@@ -90,8 +90,7 @@ final class RailPath {
 		int x = railPos.getX();
 		int y = railPos.getY();
 		int z = railPos.getZ();
-		RailShape railShape = railShape(state);
-		int stepIndex = (railShape.ordinal() << 1) | (forward ? 0 : 1);
+		int stepIndex = ((railData(state) & RailStateAccess.SHAPE_MASK) << 1) | (forward ? 0 : 1);
 		int nextX = x + STEP_X[stepIndex];
 		int nextY = y + STEP_Y[stepIndex];
 		int nextZ = z + STEP_Z[stepIndex];
@@ -120,8 +119,7 @@ final class RailPath {
 
 	static boolean connectsBackTo(PoweredRailBlock self, Level level, BlockPos railPos, BlockState state, boolean forward, int previousY,
 			BlockState previousState, RailUpdateContext context) {
-		RailShape railShape = railShape(state);
-		int stepIndex = (railShape.ordinal() << 1) | (forward ? 1 : 0);
+		int stepIndex = ((railData(state) & RailStateAccess.SHAPE_MASK) << 1) | (forward ? 1 : 0);
 		int nextY = railPos.getY() + STEP_Y[stepIndex];
 		RailShape flatShape = STEP_FLAT[stepIndex];
 
