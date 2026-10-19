@@ -1,7 +1,6 @@
 package RailOptimization.mixin;
 
 import RailOptimization.RailPaletteAccess;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.BitStorage;
 import net.minecraft.world.level.chunk.PaletteResize;
 import net.minecraft.world.level.chunk.PalettedContainer;
@@ -42,7 +41,7 @@ public abstract class PalettedContainerMixin<T> implements RailPaletteAccess<T>,
 			BitStorage storage = data.storage();
 			for (int index = first; index >= 0; index = next[index]) {
 				long position = positions[index];
-				int cell = ((BlockPos.getY(position) & 15) << 8) | ((BlockPos.getZ(position) & 15) << 4) | (BlockPos.getX(position) & 15);
+				int cell = ((int) (position & 15) << 8) | ((int) ((position >>> 12) & 15) << 4) | (int) ((position >>> 38) & 15);
 				storage.set(cell, paletteIds[index]);
 			}
 		} finally {
